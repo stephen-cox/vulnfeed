@@ -1,3 +1,5 @@
+import os
+
 import requests
 import yaml
 from feedgen.feed import FeedGenerator
@@ -49,3 +51,35 @@ def generate_feed(advisories: list[dict], feed_url: str = "") -> bytes:
         entry.guid(advisory["ghsa_id"], permalink=False)
 
     return fg.rss_str(pretty=True)
+
+
+def main(
+    config_path: str = "config.yaml",
+    output_path: str = "public/feed.xml",
+    token: str | None = None,
+) -> None:
+    config = load_config(config_path)
+    all_advisories = []
+
+    for feed in config.get("feeds", []):
+        if feed.get("source") != "github":
+            continue
+
+        for repo in feed.get("repos", []):
+            advisories = fetch_github_advisories(repo, token=token)
+            for advisory in advisories:
+                advisory["repo"] = repo
+                all_advisories.append(advisory)
+
+    aggregated = aggregate_advisories(all_advisories)
+    feed_xml = generate_feed(aggregated, feed_url="https://github.com/vulnfeed")
+
+    output_dir = os.path.dirname(output_path) or "."
+    os.makedirs(output_dir, exist_ok=True)
+    with open(output_path, "wb") as output_file:
+        output_file.write(feed_xml)
+
+
+if __name__ == "__main__":
+    github_token = os.getenv("GITHUB_TOKEN")
+    main(token=github_token)

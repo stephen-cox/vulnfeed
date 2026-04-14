@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from unittest.mock import Mock, patch
 
-from vulnfeed import aggregate_advisories, fetch_github_advisories, generate_feed, load_config
+from vulnfeed import aggregate_advisories, fetch_github_advisories, generate_feed, load_config, main
 
 
 def test_load_config(tmp_path) -> None:
@@ -141,3 +141,36 @@ def test_generate_feed() -> None:
     )
     assert items[0].find("description").text == "A SQL injection vulnerability was found."
     assert items[0].find("guid").text == "GHSA-1234-5678-9abc"
+
+
+def test_main_writes_feed_xml(tmp_path) -> None:
+    config_file = tmp_path / "config.yaml"
+    output_file = tmp_path / "output" / "feed.xml"
+    config_file.write_text(
+        """
+feeds:
+  - source: github
+    repos:
+      - owner/repo
+"""
+    )
+
+    mock_response = Mock()
+    mock_response.json.return_value = [
+        {
+            "ghsa_id": "GHSA-zzzz-yyyy-xxxx",
+            "html_url": "https://github.com/owner/repo/security/advisories/GHSA-zzzz-yyyy-xxxx",
+            "summary": "Privilege escalation in widget parser",
+            "severity": "critical",
+            "published_at": "2026-04-10T10:00:00Z",
+            "description": "A privilege escalation vulnerability was found.",
+        }
+    ]
+
+    with patch("vulnfeed.requests.get", return_value=mock_response):
+        main(config_path=str(config_file), output_path=str(output_file), token="fake-token")
+
+    assert output_file.exists()
+    output_xml = output_file.read_text()
+    assert "GHSA-zzzz-yyyy-xxxx" in output_xml
+    assert "CRITICAL" in output_xml
