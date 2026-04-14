@@ -1,0 +1,6 @@
+feeds:
+  - source: github
+    repos:
+      - zammad/zammad
+      - django/django
+      - pallets/flask
