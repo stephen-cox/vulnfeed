@@ -1,9 +1,10 @@
 ---
 id: TASK-08
 title: README with setup and usage instructions
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-14 09:18'
+updated_date: '2026-04-14 11:21'
 labels: []
 milestone: m-0
 dependencies:
@@ -35,21 +36,29 @@ The README should include these sections:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 README.md exists at the project root
-- [ ] #2 Contains a clear project title and one-line description
-- [ ] #3 Explains how the tool works (config -> fetch -> generate RSS)
-- [ ] #4 Shows the GitHub Pages feed URL pattern
-- [ ] #5 Includes fork-and-customize instructions with GitHub Pages setup (Source: GitHub Actions)
-- [ ] #6 Includes local development setup commands (venv, pip install, run script)
-- [ ] #7 Documents how to set GITHUB_TOKEN for authenticated API access
-- [ ] #8 Includes test running instructions
-- [ ] #9 ruff check . and ruff format --check . pass with no errors
+- [x] #1 README.md exists at the project root
+- [x] #2 Contains a clear project title and one-line description
+- [x] #3 Explains how the tool works (config -> fetch -> generate RSS)
+- [x] #4 Shows the GitHub Pages feed URL pattern
+- [x] #5 Includes fork-and-customize instructions with GitHub Pages setup (Source: GitHub Actions)
+- [x] #6 Includes local development setup commands (venv, pip install, run script)
+- [x] #7 Documents how to set GITHUB_TOKEN for authenticated API access
+- [x] #8 Includes test running instructions
+- [x] #9 ruff check . and ruff format --check . pass with no errors
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added a new root `README.md` documenting project purpose, workflow (config → fetch advisories → generate RSS), subscription URL pattern, fork/customization with GitHub Pages (Source: GitHub Actions), local setup commands, `GITHUB_TOKEN` usage, and test/lint commands.
+
+Independent verification completed: `.venv/bin/python -m pytest tests/ -v` (7 passed), `.venv/bin/ruff check .` (passed), and `.venv/bin/ruff format --check .` (passed). All acceptance criteria and Definition of Done items are satisfied; no warnings or follow-up actions required.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 All acceptance criteria verified and marked as done
-- [ ] #2 All tests pass
-- [ ] #3 All linting checks pass
-- [ ] #4 Any manual tests pass
+- [x] #1 All acceptance criteria verified and marked as done
+- [x] #2 All tests pass
+- [x] #3 All linting checks pass
+- [x] #4 Any manual tests pass
 <!-- DOD:END -->
