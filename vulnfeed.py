@@ -16,3 +16,13 @@ def fetch_github_advisories(repo: str, token: str | None = None) -> list[dict]:
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     return response.json()
+
+
+def aggregate_advisories(advisories: list[dict]) -> list[dict]:
+    seen: dict[str, dict] = {}
+    for advisory in advisories:
+        ghsa_id = advisory["ghsa_id"]
+        if ghsa_id not in seen:
+            seen[ghsa_id] = advisory
+
+    return sorted(seen.values(), key=lambda advisory: advisory["published_at"], reverse=True)

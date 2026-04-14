@@ -1,9 +1,10 @@
 ---
 id: TASK-04
 title: Aggregate and deduplicate advisories
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-14 09:17'
+updated_date: '2026-04-14 11:04'
 labels: []
 milestone: m-0
 dependencies:
@@ -32,18 +33,26 @@ Use TDD: write two tests:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 aggregate_advisories(advisories) exists in vulnfeed.py
-- [ ] #2 Duplicate advisories (same ghsa_id) are removed, keeping first occurrence
-- [ ] #3 Result is sorted by published_at descending (newest first)
-- [ ] #4 test_aggregate_advisories_deduplicates passes — 3 input advisories with 1 duplicate produces 2 results
-- [ ] #5 test_aggregate_advisories_sorts_newest_first passes — newer advisory appears before older one
-- [ ] #6 ruff check . and ruff format --check . pass with no errors
+- [x] #1 aggregate_advisories(advisories) exists in vulnfeed.py
+- [x] #2 Duplicate advisories (same ghsa_id) are removed, keeping first occurrence
+- [x] #3 Result is sorted by published_at descending (newest first)
+- [x] #4 test_aggregate_advisories_deduplicates passes — 3 input advisories with 1 duplicate produces 2 results
+- [x] #5 test_aggregate_advisories_sorts_newest_first passes — newer advisory appears before older one
+- [x] #6 ruff check . and ruff format --check . pass with no errors
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented `aggregate_advisories(advisories)` in `vulnfeed.py` and added aggregate-focused tests in `tests/test_vulnfeed.py`. Verification passed: `.venv/bin/python -m pytest tests/ -v` (5 passed), `.venv/bin/ruff check .` (all checks passed), and `.venv/bin/ruff format --check .` (3 files already formatted).
+
+Acceptance criteria and DoD are satisfied: deduplication by `ghsa_id` keeps first occurrence (confirmed via implementation and direct runtime check), output sorting is newest-first by `published_at`, and required tests pass. Minor recommendation: strengthen `test_aggregate_advisories_deduplicates` to assert the retained duplicate is explicitly the first occurrence.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 All acceptance criteria verified and marked as done
-- [ ] #2 All tests pass
-- [ ] #3 All linting checks pass
-- [ ] #4 Any manual tests pass
+- [x] #1 All acceptance criteria verified and marked as done
+- [x] #2 All tests pass
+- [x] #3 All linting checks pass
+- [x] #4 Any manual tests pass
 <!-- DOD:END -->
