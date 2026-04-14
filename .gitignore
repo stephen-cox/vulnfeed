@@ -1,5 +1,9 @@
-.worktrees/
-__pycache__/
+# Git
+/.worktrees/
+
+# Python
+/__pycache__/
+/.venv/
+/.pytest_cache/
+/.ruff_cache/
 *.pyc
-.venv/
-public/feed.xml

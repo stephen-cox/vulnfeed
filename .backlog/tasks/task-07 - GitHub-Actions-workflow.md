@@ -1,9 +1,10 @@
 ---
 id: TASK-07
 title: GitHub Actions workflow
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-14 09:18'
+updated_date: '2026-04-14 11:17'
 labels: []
 milestone: m-0
 dependencies:
@@ -43,19 +44,43 @@ Permissions needed: `contents: write`, `pages: write`, `id-token: write`.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 .github/workflows/update-feed.yml exists
-- [ ] #2 Workflow triggers on schedule (cron '0 4 * * *') and workflow_dispatch
-- [ ] #3 Permissions include contents: write, pages: write, id-token: write
-- [ ] #4 Update job: checks out repo, sets up Python 3.12, installs requirements, runs ruff check and format check, runs vulnfeed.py with GITHUB_TOKEN, commits and pushes feed.xml only if changed
-- [ ] #5 Deploy job: depends on update job, checks out main, pulls latest, configures pages, uploads public/ as artifact, deploys to GitHub Pages
-- [ ] #6 Workflow YAML is valid (no syntax errors)
-- [ ] #7 ruff check . and ruff format --check . pass with no errors
+- [x] #1 .github/workflows/update-feed.yml exists
+- [x] #2 Workflow triggers on schedule (cron '0 4 * * *') and workflow_dispatch
+- [x] #3 Permissions include contents: write, pages: write, id-token: write
+- [x] #4 Update job: checks out repo, sets up Python 3.12, installs requirements, runs ruff check and format check, runs vulnfeed.py with GITHUB_TOKEN, commits and pushes feed.xml only if changed
+- [x] #5 Deploy job: depends on update job, checks out main, pulls latest, configures pages, uploads public/ as artifact, deploys to GitHub Pages
+- [x] #6 Workflow YAML is valid (no syntax errors)
+- [x] #7 ruff check . and ruff format --check . pass with no errors
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Verification completed with PASS_WITH_WARNINGS.
+
+Changed file reviewed in full: `.github/workflows/update-feed.yml`.
+
+Acceptance criteria evidence:
+- Workflow file exists and includes triggers for `schedule` (`0 4 * * *`) and `workflow_dispatch`.
+- Permissions include `contents: write`, `pages: write`, `id-token: write`.
+- `update` job includes checkout, Python 3.12 setup, dependency install, `ruff check .`, `ruff format --check .`, `python vulnfeed.py` with `GITHUB_TOKEN`, and conditional commit/push logic for `public/feed.xml` using `git diff --cached --quiet`.
+- `deploy` job depends on `update`, checks out `main`, pulls latest main, configures pages, uploads `public` artifact, and deploys pages.
+- YAML syntax validated via `.venv/bin/python -c "import pathlib,yaml; yaml.safe_load(...)"`.
+- Lint/format checks passed: `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .`.
+
+Automated verification evidence:
+- `.venv/bin/python -m pytest tests/ -v` → 7 passed.
+- `.venv/bin/ruff check .` → passed.
+- `.venv/bin/ruff format --check .` → passed.
+
+Warning:
+- Unrelated working-tree change present in `.gitignore` during verification (not part of TASK-07 scope). Recommend confirming whether this belongs to a separate task/commit before merge.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 All acceptance criteria verified and marked as done
-- [ ] #2 All tests pass
-- [ ] #3 All linting checks pass
-- [ ] #4 Any manual tests pass
+- [x] #1 All acceptance criteria verified and marked as done
+- [x] #2 All tests pass
+- [x] #3 All linting checks pass
+- [x] #4 Any manual tests pass
 <!-- DOD:END -->
