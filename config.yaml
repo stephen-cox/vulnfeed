@@ -1,6 +1,7 @@
 feeds:
   - source: github
     repos:
+      - composer/composer
       - mautic/mautic
       - RocketChat/Rocket.Chat
       - taigaio/taiga-back
