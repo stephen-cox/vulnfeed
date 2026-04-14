@@ -1,6 +1,9 @@
 feeds:
   - source: github
     repos:
+      - mautic/mautic
+      - RocketChat/Rocket.Chat
+      - taigaio/taiga-back
+      - taigaio/taiga-events
+      - taigaio/taiga-front
       - zammad/zammad
-      - django/django
-      - pallets/flask
