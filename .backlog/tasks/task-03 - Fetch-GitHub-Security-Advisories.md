@@ -1,10 +1,12 @@
 ---
 id: TASK-03
 title: Fetch GitHub Security Advisories
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-14 09:17'
-labels: []
+updated_date: '2026-04-14 11:00'
+labels:
+  - automation
 milestone: m-0
 dependencies:
   - TASK-02
@@ -33,21 +35,29 @@ Use TDD: write a test that mocks `requests.get` with a fake response containing 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 fetch_github_advisories(repo, token) exists in vulnfeed.py
-- [ ] #2 Function calls the correct GitHub API URL: https://api.github.com/repos/{owner}/{repo}/security-advisories
-- [ ] #3 Function sets Accept: application/vnd.github+json header
-- [ ] #4 Function sets Authorization: Bearer {token} header when token is provided
-- [ ] #5 Function calls response.raise_for_status() before returning
-- [ ] #6 Function returns the parsed JSON list of advisories
-- [ ] #7 Test uses unittest.mock to mock requests.get and verifies the correct URL and headers
-- [ ] #8 pytest tests/test_vulnfeed.py::test_fetch_github_advisories passes
-- [ ] #9 ruff check . and ruff format --check . pass with no errors
+- [x] #1 fetch_github_advisories(repo, token) exists in vulnfeed.py
+- [x] #2 Function calls the correct GitHub API URL: https://api.github.com/repos/{owner}/{repo}/security-advisories
+- [x] #3 Function sets Accept: application/vnd.github+json header
+- [x] #4 Function sets Authorization: Bearer {token} header when token is provided
+- [x] #5 Function calls response.raise_for_status() before returning
+- [x] #6 Function returns the parsed JSON list of advisories
+- [x] #7 Test uses unittest.mock to mock requests.get and verifies the correct URL and headers
+- [x] #8 pytest tests/test_vulnfeed.py::test_fetch_github_advisories passes
+- [x] #9 ruff check . and ruff format --check . pass with no errors
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented `fetch_github_advisories(repo, token=None)` in `vulnfeed.py` to call the GitHub security-advisories endpoint with required headers, optional bearer token auth, `raise_for_status()`, and JSON return. Added/verified `test_fetch_github_advisories` using `unittest.mock.patch` on `requests.get` to assert URL, headers, status propagation, and returned advisory data.
+
+Verification evidence: `.venv/bin/python -m pytest tests/test_vulnfeed.py::test_fetch_github_advisories -v` (1 passed), `.venv/bin/python -m pytest tests/ -v` (3 passed), `.venv/bin/ruff check .` (all checks passed), `.venv/bin/ruff format --check .` (3 files already formatted). No warnings; no follow-up required for this task scope.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 All acceptance criteria verified and marked as done
-- [ ] #2 All tests pass
-- [ ] #3 All linting checks pass
-- [ ] #4 Any manual tests pass
+- [x] #1 All acceptance criteria verified and marked as done
+- [x] #2 All tests pass
+- [x] #3 All linting checks pass
+- [x] #4 Any manual tests pass
 <!-- DOD:END -->
