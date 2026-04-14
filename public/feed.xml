@@ -7,45 +7,881 @@
     <atom:link href="https://github.com/vulnfeed" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 14 Apr 2026 11:25:15 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 14 Apr 2026 11:57:12 +0000</lastBuildDate>
     <item>
-      <title>[HIGH] pallets/flask — Possible disclosure of permanent session cookie due to missing Vary: Cookie header</title>
-      <link>https://github.com/pallets/flask/security/advisories/GHSA-m2qf-hxjv-5gpq</link>
-      <description>When all of the following conditions are met, a response containing data intended for one client may be cached and subsequently sent by a proxy to other clients. If the proxy also caches `Set-Cookie` headers, it may send one client's `session` cookie to other clients. The severity depends on the application's use of the session, and the proxy's behavior regarding cookies. The risk depends on _all_ these conditions being met.&#13;
+      <title>[MEDIUM] mautic/mautic — Improper regex in htaccess file</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-mj6m-246h-9w56</link>
+      <description>### Impact&#13;
+the default .htaccess file has some restrictions in the access to PHP files to only allow specific PHP files to be executed in the root of the application.&#13;
 &#13;
-1. The application must be hosted behind a caching proxy that does not strip cookies or ignore responses with cookies.&#13;
-2. The application sets [`session.permanent = True`](https://flask.palletsprojects.com/en/2.3.x/api/#flask.session.permanent).&#13;
-2. The application does not access or modify the session at any point during a request.&#13;
-4. [`SESSION_REFRESH_EACH_REQUEST`](https://flask.palletsprojects.com/en/2.3.x/config/#SESSION_REFRESH_EACH_REQUEST) is enabled (the default).&#13;
-5. The application does not set a `Cache-Control` header to indicate that a page is private or should not be cached.&#13;
+This logic isn't correct, as the regex in the second FilesMatch only checks the filename, not the full path.&#13;
 &#13;
-This happens because vulnerable versions of Flask only set the `Vary: Cookie` header when the session is accessed or modified, not when it is refreshed (re-sent to update the expiration) without being accessed or modified.</description>
-      <guid isPermaLink="false">GHSA-m2qf-hxjv-5gpq</guid>
-      <pubDate>Mon, 01 May 2023 15:42:50 +0000</pubDate>
+### Patches&#13;
+Please upgrade to 3.3.5 or 4.2.0 &#13;
+&#13;
+### Workarounds&#13;
+No&#13;
+&#13;
+### References&#13;
+&#13;
+- Release post: https://www.mautic.org/blog/community/mautic-4-2-one-small-step-mautic&#13;
+- Internally tracked under MST-32&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-mj6m-246h-9w56</guid>
+      <pubDate>Mon, 28 Feb 2022 23:26:31 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] pallets/flask — fallback key is used instead of current signing key</title>
-      <link>https://github.com/pallets/flask/security/advisories/GHSA-4grg-w6v8-c28g</link>
-      <description>In Flask 3.1.0, the way fallback key configuration was handled resulted in the last fallback key being used for signing, rather than the current signing key.&#13;
+      <title>[HIGH] mautic/mautic — XSS vulnerability in installer</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-jrwm-pr9x-cgq3</link>
+      <description>⚠️ After this security fix was released we identified an issue which has been resolved in releasing hotfix version 4.3.1.&#13;
 &#13;
-Signing is provided by the `itsdangerous` library. A list of keys can be passed, and it expects the last (top) key in the list to be the most recent key, and uses that for signing. Flask was incorrectly constructing that list in reverse, passing the signing key first.&#13;
+### Impact&#13;
 &#13;
-Sites that have opted-in to use key rotation by setting `SECRET_KEY_FALLBACKS` are likely to unexpectedly be signing their sessions with stale keys, and their transition to fresher keys will be impeded. Sessions are still signed, so this would not cause any sort of data integrity loss.</description>
-      <guid isPermaLink="false">GHSA-4grg-w6v8-c28g</guid>
-      <pubDate>Tue, 13 May 2025 15:01:27 +0000</pubDate>
+Mautic allows you to install the application via an installer.&#13;
+&#13;
+The installer logic doesn't sufficiently sanitise the input of the install information, which may lead to vulnerable situation.&#13;
+&#13;
+This vulnerability is mitigated by the fact that the attacker needs to have access to the install process.&#13;
+&#13;
+&#13;
+### Patches&#13;
+&#13;
+Please upgrade to 4.3.1&#13;
+&#13;
+### Workarounds&#13;
+None.&#13;
+&#13;
+### References&#13;
+* Internally tracked under MST-28&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-jrwm-pr9x-cgq3</guid>
+      <pubDate>Mon, 23 May 2022 13:00:23 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] pallets/flask — Flask session does not add `Vary: Cookie` header when accessed in some ways</title>
-      <link>https://github.com/pallets/flask/security/advisories/GHSA-68rp-wp8r-4726</link>
-      <description>When the `session` object is accessed, Flask should set the `Vary: Cookie` header. This instructs caches not to cache the response, as it may contain information specific to a logged in user. This is handled in most cases, but some forms of access such as the Python `in` operator were overlooked.&#13;
+      <title>[HIGH] mautic/mautic — XSS vulnerability in tracking pixel functionality</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-pjpc-87mp-4332</link>
+      <description>### Impact&#13;
 &#13;
-The severity depends on the application's use of the session, and the cache's behavior regarding cookies. The risk depends on all these conditions being met.&#13;
+Mautic allows you to track open rates by using tracking pixels. &#13;
+The tracking information is stored together with extra metadata of the tracking request.&#13;
 &#13;
-1. The application must be hosted behind a caching proxy that does not ignore responses with cookies.&#13;
-2. The application does not set a `Cache-Control` header to indicate that a page is private or should not be cached.&#13;
-3. The application accesses the session in a way that does not access the values, only the keys, and does not mutate the session.</description>
-      <guid isPermaLink="false">GHSA-68rp-wp8r-4726</guid>
-      <pubDate>Thu, 19 Feb 2026 05:01:23 +0000</pubDate>
+The output isn't sufficiently filtered when showing the metadata of the tracking information, which may lead to a vulnerable situation.&#13;
+&#13;
+### Patches&#13;
+&#13;
+Please upgrade to 4.3.0&#13;
+&#13;
+### Workarounds&#13;
+None.&#13;
+&#13;
+### References&#13;
+* Internally tracked under MST-38&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-pjpc-87mp-4332</guid>
+      <pubDate>Mon, 23 May 2022 13:01:04 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — XSS Cross-site Scripting Stored (XSS) - Description field</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-2rc5-2755-v422</link>
+      <description>### Impact&#13;
+Prior to the patched version, there is an XSS vulnerability in the description fields within the Mautic application which could be exploited by a logged in user of Mautic with the appropriate permissions.&#13;
+&#13;
+This could lead to the user having elevated access to the system.&#13;
+&#13;
+### Patches&#13;
+Update to 4.4.12&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+### References&#13;
+- https://owasp.org/www-project-top-ten/2017/A7_2017-Cross-Site_Scripting_(XSS)&#13;
+- https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/02-Testing_for_Stored_Cross_Site_Scripting&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-2rc5-2755-v422</guid>
+      <pubDate>Thu, 11 Apr 2024 14:47:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — XSS in Notifications via saving Dashboards</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-fhcx-f7jg-jx3f</link>
+      <description>### Impact&#13;
+Prior to the patched version, logged in users of Mautic are vulnerable to a self XSS vulnerability in the notifications within Mautic.&#13;
+&#13;
+Users could inject malicious code into the notification when saving Dashboards.&#13;
+&#13;
+### Patches&#13;
+Update to Mautic 4.4.12. &#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+### References&#13;
+- https://owasp.org/www-project-top-ten/2017/A7_2017-Cross-Site_Scripting_(XSS)&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-fhcx-f7jg-jx3f</guid>
+      <pubDate>Thu, 11 Apr 2024 14:47:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Relative Path Traversal / Arbitrary File Deletion in Mautic (GrapesJS)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-9fcx-cv56-w58p</link>
+      <description>### Impact&#13;
+Prior to the patched version, logged in users of Mautic are vulnerable to Relative Path Traversal/Arbitrary File Deletion.  Regardless of the level of access the Mautic user had, they could delete files other than those in the media folders such as system files, libraries or other important files.&#13;
+&#13;
+This vulnerability exists in the implementation of the GrapesJS builder in Mautic.&#13;
+&#13;
+### Patches&#13;
+Update to 4.4.12 or 5.0.4.&#13;
+&#13;
+### Workarounds&#13;
+No&#13;
+&#13;
+### References&#13;
+- https://cwe.mitre.org/data/definitions/23.html&#13;
+- https://cwe.mitre.org/data/definitions/22.html&#13;
+- https://attack.mitre.org/techniques/T1630/002/&#13;
+_Are there any links users can visit to find out more?_&#13;
+&#13;
+### For more information&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-9fcx-cv56-w58p</guid>
+      <pubDate>Thu, 11 Apr 2024 14:47:40 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — SQL Injection in dynamic Reports</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-jj6w-2cqg-7p94</link>
+      <description>### Impact&#13;
+Prior to the patched version, logged in users of Mautic are vulnerable to an SQL injection vulnerability in the Reports bundle.&#13;
+&#13;
+The user could retrieve and alter data like sensitive data, login, and depending on database permission the attacker can manipulate file systems.&#13;
+&#13;
+### Patches&#13;
+Update to 4.4.12 or 5.0.4&#13;
+&#13;
+### Workarounds&#13;
+No&#13;
+&#13;
+### References&#13;
+- https://owasp.org/www-community/attacks/SQL_Injection&#13;
+- https://owasp.org/www-community/attacks/Blind_SQL_Injection&#13;
+</description>
+      <guid isPermaLink="false">GHSA-jj6w-2cqg-7p94</guid>
+      <pubDate>Thu, 11 Apr 2024 14:47:50 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Sensitive Data Exposure due to inadequate user permission settings</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-qjx3-2g35-6hv8</link>
+      <description>### Impact&#13;
+Prior to the patched version, logged in users of Mautic are able to access areas of the application that they should be prevented from accessing.&#13;
+&#13;
+Users could potentially access sensitive data such as names and surnames, company names and stage names.&#13;
+&#13;
+### Patches&#13;
+Update to 4.4.12 and 5.0.4&#13;
+&#13;
+### Workarounds&#13;
+No&#13;
+&#13;
+### References&#13;
+https://owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure&#13;
+</description>
+      <guid isPermaLink="false">GHSA-qjx3-2g35-6hv8</guid>
+      <pubDate>Thu, 11 Apr 2024 14:48:15 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Server-Side Request Forgery in Asset section </title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-mgv8-w49f-822w</link>
+      <description>### Impact&#13;
+Prior to the patched version, an authenticated user of Mautic could read system files and access the internal addresses of the application due to a Server-Side Request Forgery (SSRF) vulnerability.&#13;
+&#13;
+### Patches&#13;
+Update to 4.4.12 or 5.0.4&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+### References&#13;
+- https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-mgv8-w49f-822w</guid>
+      <pubDate>Thu, 11 Apr 2024 14:48:30 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Improper Access Control in UI upgrade process</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-x3jx-5w6m-q2fc</link>
+      <description>### Impact&#13;
+The logic in place to facilitate the update process via the user interface lacks access control to verify if permission exists to perform the tasks. Prior to this patch being applied it might be possible for an attacker to access the Mautic version number or to execute parts of the upgrade process without permission. As upgrading in the user interface is deprecated, this functionality is no longer required.&#13;
+&#13;
+### Patches&#13;
+Upgrade to 4.4.13 or 5.1.1 or later.&#13;
+&#13;
+### Workarounds&#13;
+None.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-x3jx-5w6m-q2fc</guid>
+      <pubDate>Wed, 18 Sep 2024 17:00:57 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] mautic/mautic — Cross-site Scripting (XSS) - stored (edit form HTML field)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-xv68-rrmw-9xwf</link>
+      <description>### Impact&#13;
+With access to edit a Mautic form, the attacker can add Cross-Site Scripting stored in the html filed. This could be used to steal sensitive information from the user's current session.&#13;
+&#13;
+### Patches&#13;
+Upgrade to 4.4.13 or 5.1.1 or later.&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+### References&#13;
+- https://owasp.org/www-project-top-ten/2017/A7_2017-Cross-Site_Scripting_(XSS)&#13;
+- https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/02-Testing_for_Stored_Cross_Site_Scripting&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-xv68-rrmw-9xwf</guid>
+      <pubDate>Wed, 18 Sep 2024 20:28:03 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — XSS in contact tracking and page hits report</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-xpc5-rr39-v8v2</link>
+      <description>### Summary&#13;
+Prior to this patch, a stored XSS vulnerability existed in the contact tracking and page hits report.&#13;
+&#13;
+### Patches&#13;
+Please update to 4.4.13 or 5.1.1 or later.&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+### References&#13;
+https://owasp.org/www-project-top-ten/2017/A7_2017-Cross-Site_Scripting_(XSS)&#13;
+https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/02-Testing_for_Stored_Cross_Site_Scripting&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-xpc5-rr39-v8v2</guid>
+      <pubDate>Wed, 18 Sep 2024 20:35:32 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Insufficient authentication in upgrade flow</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-qf6m-6m4g-rmrc</link>
+      <description>### Impact&#13;
+&#13;
+Mautic allows you to update the application via an upgrade script.&#13;
+&#13;
+The upgrade logic isn't shielded off correctly, which may lead to vulnerable situation.&#13;
+&#13;
+This vulnerability is mitigated by the fact that Mautic needs to be installed in a certain way to be vulnerable&#13;
+&#13;
+### Patches&#13;
+&#13;
+Please upgrade to 4.4.1 or 5.1.1 or later.&#13;
+&#13;
+### Workarounds&#13;
+None.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-qf6m-6m4g-rmrc</guid>
+      <pubDate>Wed, 18 Sep 2024 20:41:24 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Users enumeration - weak password login</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-8vff-35qm-qjvv</link>
+      <description>### Summary&#13;
+&#13;
+When logging in with the correct username and incorrect weak password, the user receives the notification, that their password is too weak.&#13;
+&#13;
+However when an incorrect username is provided along side with weak password, the application responds with ’Invalid credentials’ notification.&#13;
+&#13;
+This difference could be used to perform username enumeration.&#13;
+&#13;
+### Patches&#13;
+&#13;
+Update to 5.1.1 or later.&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-8vff-35qm-qjvv</guid>
+      <pubDate>Wed, 18 Sep 2024 20:46:50 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — XSS in contact/company tracking (no authentication)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-73gr-32wg-qhh7</link>
+      <description>## Summary&#13;
+Prior to this patch being applied, Mautic's tracking was vulnerable to Cross-Site Scripting through the Page URL variable.&#13;
+  &#13;
+## Patches&#13;
+Please update to 4.4.13 or 5.1.1 or later.&#13;
+&#13;
+## Workarounds&#13;
+None&#13;
+&#13;
+## References&#13;
+https://owasp.org/www-project-top-ten/2017/A7_2017-Cross-Site_Scripting_(XSS)&#13;
+https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/02-Testing_for_Stored_Cross_Site_Scripting&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-73gr-32wg-qhh7</guid>
+      <pubDate>Wed, 18 Sep 2024 20:48:37 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] mautic/mautic — Remote Code Execution &amp; File Deletion in Asset Uploads</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-73gx-x7r9-77x2</link>
+      <description>### Summary&#13;
+This advisory addresses two critical security vulnerabilities present in Mautic versions before 5.2.3.  These vulnerabilities could be exploited by authenticated users.&#13;
+&#13;
+* **Remote Code Execution (RCE) via Asset Upload:**  A Remote Code Execution vulnerability has been identified in the asset upload functionality. Insufficient enforcement of allowed file extensions allows an attacker to bypass restrictions and upload executable files, such as PHP scripts.&#13;
+&#13;
+* **Path Traversal File Deletion:** A Path Traversal vulnerability exists in the upload validation process.  Due to improper handling of path components, an authenticated user can manipulate the file deletion process to delete arbitrary files on the host system. &#13;
+  &#13;
+### Mitigation&#13;
+Please update to 5.2.3 or later.&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+### References&#13;
+https://owasp.org/www-community/attacks/Code_Injection&#13;
+https://owasp.org/www-community/attacks/Path_Traversal&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-73gx-x7r9-77x2</guid>
+      <pubDate>Tue, 25 Feb 2025 11:44:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Relative Path Traversal in assets file upload</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-4w2w-36vm-c8hf</link>
+      <description>### Summary&#13;
+&#13;
+This advisory addresses a file placement vulnerability that could allow assets to be uploaded to unintended directories on the server.&#13;
+&#13;
+* **Improper Limitation of a Pathname to a Restricted Directory:** A vulnerability exists in the asset upload functionality that allows users to upload files to directories outside of the intended temporary directory.&#13;
+&#13;
+### Mitigation&#13;
+&#13;
+Please update to 5.2.3 or later.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+None&#13;
+&#13;
+### References&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-4w2w-36vm-c8hf</guid>
+      <pubDate>Tue, 25 Feb 2025 11:44:35 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Improper Authorization in Reporting API</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-8xv7-g2q3-fqgc</link>
+      <description>### Summary&#13;
+&#13;
+This advisory addresses an authorization vulnerability in Mautic's HTTP Basic Authentication implementation. This flaw could allow unauthorized access to sensitive report data.&#13;
+&#13;
+* **Improper Authorization:** An authorization flaw exists in Mautic's API Authorization implementation. Any authenticated user, regardless of assigned roles or permissions, can access all reports and their associated data via the API.  This bypasses the intended access controls governed by the "Reporting Permissions &gt; View Own" and "Reporting Permissions &gt; View Others" permissions, which should restrict access to non-System Reports. &#13;
+&#13;
+### Mitigation&#13;
+&#13;
+Please update to Mautic 5.2.3 or later&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+ Disable the API in Mautic. See [documentation](https://docs.mautic.org/en/5.2/configuration/settings.html#api-settings).&#13;
+&#13;
+### References&#13;
+https://cwe.mitre.org/data/definitions/285.html&#13;
+https://docs.mautic.org/en/5.2/configuration/settings.html#api-settings&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-8xv7-g2q3-fqgc</guid>
+      <pubDate>Tue, 25 Feb 2025 11:44:42 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Predictable Page Indexing Might Lead to Sensitive Data Exposure</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-cqx4-9vqf-q3m8</link>
+      <description>### Summary&#13;
+This advisory addresses a security vulnerability in Mautic where unpublished page previews could be accessed by unauthenticated users and potentially indexed by search engines. This could lead to the unintended disclosure of draft content or sensitive information.&#13;
+&#13;
+Unauthorized Access to Unpublished Page Previews: The page preview functionality for unpublished content, accessible via predictable URLs (e.g., `/page/preview/1`, `/page/preview/2`), lacked proper authorization checks. This allowed any unauthenticated user to view content that was not yet intended for public release, and allowed search engines to index these private preview URLs, making the content publicly discoverable.&#13;
+&#13;
+### Mitigation&#13;
+Mautic has patched this vulnerability by enforcing proper permission checks on preview pages. Users should upgrade to the patched version of Mautic or later.&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-cqx4-9vqf-q3m8</guid>
+      <pubDate>Wed, 28 May 2025 16:07:44 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Mautic does not shield .env files from web traffic</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-h2wg-v8wg-jhxh</link>
+      <description>### Summary &#13;
+This advisory addresses a security vulnerability in Mautic where sensitive `.env` configuration files may be directly accessible via a web browser. This exposure could lead to the disclosure of sensitive information, including database credentials, API keys, and other critical system configurations.&#13;
+&#13;
+Sensitive Information Disclosure via `.env` File Exposure: The `.env` file, which typically contains environment variables and sensitive application configurations, is directly accessible via a web browser due to missing web server configurations that restrict access to such files. This allows an unauthenticated attacker to view the contents of this file by simply navigating to its URL.&#13;
+&#13;
+### Mitigation&#13;
+Update Mautic to the latest Mautic version.&#13;
+By default, Mautic does not use `.env` files for production data.&#13;
+&#13;
+**For Apache users:** Ensure your web server is configured to respect `.htaccess` files.&#13;
+&#13;
+**For Nginx users:** As Nginx does not inherently support `.htaccess` files, you must manually add a configuration block to your Nginx server configuration to deny access to `.env` files. Add the following to your Nginx configuration for the Mautic site:&#13;
+&#13;
+```nginx&#13;
+location ~ /\.env {&#13;
+    deny all;&#13;
+}&#13;
+```&#13;
+&#13;
+After modifying your Nginx configuration, remember to reload or restart your Nginx service for the changes to take effect.</description>
+      <guid isPermaLink="false">GHSA-h2wg-v8wg-jhxh</guid>
+      <pubDate>Wed, 28 May 2025 16:09:23 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — User name enumeration possible due to response time difference on password reset form</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-424x-cxvh-wq9p</link>
+      <description>### Summary&#13;
+&#13;
+This advisory addresses a security vulnerability in Mautic related to the "Forget your password" functionality. This vulnerability could be exploited by unauthenticated users to enumerate valid usernames.&#13;
+&#13;
+User Enumeration via Timing Attack: A user enumeration vulnerability exists in the "Forget your password" functionality. Differences in response times for existing and non-existing users, combined with a lack of request limiting, allow an attacker to determine the existence of usernames through a timing-based attack.&#13;
+&#13;
+### Mitigation&#13;
+Please update to a version that addresses this timing vulnerability, where password reset responses are normalized to respond at the same time regardless of user existence.&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+Email us at security@mautic.org</description>
+      <guid isPermaLink="false">GHSA-424x-cxvh-wq9p</guid>
+      <pubDate>Wed, 28 May 2025 16:09:57 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Segment cloning doesn't have a proper permission check</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-vph5-ghq3-q782</link>
+      <description>### Summary&#13;
+This advisory addresses a security vulnerability in Mautic related to the segment cloning functionality. This vulnerability allows any authenticated user to clone segments without proper authorization checks.&#13;
+&#13;
+Insecure Direct Object Reference (IDOR) / Missing Authorization: A missing authorization vulnerability exists in the `cloneAction` of the segment management. This allows an authenticated user to bypass intended permission restrictions and clone segments even if they lack the necessary permissions to create new ones.&#13;
+&#13;
+### Mitigation&#13;
+Update Mautic to a version that implements proper authorization checks for the `cloneAction` within the `ListController.php`. Ensure that users attempting to clone segments possess the appropriate creation permissions.&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+Email us at security@mautic.org</description>
+      <guid isPermaLink="false">GHSA-vph5-ghq3-q782</guid>
+      <pubDate>Wed, 28 May 2025 16:10:21 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Open Redirect vulnerability on user unlock path.</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-6vx9-9r2g-8373</link>
+      <description>### Summary&#13;
+This advisory addresses an Open Redirection vulnerability in Mautic's user unlocking endpoint. This vulnerability could be exploited by an attacker to redirect legitimate users to malicious websites, potentially leading to phishing attacks or the delivery of exploit kits.&#13;
+&#13;
+Open Redirection via `returnUrl` Parameter: An Open Redirection vulnerability exists in the `/s/action/unlock/user.user/0` endpoint. The `returnUrl` parameter, intended for post-action redirection, is not properly validated. This allows an attacker to craft a URL that, when clicked by a user, redirects them to an arbitrary external website controlled by the attacker.&#13;
+&#13;
+### Mitigation&#13;
+Update Mautic to a version that properly validates or sanitizes the `returnUrl` parameter to ensure that redirects only occur to trusted, internal URLs or explicitly whitelisted domains.</description>
+      <guid isPermaLink="false">GHSA-6vx9-9r2g-8373</guid>
+      <pubDate>Wed, 28 May 2025 16:11:20 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] mautic/mautic — SSRF via webhook function</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-hj6f-7hp7-xg69</link>
+      <description>### Summary&#13;
+Users with webhook permissions can conduct SSRF via webhooks. If they have permission to view the webhook logs, the (partial) request response is also disclosed&#13;
+&#13;
+### Details&#13;
+When sending webhooks, the destination is not validated, causing SSRF.&#13;
+&#13;
+### Impact&#13;
+Bypass of firewalls to interact with internal services. &#13;
+See https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/ for more potential impact.&#13;
+&#13;
+### Resources&#13;
+https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html for more information on SSRF and its fix&#13;
+</description>
+      <guid isPermaLink="false">GHSA-hj6f-7hp7-xg69</guid>
+      <pubDate>Wed, 03 Sep 2025 08:56:19 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Secret data extraction via elfinder</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-438m-6mhw-hq5w</link>
+      <description>### Summary&#13;
+_A user with administrator rights can change the configuration of the mautic application and extract secrets that are not normally available._&#13;
+&#13;
+&#13;
+### Impact&#13;
+_An administrator who usually does not have access to certain parameters, such as database credentials, can disclose them._&#13;
+</description>
+      <guid isPermaLink="false">GHSA-438m-6mhw-hq5w</guid>
+      <pubDate>Wed, 03 Sep 2025 08:56:26 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — User Enumeration via Response Timing</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-3ggv-qwcp-j6xg</link>
+      <description>### Impact&#13;
+The attacker can validate if a user exists by checking the time login returns. This timing difference can be used to enumerate valid usernames, after which an attacker could attempt brute force attacks.&#13;
+&#13;
+### Patches&#13;
+This vulnerability has been patched, implementing a timing-safe form login authenticator that ensures consistent response times regardless of whether a user exists or not.&#13;
+&#13;
+### Technical Details&#13;
+The vulnerability was caused by different response times when:&#13;
+- A valid username was provided (password hashing occurred)&#13;
+- An invalid username was provided (no password hashing occurred)&#13;
+&#13;
+The fix introduces a `TimingSafeFormLoginAuthenticator` that performs a dummy password hash verification even for non-existent users, ensuring consistent timing.&#13;
+&#13;
+### Workarounds&#13;
+No workarounds are available. Users should upgrade to the patched version.&#13;
+&#13;
+### References&#13;
+- https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account&#13;
+- https://github.com/mautic/mautic-security/pull/146</description>
+      <guid isPermaLink="false">GHSA-3ggv-qwcp-j6xg</guid>
+      <pubDate>Wed, 03 Sep 2025 08:56:40 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Reflected XSS in lead:addLeadTags - Quick Add</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-9v8p-m85m-f7mm</link>
+      <description>## Summary&#13;
+&#13;
+A Cross-Site Scripting (XSS) vulnerability allows an attacker to execute arbitrary JavaScript in the context of another user’s session. This occurs because user-supplied input is reflected back in the server’s response without proper sanitization or escaping, potentially enabling malicious actions such as session hijacking, credential theft, or unauthorized actions in the application.&#13;
+&#13;
+## Details&#13;
+&#13;
+The vulnerability resides in the “Tags” input field on the /s/ajax?action=lead:addLeadTags endpoint. Although the server applies sanitization before storing the data or returning it later, the payload is executed immediately in the victim’s browser upon reflection, allowing an attacker to run arbitrary JavaScript in the user’s session.&#13;
+&#13;
+## Impact&#13;
+A Reflected XSS attack can have a significant impact, allowing attackers to steal sensitive user data like cookies, redirect users to malicious websites, manipulate the web page content, and essentially take control of a user's session within an application by executing malicious JavaScript code within the victim's browser, even if the server-side code is secure; essentially enabling them to perform actions as if they were the logged-in user.&#13;
+&#13;
+## References&#13;
+- [Web Security Academy: Cross-site scripting](https://portswigger.net/web-security/cross-site-scripting)&#13;
+- [Web Security Academy: Reflected cross-site scripting](https://portswigger.net/web-security/cross-site-scripting/reflected)</description>
+      <guid isPermaLink="false">GHSA-9v8p-m85m-f7mm</guid>
+      <pubDate>Wed, 03 Sep 2025 08:56:47 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] taigaio/taiga-back — Blind SQL Injection Time Based</title>
+      <link>https://github.com/taigaio/taiga-back/security/advisories/GHSA-chm9-9wwq-xffj</link>
+      <description>Taiga API is vulnerable to Time‑based blind SQL injection allowing sensitive data disclosure via response timing.</description>
+      <guid isPermaLink="false">GHSA-chm9-9wwq-xffj</guid>
+      <pubDate>Tue, 28 Oct 2025 11:49:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] taigaio/taiga-back — Authenticated Remote Code Execution</title>
+      <link>https://github.com/taigaio/taiga-back/security/advisories/GHSA-cpcf-9276-fwc5</link>
+      <description>A remote code execution vulnerability exists in the Taiga API due to unsafe deserialization of untrusted data. </description>
+      <guid isPermaLink="false">GHSA-cpcf-9276-fwc5</guid>
+      <pubDate>Tue, 28 Oct 2025 11:50:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] mautic/mautic — Mautic user without privileged access to the Marketplace can install and uninstall composer packages</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-3fq7-c5m8-g86x</link>
+      <description>### Summary&#13;
+&#13;
+A non privileged user can install and remove arbitrary packages via composer for a composer based installed, even if the flag in update settings for enable composer based update is unticked.&#13;
+&#13;
+### Impact&#13;
+&#13;
+A low-privileged user of the platform can install malicious code to obtain higher privileges.</description>
+      <guid isPermaLink="false">GHSA-3fq7-c5m8-g86x</guid>
+      <pubDate>Tue, 02 Dec 2025 16:57:51 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — GrapesJsBuilder File Upload allows all file uploads</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-5xw2-57jx-pgjp</link>
+      <description>### Summary&#13;
+&#13;
+Arbitrary files can be uploaded via the GrapesJS Builder, as the types of files that can be uploaded are not restricted. &#13;
+&#13;
+### Impact&#13;
+&#13;
+If the media folder is not restricted from running files this can lead to a remote code execution. </description>
+      <guid isPermaLink="false">GHSA-5xw2-57jx-pgjp</guid>
+      <pubDate>Tue, 02 Dec 2025 16:58:03 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] RocketChat/Rocket.Chat — Unauthorized Access to OAuth App Details (Versions ≤ 6.12.0)</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-g4wm-fg3c-g4p2</link>
+      <description>### Summary&#13;
+A vulnerability in Rocket.Chat &lt;6.12.0 allows low-privileged users, if they know an app ID, to access sensitive information about configured OAuth applications by invoking an API endpoint that lacks proper authorization checks.&#13;
+&#13;
+### Details&#13;
+In Rocket.Chat versions up to 6.12.0, the API endpoint `GET /api/v1/oauth-apps.get` is exposed to any authenticated user, regardless of their role or permissions. This endpoint returns an OAuth application, as long as the user knows its ID, including potentially sensitive fields such as `client_id` and `client_secret`.&#13;
+&#13;
+### PoC&#13;
+#### Steps to Reproduce:&#13;
+&#13;
+1. Log in as a regular (non-admin) user.&#13;
+2. Obtain your `X-Auth-Token` and `X-User-Id`.&#13;
+3. Send the following HTTP request:&#13;
+&#13;
+```&#13;
+GET /api/v1/oauth-apps.get?AppId=zapier&#13;
+X-Auth-Token: &lt;user_token&gt;&#13;
+X-User-Id: &lt;user_id&gt;&#13;
+```&#13;
+&#13;
+#### Example Response:&#13;
+![image](https://github.com/user-attachments/assets/c9c7edd0-d3f3-4ef8-b791-eb081450f174)&#13;
+&#13;
+The response contains internal configuration details of OAuth apps set up in the instance, including credentials that should only be accessible by admins.&#13;
+&#13;
+### Vulnerable File and Code Location&#13;
+**Affected File:**&#13;
+ `apps/meteor/app/api/server/v1/oauthapps.ts`&#13;
+&#13;
+**Relevant Code Block (lines 25–45):**&#13;
+![image](https://github.com/user-attachments/assets/cb56ae69-0228-4a78-a0f0-dde38f3b2b67)&#13;
+&#13;
+**Issue:**&#13;
+ The code above requires the user to be authenticated (`authRequired: true`) but does **not** perform any authorization or permission checks such as `hasPermissionAsync()`. As a result, **any authenticated user**, regardless of role, can access this endpoint and retrieve sensitive configuration data.&#13;
+&#13;
+### Additional Information&#13;
+Affected Versions: Rocket.Chat ≤ 6.12.0&#13;
+&#13;
+### Impact&#13;
+Disclosure of `client_id` and `client_secret` could lead to further compromise of third-party integrated services.&#13;
+&#13;
+Violation of the principle of least privilege: users without administrative roles gain access to configuration data they are not authorized to see.&#13;
+&#13;
+Potential compliance issues depending on how OAuth integrations are used (e.g., exposing keys to cloud identity providers).&#13;
+</description>
+      <guid isPermaLink="false">GHSA-g4wm-fg3c-g4p2</guid>
+      <pubDate>Wed, 14 Jan 2026 11:50:54 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — SQL Injection in Contact Activity API Sorting</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-r5j5-q42h-fc93</link>
+      <description>### Summary&#13;
+This advisory addresses a SQL injection vulnerability in the API endpoint used for retrieving contact activities. A vulnerability exists in the query construction for the Contact Activity timeline where the parameter responsible for determining the sort direction was not strictly validated against an allowlist, potentially allowing authenticated users to inject arbitrary SQL commands via the API.&#13;
+&#13;
+### Mitigation&#13;
+&#13;
+Please update to **4.4.19**, **5.2.10**, **6.0.8**, **7.0.1** or later.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+None.&#13;
+&#13;
+### References&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+Email us at [security@mautic.org](mailto:security@mautic.org)</description>
+      <guid isPermaLink="false">GHSA-r5j5-q42h-fc93</guid>
+      <pubDate>Tue, 24 Feb 2026 14:55:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] RocketChat/Rocket.Chat — Users can login with any password via the EE ddp-streamer-service</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-w6vw-mrgv-69vf</link>
+      <description>### Issue 1: Users can login with any password via the EE ddp-streamer-service `GHSL-2026-004`)&#13;
+&#13;
+A critical authentication bypass vulnerability exists in Rocket.Chat's account service used in the `ddp-streamer` micro service that allows an attacker to log in to the service as any user with a password set, using any arbitrary password. The vulnerability stems from a missing `await` keyword when calling an asynchronous password validation function, causing a Promise object (which is always truthy) to be evaluated instead of the actual boolean validation result. This may lead to account takeover of any user whose username is known or guessable.&#13;
+&#13;
+The vulnerability originates from improper handling of asynchronous password validation in the authentication flow:&#13;
+&#13;
+1. **Password Validation Function** - [ee/apps/account-service/src/lib/utils.ts](https://github.com/RocketChat/Rocket.Chat/blob/05c415b94cb91907de39a39c6d277579258f334e/ee/apps/account-service/src/lib/utils.ts#L60-L61)&#13;
+&#13;
+   The `validatePassword` function returns a `Promise&lt;boolean&gt;` by calling `bcrypt.compare()`:&#13;
+   ```typescript&#13;
+   export const validatePassword = (password: string, bcryptPassword: string): Promise&lt;boolean&gt; =&gt;&#13;
+       bcrypt.compare(getPassword(password), bcryptPassword);&#13;
+   ```&#13;
+&#13;
+2. **Missing Await in Login Logic** - [ee/apps/account-service/src/lib/loginViaUsername.ts](https://github.com/RocketChat/Rocket.Chat/blob/05c415b94cb91907de39a39c6d277579258f334e/ee/apps/account-service/src/lib/loginViaUsername.ts#L18-L21)&#13;
+&#13;
+   The critical flaw occurs when `validatePassword` is called without `await`:&#13;
+   ```typescript&#13;
+   const valid = user.services?.password?.bcrypt &amp;&amp; validatePassword(password, user.services.password.bcrypt);&#13;
+&#13;
+   if (!valid) {&#13;
+       return false;&#13;
+   }&#13;
+   ```&#13;
+&#13;
+Since a Promise object is always truthy in JavaScript, the condition `!valid` is never true when a bcrypt hash exists, bypassing password validation entirely.&#13;
+&#13;
+The vulnerability is externally reachable through the [`login`](https://github.com/RocketChat/Rocket.Chat/blob/05c415b94cb91907de39a39c6d277579258f334e/ee/apps/ddp-streamer/src/configureServer.ts#L67-L88) method exposed by the ddp-streamer micro service (reachable via `&lt;rocketchat-host&gt;/websocket`):&#13;
+&#13;
+```typescript&#13;
+   server.methods({&#13;
+       async login(resume, user, password) {&#13;
+           const result = await Account.login({ resume, user, password });&#13;
+           // ...&#13;
+       }&#13;
+   });&#13;
+```&#13;
+&#13;
+#### Impact&#13;
+&#13;
+This issue leads to attackers being able to interact with available DDP methods, which may lead to account takeover depending on the attack path.&#13;
+&#13;
+#### Remediation&#13;
+&#13;
+Add the missing `await` to the [`validatePassword`](https://github.com/RocketChat/Rocket.Chat/blob/05c415b94cb91907de39a39c6d277579258f334e/ee/apps/account-service/src/lib/loginViaUsername.ts#L18) call.&#13;
+Enable strict TypeScript compiler options to catch unawaited promises (`@typescript-eslint/no-floating-promises`)&#13;
+&#13;
+#### CWEs&#13;
+&#13;
+- CWE-287: Improper Authentication&#13;
+&#13;
+## Credit&#13;
+&#13;
+These issues were discovered by an AI agent developed by the GitHub Security Lab and reviewed by GHSL team members [@p- (Peter Stöckli)](https://github.com/p-) and [@m-y-mo (Man Yue Mo)](https://github.com/m-y-mo).&#13;
+&#13;
+## Contact&#13;
+&#13;
+You can contact the GHSL team at `securitylab@github.com`, please include a reference to `GHSL-2026-004` or `GHSL-2026-005` in any communication regarding these issues.&#13;
+&#13;
+## Disclosure Policy&#13;
+&#13;
+This report is subject to a 90-day disclosure deadline, as described in more detail in our [coordinated disclosure policy](https://securitylab.github.com/advisories#policy).</description>
+      <guid isPermaLink="false">GHSA-w6vw-mrgv-69vf</guid>
+      <pubDate>Thu, 05 Mar 2026 19:49:21 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] RocketChat/Rocket.Chat — 2FA bypass and login of deactivated users via EE ddp-streamer</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-7qr6-q62g-hm63</link>
+      <description>### 2FA bypass and login of deactivated users via EE ddp-streamer (`GHSL-2026-008`)&#13;
+&#13;
+Authentication vulnerabilities exist in Rocket.Chat's enterprise DDP Streamer service. The `Account.login` method exposed through the DDP Streamer does **not enforce Two-Factor Authentication (2FA) or validate user account status** (deactivated users can still login), despite these checks being mandatory in the standard Meteor login flow.&#13;
+&#13;
+The code at [`ee/apps/account-service/src/Account.ts#L31-L40`](https://github.com/RocketChat/Rocket.Chat/blob/develop/ee/apps/account-service/src/Account.ts#L31-L40) does not enforce a 2FA check and it does not validate the account status of a user, whereas [`onValidateLogin`](https://github.com/RocketChat/Rocket.Chat/blob/c5f7dcb80a3b99d6ec7c06a16b2ea6841a06c373/apps/meteor/app/2fa/server/loginHandler.ts#L27C3-L27C18) [checks the TOTP](https://github.com/RocketChat/Rocket.Chat/blob/c5f7dcb80a3b99d6ec7c06a16b2ea6841a06c373/apps/meteor/app/2fa/server/loginHandler.ts#L43) code and [validateLoginAttemptAsync](https://github.com/RocketChat/Rocket.Chat/blob/c5f7dcb80a3b99d6ec7c06a16b2ea6841a06c373/apps/meteor/app/authentication/server/startup/index.js#L391) checks if the [user is active](https://github.com/RocketChat/Rocket.Chat/blob/c5f7dcb80a3b99d6ec7c06a16b2ea6841a06c373/apps/meteor/app/authentication/server/startup/index.js#L420).&#13;
+&#13;
+#### Impact&#13;
+&#13;
+This missing user account status checked might lead to deactivated users being able to login. The missing 2FA enforcement might lead to successful account takeover through a brute-force based attack (e.g. password spraying).&#13;
+&#13;
+#### Remediation&#13;
+&#13;
+Enforce 2FA in `Account.login` and reject logins for users where `active === false` in both `loginViaUsername.ts` and `loginViaResume.ts`.&#13;
+&#13;
+**Long-term Recommendations**&#13;
+- Consolidate authentication logic to ensure all login paths use the same security controls&#13;
+- Add integration tests that verify 2FA is enforced across all authentication endpoints&#13;
+&#13;
+#### CWEs&#13;
+&#13;
+- CWE-287: Improper Authentication&#13;
+- CWE-304: Missing Critical Step in Authentication&#13;
+&#13;
+## Credit&#13;
+&#13;
+These issues were discovered by an AI agent developed by the GitHub Security Lab and reviewed by GHSL team members [@p- (Peter Stöckli)](https://github.com/p-) and [@m-y-mo (Man Yue Mo)](https://github.com/m-y-mo).&#13;
+&#13;
+## Contact&#13;
+&#13;
+You can contact the GHSL team at `securitylab@github.com`, please include a reference to `GHSL-2026-008` or `GHSL-2026-009` in any communication regarding these issues.&#13;
+&#13;
+## Disclosure Policy&#13;
+&#13;
+This report is subject to a 90-day disclosure deadline, as described in more detail in our [coordinated disclosure policy](https://securitylab.github.com/advisories#policy).</description>
+      <guid isPermaLink="false">GHSA-7qr6-q62g-hm63</guid>
+      <pubDate>Thu, 05 Mar 2026 20:09:23 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] RocketChat/Rocket.Chat — NoSQL injection in the EE ddp-streamer-service</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-hgq6-9jg2-wf3f</link>
+      <description>### Issue 2: NoSQL injection in the EE ddp-streamer-service  (`GHSL-2026-005`)&#13;
+&#13;
+A NoSQL injection vulnerability exists in Rocket.Chat's account service used in the `ddp-streamer` micro service that allows unauthenticated attackers to manipulate MongoDB queries during authentication. The vulnerability is located in the username-based login flow where user-supplied input is directly embedded into a MongoDB query selector without validation. An attacker can inject MongoDB operator expressions (e.g., `{ $regex: '.*' }`) in place of a username string, causing the database query to match unintended user records.&#13;
+&#13;
+The NoSQL injection surface exists in the authentication flow where the `username` parameter from the client is used directly in a MongoDB `findOne` query without type or content validation.&#13;
+&#13;
+[ee/apps/account-service/src/lib/loginViaUsername.ts](https://github.com/RocketChat/Rocket.Chat/blob/05c415b94cb91907de39a39c6d277579258f334e/ee/apps/account-service/src/lib/loginViaUsername.ts#13):&#13;
+```typescript&#13;
+Users.findOne&lt;IUser&gt;({ username }, { projection: { 'services.password.bcrypt': 1 } });&#13;
+```&#13;
+&#13;
+The vulnerability is externally reachable through the [`login`](https://github.com/RocketChat/Rocket.Chat/blob/05c415b94cb91907de39a39c6d277579258f334e/ee/apps/ddp-streamer/src/configureServer.ts#L67-L88) method exposed by the ddp-streamer micro service (reachable via `&lt;rocketchat-host&gt;/websocket`):&#13;
+&#13;
+```typescript&#13;
+   server.methods({&#13;
+       async login(resume, user, password) {&#13;
+           const result = await Account.login({ resume, user, password });&#13;
+           // ...&#13;
+       }&#13;
+   });&#13;
+```&#13;
+&#13;
+#### Impact&#13;
+&#13;
+This issue may lead to enable logins without fully knowing the usernames of users (especially in combination with GHSL-2026-004).&#13;
+&#13;
+#### Remediation&#13;
+&#13;
+Validate that the `username` parameter is a primitive string before using it in the query and/or use parameterized queries if possible.&#13;
+&#13;
+#### CWEs&#13;
+&#13;
+- CWE-943: Improper Neutralization of Special Elements in Data Query Logic&#13;
+&#13;
+## Credit&#13;
+&#13;
+These issues were discovered by an AI agent developed by the GitHub Security Lab and reviewed by GHSL team members [@p- (Peter Stöckli)](https://github.com/p-) and [@m-y-mo (Man Yue Mo)](https://github.com/m-y-mo).&#13;
+&#13;
+## Contact&#13;
+&#13;
+You can contact the GHSL team at `securitylab@github.com`, please include a reference to `GHSL-2026-004` or `GHSL-2026-005` in any communication regarding these issues.&#13;
+&#13;
+## Disclosure Policy&#13;
+&#13;
+This report is subject to a 90-day disclosure deadline, as described in more detail in our [coordinated disclosure policy](https://securitylab.github.com/advisories#policy).</description>
+      <guid isPermaLink="false">GHSA-hgq6-9jg2-wf3f</guid>
+      <pubDate>Thu, 05 Mar 2026 20:21:29 +0000</pubDate>
     </item>
     <item>
       <title>[LOW] zammad/zammad — Information disclosure in ticket detail view of customers in shared organizations</title>
