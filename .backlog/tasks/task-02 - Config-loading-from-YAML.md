@@ -1,9 +1,11 @@
 ---
 id: TASK-02
 title: Config loading from YAML
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@codex'
 created_date: '2026-04-14 09:17'
+updated_date: '2026-04-14 10:56'
 labels: []
 milestone: m-0
 dependencies:
@@ -37,17 +39,25 @@ Use TDD: write the test first in `tests/test_vulnfeed.py`, verify it fails, then
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 vulnfeed.py exists with a load_config() function that accepts an optional config_path parameter
-- [ ] #2 load_config() parses a YAML file and returns a dict with a 'feeds' key containing a list of source configs
-- [ ] #3 tests/test_vulnfeed.py exists with a test_load_config test that creates a temp config and verifies parsing
-- [ ] #4 pytest tests/test_vulnfeed.py::test_load_config passes
-- [ ] #5 ruff check . and ruff format --check . pass with no errors
+- [x] #1 vulnfeed.py exists with a load_config() function that accepts an optional config_path parameter
+- [x] #2 load_config() parses a YAML file and returns a dict with a 'feeds' key containing a list of source configs
+- [x] #3 tests/test_vulnfeed.py exists with a test_load_config test that creates a temp config and verifies parsing
+- [x] #4 pytest tests/test_vulnfeed.py::test_load_config passes
+- [x] #5 ruff check . and ruff format --check . pass with no errors
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented YAML config loading by adding `load_config(config_path="config.yaml")` in `vulnfeed.py` using `yaml.safe_load`, and added `tests/test_vulnfeed.py::test_load_config` to verify temporary YAML parsing via `tmp_path`.
+
+Verification results: `.venv/bin/python -m pytest tests/test_vulnfeed.py::test_load_config -v` PASS, `.venv/bin/python -m pytest tests/ -v` PASS (2/2), `.venv/bin/ruff check .` PASS, `.venv/bin/ruff format --check .` PASS, plus manual runtime check of default-path loading from `config.yaml` PASS. No blocking issues found; recommend adding explicit negative-path tests (missing file / invalid YAML) in a future task.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 All acceptance criteria verified and marked as done
-- [ ] #2 All tests pass
-- [ ] #3 All linting checks pass
-- [ ] #4 Any manual tests pass
+- [x] #1 All acceptance criteria verified and marked as done
+- [x] #2 All tests pass
+- [x] #3 All linting checks pass
+- [x] #4 Any manual tests pass
 <!-- DOD:END -->
