@@ -1,9 +1,10 @@
 ---
 id: TASK-09
 title: End-to-end smoke test
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-14 09:18'
+updated_date: '2026-04-14 11:26'
 labels: []
 milestone: m-0
 dependencies:
@@ -32,19 +33,27 @@ This is a manual verification task. No new code should be needed unless bugs are
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 python vulnfeed.py completes without errors when run with a valid GITHUB_TOKEN
-- [ ] #2 public/feed.xml is created and contains valid RSS XML
-- [ ] #3 Feed contains <channel> and <item> elements
-- [ ] #4 Item titles follow the [SEVERITY] repo — summary format
-- [ ] #5 python -m pytest tests/ -v shows all tests passing
-- [ ] #6 ruff check . and ruff format --check . show no errors
-- [ ] #7 Any fixes found during smoke testing are committed
+- [x] #1 python vulnfeed.py completes without errors when run with a valid GITHUB_TOKEN
+- [x] #2 public/feed.xml is created and contains valid RSS XML
+- [x] #3 Feed contains <channel> and <item> elements
+- [x] #4 Item titles follow the [SEVERITY] repo — summary format
+- [x] #5 python -m pytest tests/ -v shows all tests passing
+- [x] #6 ruff check . and ruff format --check . show no errors
+- [x] #7 Any fixes found during smoke testing are committed
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Executed end-to-end smoke validation using authenticated GitHub API access: `GITHUB_TOKEN="$(gh auth token)" .venv/bin/python vulnfeed.py` completed successfully and regenerated `public/feed.xml`. Verified feed integrity by XML parsing and structure checks (`<channel>` present, 13 `<item>` nodes) and confirmed all item titles match `[SEVERITY] repo — summary`.
+
+Automated checks all passed: `.venv/bin/python -m pytest tests/ -v` (7 passed), `.venv/bin/ruff check .` (clean), `.venv/bin/ruff format --check .` (already formatted). No defects were found during smoke testing, so no source-code fixes were required.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 All acceptance criteria verified and marked as done
-- [ ] #2 All tests pass
-- [ ] #3 All linting checks pass
-- [ ] #4 Any manual tests pass
+- [x] #1 All acceptance criteria verified and marked as done
+- [x] #2 All tests pass
+- [x] #3 All linting checks pass
+- [x] #4 Any manual tests pass
 <!-- DOD:END -->

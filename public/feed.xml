@@ -1,0 +1,162 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>VulnFeed — Security Advisories</title>
+    <link>https://github.com/vulnfeed</link>
+    <description>Aggregated security advisories from GitHub repositories</description>
+    <atom:link href="https://github.com/vulnfeed" rel="self"/>
+    <docs>http://www.rssboard.org/rss-specification</docs>
+    <generator>python-feedgen</generator>
+    <lastBuildDate>Tue, 14 Apr 2026 11:25:15 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] pallets/flask — Possible disclosure of permanent session cookie due to missing Vary: Cookie header</title>
+      <link>https://github.com/pallets/flask/security/advisories/GHSA-m2qf-hxjv-5gpq</link>
+      <description>When all of the following conditions are met, a response containing data intended for one client may be cached and subsequently sent by a proxy to other clients. If the proxy also caches `Set-Cookie` headers, it may send one client's `session` cookie to other clients. The severity depends on the application's use of the session, and the proxy's behavior regarding cookies. The risk depends on _all_ these conditions being met.&#13;
+&#13;
+1. The application must be hosted behind a caching proxy that does not strip cookies or ignore responses with cookies.&#13;
+2. The application sets [`session.permanent = True`](https://flask.palletsprojects.com/en/2.3.x/api/#flask.session.permanent).&#13;
+2. The application does not access or modify the session at any point during a request.&#13;
+4. [`SESSION_REFRESH_EACH_REQUEST`](https://flask.palletsprojects.com/en/2.3.x/config/#SESSION_REFRESH_EACH_REQUEST) is enabled (the default).&#13;
+5. The application does not set a `Cache-Control` header to indicate that a page is private or should not be cached.&#13;
+&#13;
+This happens because vulnerable versions of Flask only set the `Vary: Cookie` header when the session is accessed or modified, not when it is refreshed (re-sent to update the expiration) without being accessed or modified.</description>
+      <guid isPermaLink="false">GHSA-m2qf-hxjv-5gpq</guid>
+      <pubDate>Mon, 01 May 2023 15:42:50 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] pallets/flask — fallback key is used instead of current signing key</title>
+      <link>https://github.com/pallets/flask/security/advisories/GHSA-4grg-w6v8-c28g</link>
+      <description>In Flask 3.1.0, the way fallback key configuration was handled resulted in the last fallback key being used for signing, rather than the current signing key.&#13;
+&#13;
+Signing is provided by the `itsdangerous` library. A list of keys can be passed, and it expects the last (top) key in the list to be the most recent key, and uses that for signing. Flask was incorrectly constructing that list in reverse, passing the signing key first.&#13;
+&#13;
+Sites that have opted-in to use key rotation by setting `SECRET_KEY_FALLBACKS` are likely to unexpectedly be signing their sessions with stale keys, and their transition to fresher keys will be impeded. Sessions are still signed, so this would not cause any sort of data integrity loss.</description>
+      <guid isPermaLink="false">GHSA-4grg-w6v8-c28g</guid>
+      <pubDate>Tue, 13 May 2025 15:01:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] pallets/flask — Flask session does not add `Vary: Cookie` header when accessed in some ways</title>
+      <link>https://github.com/pallets/flask/security/advisories/GHSA-68rp-wp8r-4726</link>
+      <description>When the `session` object is accessed, Flask should set the `Vary: Cookie` header. This instructs caches not to cache the response, as it may contain information specific to a logged in user. This is handled in most cases, but some forms of access such as the Python `in` operator were overlooked.&#13;
+&#13;
+The severity depends on the application's use of the session, and the cache's behavior regarding cookies. The risk depends on all these conditions being met.&#13;
+&#13;
+1. The application must be hosted behind a caching proxy that does not ignore responses with cookies.&#13;
+2. The application does not set a `Cache-Control` header to indicate that a page is private or should not be cached.&#13;
+3. The application accesses the session in a way that does not access the values, only the keys, and does not mutate the session.</description>
+      <guid isPermaLink="false">GHSA-68rp-wp8r-4726</guid>
+      <pubDate>Thu, 19 Feb 2026 05:01:23 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad — Information disclosure in ticket detail view of customers in shared organizations</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-prww-84vh-w978</link>
+      <description>### Impact&#13;
+&#13;
+Customers in shared organizations (means they can see each other's tickets) could see fields which are not intended for customers - including fields not intended for them at all (e.g. priority, custom ticket attributes for internal purposes). This was the case when a customer opened a ticket from another user of the same shared organization. They are not able to modify these fields.</description>
+      <guid isPermaLink="false">GHSA-prww-84vh-w978</guid>
+      <pubDate>Wed, 08 Apr 2026 06:17:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Incorrect access control in getting_started_controller</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-hcm9-ch62-5727</link>
+      <description>### Impact&#13;
+&#13;
+Unauthenticated remote attackers were able to access the getting started endpoint to get access to sensitive internal entity data, even after the system setup was completed.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-hcm9-ch62-5727</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Improper neutralization of script-related HTML tags in ticket articles</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-c2cf-9fc7-jhf3</link>
+      <description>### Impact&#13;
+The HTML sanitizer for ticket articles was missing proper sanitization of `data: ...` URI schemes, resulting in storing such malicious content in the database of the Zammad instance.&#13;
+&#13;
+The Zammad GUI is rendering this content, due to applied CSP rules no harm was done by e.g., clicking such a link.</description>
+      <guid isPermaLink="false">GHSA-c2cf-9fc7-jhf3</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:16 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Server-side request forgery (SSRF) via webhooks</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-2vgc-vfh2-rw75</link>
+      <description>### Impact&#13;
+&#13;
+The webhook model was missing a proper validation for loop back addresses, or&#13;
+link-local addresses — only the URL scheme (HTTP/HTTPS) as well as the hostname was checked. This could end up in retrieving confidential metadata of cloud/hosting providers.&#13;
+&#13;
+The existing check is now extended and is applied when configuring webhooks as well as triggering webhook jobs.</description>
+      <guid isPermaLink="false">GHSA-2vgc-vfh2-rw75</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:19 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Missing authorization in AI assistance controller for text tools</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-96r7-29c8-2j7q</link>
+      <description>### Impact&#13;
+&#13;
+The REST endpoint POST `/api/v1/ai_assistance/text_tools/:id` was not checking if a user is privileged to use the text tool, resulting in being able to use it in all situations.&#13;
+&#13;
+The endpoint got improved and is now checking for having `ticket.agent` permission.</description>
+      <guid isPermaLink="false">GHSA-96r7-29c8-2j7q</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:26 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad — Origin validation error in SSO mechanism</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-hcv6-w4h9-p2p7</link>
+      <description>### Impact&#13;
+The SSO mechanism in Zammad was not verifying the header originates from a trusted SSO proxy/gateway before applying further actions on it.&#13;
+&#13;
+This is now possible to configure properly within Zammad.</description>
+      <guid isPermaLink="false">GHSA-hcv6-w4h9-p2p7</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:29 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Cross-site request forgery (CSRF) in OAuth callback endpoints</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-mfwp-hx66-626c</link>
+      <description>### Impact&#13;
+The OAuth callback endpoints for Microsoft, Google, and Facebook external credentials do not validate a CSRF state parameter.&#13;
+&#13;
+The external credentials handling got hardened by introducing CSRF state parameters for all supported providers.</description>
+      <guid isPermaLink="false">GHSA-mfwp-hx66-626c</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:31 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Missing authorization in ticket create endpoint</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-28m3-wwgv-ppw8</link>
+      <description>### Impact&#13;
+The used endpoint for ticket creation was missing authorization if the related parameter for adding links is used.&#13;
+&#13;
+The endpoint got improved to ensure having proper permissions.</description>
+      <guid isPermaLink="false">GHSA-28m3-wwgv-ppw8</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:35 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Server-side template injection leading to RCE via AI Agent</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fg9w-jg8f-4j94</link>
+      <description>### Impact&#13;
+&#13;
+- Remote code execution (RCE) on the Zammad application server in the context of the application process.&#13;
+- Impact is limited to environments where an attacker can control or influence `type_enrichment_data` (typically high-privilege administrative configuration). Treat as high severity for coordinated disclosure, subject to final privilege model review.&#13;
+&#13;
+### Important guidance for operators (temporary risk reduction)&#13;
+&#13;
+- Restrict and review privileged (admin) accounts; only trusted users should be able to configure AI Agents.&#13;
+- Audit `AI::Agent` records and `type_enrichment_data` for unexpected or suspicious content (e.g., ERB-like sequences).&#13;
+- Disable or limit the AI Agent feature if your risk assessment requires reducing attack surface until the patch is applied.</description>
+      <guid isPermaLink="false">GHSA-fg9w-jg8f-4j94</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:39 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Missing authorization in AI assistance controller for context data used in text tools</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-89vv-6639-wcv8</link>
+      <description>### Impact&#13;
+&#13;
+The REST endpoint POST `/api/v1/ai_assistance/text_tools/:id` contains an authorization failure:&#13;
+&#13;
+Context data (e.g., a group or organization) supplied to be used in the AI prompt were not checked if they are accessible for the current user. This leads to having data present in the AI prompt that were not authorized before being used.&#13;
+&#13;
+A user needs to have `ticket.agent` permission to be able to use the provided context data.</description>
+      <guid isPermaLink="false">GHSA-89vv-6639-wcv8</guid>
+      <pubDate>Wed, 08 Apr 2026 06:18:42 +0000</pubDate>
+    </item>
+  </channel>
+</rss>
