@@ -1,6 +1,7 @@
+import xml.etree.ElementTree as ET
 from unittest.mock import Mock, patch
 
-from vulnfeed import aggregate_advisories, fetch_github_advisories, load_config
+from vulnfeed import aggregate_advisories, fetch_github_advisories, generate_feed, load_config
 
 
 def test_load_config(tmp_path) -> None:
@@ -109,3 +110,34 @@ def test_aggregate_advisories_sorts_newest_first() -> None:
 
     assert result[0]["ghsa_id"] == "GHSA-new"
     assert result[1]["ghsa_id"] == "GHSA-old"
+
+
+def test_generate_feed() -> None:
+    advisories = [
+        {
+            "ghsa_id": "GHSA-1234-5678-9abc",
+            "html_url": "https://github.com/owner/repo/security/advisories/GHSA-1234-5678-9abc",
+            "summary": "SQL injection in query parser",
+            "severity": "high",
+            "published_at": "2026-04-01T12:00:00Z",
+            "description": "A SQL injection vulnerability was found.",
+            "repo": "owner/repo",
+        },
+    ]
+
+    xml_bytes = generate_feed(advisories, feed_url="https://example.github.io/vulnfeed/feed.xml")
+
+    root = ET.fromstring(xml_bytes)
+    channel = root.find("channel")
+    assert channel is not None
+    assert channel.find("title").text == "VulnFeed — Security Advisories"
+
+    items = channel.findall("item")
+    assert len(items) == 1
+    assert items[0].find("title").text == "[HIGH] owner/repo — SQL injection in query parser"
+    assert (
+        items[0].find("link").text
+        == "https://github.com/owner/repo/security/advisories/GHSA-1234-5678-9abc"
+    )
+    assert items[0].find("description").text == "A SQL injection vulnerability was found."
+    assert items[0].find("guid").text == "GHSA-1234-5678-9abc"
