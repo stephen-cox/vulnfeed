@@ -7,7 +7,38 @@
     <atom:link href="https://github.com/vulnfeed" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 14 Apr 2026 11:59:37 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 15 Apr 2026 05:42:32 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] composer/composer — Missing argument delimiter can lead to command execution via VCS repository URLs or source download URLs on systems with Mercurial</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-h5h8-pc6h-jvvx</link>
+      <description>URLs for Mercurial repositories in the root composer.json and package source download URLs are not sanitized correctly. Specifically crafted URL values allow commands to be executed in the HgDriver if hg/Mercurial is installed on the system.&#13;
+&#13;
+### Impact&#13;
+- The impact to Composer users directly is limited as the composer.json file is typically under their own control and source download URLs can only be supplied by third party Composer repositories they explicitly trust to download and execute source code from, e.g. Composer plugins.&#13;
+- The main impact is to services passing user input to Composer, including Packagist.org and Private Packagist. This allowed users to trigger remote command injection. The vulnerability has been patched on Packagist.org and Private Packagist within 12h of receiving the initial vulnerability report and based on a review of logs, to the best of our knowledge, was not abused by anyone.&#13;
+- Other services/tools using VcsRepository/VcsDriver or derivatives may also be vulnerable and should upgrade their composer/composer dependency immediately&#13;
+&#13;
+### Patches&#13;
+1.10.22 and 2.0.13 include patches for this issue.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-h5h8-pc6h-jvvx</guid>
+      <pubDate>Tue, 27 Apr 2021 11:17:42 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] composer/composer — Improper escaping of command arguments on Windows leading to command injection</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-frqg-7g38-6gcf</link>
+      <description>### Impact&#13;
+Windows users running Composer to install untrusted dependencies are affected and should definitely upgrade for safety. Other OSs and WSL are not affected.&#13;
+&#13;
+### Patches&#13;
+1.10.23 and 2.1.9 fix the issue&#13;
+&#13;
+### Workarounds&#13;
+None&#13;
+</description>
+      <guid isPermaLink="false">GHSA-frqg-7g38-6gcf</guid>
+      <pubDate>Tue, 05 Oct 2021 07:54:53 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] mautic/mautic — Improper regex in htaccess file</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-mj6m-246h-9w56</link>
@@ -33,6 +64,19 @@ If you have any questions or comments about this advisory:&#13;
 </description>
       <guid isPermaLink="false">GHSA-mj6m-246h-9w56</guid>
       <pubDate>Mon, 28 Feb 2022 23:26:31 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] composer/composer — Missing input validation can lead to command execution via VcsDriver::getFileContent()</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-x7cr-6qr6-2hh6</link>
+      <description>The Composer method `VcsDriver::getFileContent()` with user-controlled `$file` or `$identifier` arguments is susceptible to an argument injection vulnerability. It can be leveraged to gain arbitrary command execution if the Mercurial or the Git driver are used.&#13;
+&#13;
+This led to a vulnerability on Packagist.org and Private Packagist, i.e., using the composer.json `readme` field as a vector for injecting parameters into the `$file` argument for the Mercurial driver or via the `$identifier` argument for the Git and Mercurial drivers.&#13;
+&#13;
+Composer itself can be attacked through branch names by anyone controlling a Git or Mercurial repository, which is explicitly listed by URL in a project's composer.json.&#13;
+&#13;
+To the best of our knowledge, this was not actively exploited. The vulnerability has been patched on Packagist.org and Private Packagist within a day of the vulnerability report.</description>
+      <guid isPermaLink="false">GHSA-x7cr-6qr6-2hh6</guid>
+      <pubDate>Wed, 13 Apr 2022 14:55:37 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] mautic/mautic — XSS vulnerability in installer</title>
@@ -91,6 +135,62 @@ If you have any questions or comments about this advisory:&#13;
 </description>
       <guid isPermaLink="false">GHSA-pjpc-87mp-4332</guid>
       <pubDate>Mon, 23 May 2022 13:01:04 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] composer/composer — Remote Code Execution via web-accessible composer.phar</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-jm6m-4632-36hf</link>
+      <description>### Impact&#13;
+&#13;
+Users publishing a composer.phar to a public web-accessible server where the composer.phar can be executed as a php file may be impacted if PHP also has `register_argc_argv` enabled in php.ini.&#13;
+&#13;
+### Patches&#13;
+&#13;
+2.6.4, 2.2.21 and 1.10.27 patch this vulnerability.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Make sure `register_argc_argv` is disabled in php.ini, and avoid publishing composer.phar to the web as this really should not happen.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-jm6m-4632-36hf</guid>
+      <pubDate>Fri, 29 Sep 2023 08:56:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Code execution and possible privilege escalation via compromised InstalledVersions.php or installed.php</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-7c6p-848j-wh5h</link>
+      <description>### Impact&#13;
+&#13;
+Several files within the local working directory are included during the invocation of Composer and in the context of the executing user.&#13;
+&#13;
+As such,  under certain conditions arbitrary code execution may lead to local privilege escalation, provide lateral user movement or malicious code execution when Composer is invoked within a directory with tampered files.&#13;
+&#13;
+All Composer CLI commands are affected, including composer.phar's self-update.&#13;
+&#13;
+The following are of high risk:&#13;
+&#13;
+- Composer being run with sudo.&#13;
+- Pipelines which may execute Composer on untrusted projects.&#13;
+- Shared environments with developers who run Composer individually on the same project.&#13;
+&#13;
+### Patches&#13;
+&#13;
+2.7.0, 2.2.23&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+- It is advised that the patched versions are applied at the earliest convenience.&#13;
+&#13;
+Where not possible, the following should be addressed:&#13;
+- Remove all sudo composer privileges for all users to mitigate root privilege escalation.  &#13;
+- Avoid running Composer within an untrusted directory, or if needed, verify that the contents of `vendor/composer/InstalledVersions.php` and `vendor/composer/installed.php` do not include untrusted code. &#13;
+&#13;
+A reset can also be done on these files by the following:&#13;
+&#13;
+```sh&#13;
+rm vendor/composer/installed.php vendor/composer/InstalledVersions.php&#13;
+composer install --no-scripts --no-plugins&#13;
+```</description>
+      <guid isPermaLink="false">GHSA-7c6p-848j-wh5h</guid>
+      <pubDate>Thu, 08 Feb 2024 14:12:39 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] mautic/mautic — XSS Cross-site Scripting Stored (XSS) - Description field</title>
@@ -230,6 +330,42 @@ If you have any questions or comments about this advisory:&#13;
 Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <guid isPermaLink="false">GHSA-mgv8-w49f-822w</guid>
       <pubDate>Thu, 11 Apr 2024 14:48:30 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Command injection via malicious git branch name</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-47f6-5gq3-vx9c</link>
+      <description>### Impact&#13;
+&#13;
+The `status`, `reinstall` and `remove` commands with packages installed from source via git containing specially crafted branch names in the repository can be used to execute code.&#13;
+&#13;
+### Patches&#13;
+&#13;
+2.2.24 for 2.2 LTS or 2.7.7 for mainline&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Avoid installing dependencies via git by using `--prefer-dist` or the `preferred-install: dist` config setting.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-47f6-5gq3-vx9c</guid>
+      <pubDate>Mon, 10 Jun 2024 20:54:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Multiple command injections via malicious git/hg branch names</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-v9qv-c7wm-wgmf</link>
+      <description>### Impact&#13;
+&#13;
+The `composer install` command running inside a git/hg repository which has specially crafted branch names can lead to command injection. So this requires cloning untrusted repositories.&#13;
+&#13;
+### Patches&#13;
+&#13;
+2.2.24 for 2.2 LTS or 2.7.7 for mainline&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Avoid cloning potentially compromised repositories.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-v9qv-c7wm-wgmf</guid>
+      <pubDate>Mon, 10 Jun 2024 20:54:10 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] mautic/mautic — Improper Access Control in UI upgrade process</title>
@@ -653,6 +789,20 @@ If the media folder is not restricted from running files this can lead to a remo
       <pubDate>Tue, 02 Dec 2025 16:58:03 +0000</pubDate>
     </item>
     <item>
+      <title>[LOW] composer/composer — ANSI sequence injection</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-59pp-r3rg-353g</link>
+      <description>### Impact&#13;
+Attackers controlling remote sources that Composer downloads from might in some way inject ANSI control characters in the terminal output of various Composer commands, causing mangled output and potentially leading to confusion or DoS of the terminal application.&#13;
+&#13;
+There is no proven exploit and this has thus a low severity but we still publish a CVE as it has potential for abuse, and we want to be on the safe side informing users that they should upgrade.&#13;
+&#13;
+### Patches&#13;
+2.2.26 for 2.2 LTS or 2.9.3 for mainline&#13;
+</description>
+      <guid isPermaLink="false">GHSA-59pp-r3rg-353g</guid>
+      <pubDate>Tue, 30 Dec 2025 12:53:59 +0000</pubDate>
+    </item>
+    <item>
       <title>[HIGH] RocketChat/Rocket.Chat — Unauthorized Access to OAuth App Details (Versions ≤ 6.12.0)</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-g4wm-fg3c-g4p2</link>
       <description>### Summary&#13;
@@ -993,6 +1143,47 @@ Context data (e.g., a group or organization) supplied to be used in the AI promp
 A user needs to have `ticket.agent` permission to be able to use the provided context data.</description>
       <guid isPermaLink="false">GHSA-89vv-6639-wcv8</guid>
       <pubDate>Wed, 08 Apr 2026 06:18:42 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Command injection via malicious Perforce source reference/url</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-gqw4-4w2p-838q</link>
+      <description>### Impact&#13;
+The `Perforce::syncCodeBase()` method appended the `$sourceReference` parameter to a shell command without proper escaping, allowing an attacker to inject arbitrary commands through a crafted source reference containing shell metacharacters. Further as in GHSA-wg36-wvj6-r67p / CVE-2026-40176 the `Perforce::generateP4Command()` method constructed shell commands by interpolating user-supplied Perforce connection parameters (port, user, client) without proper escaping from the source url field. Composer would execute these injected commands even if Perforce is not installed.&#13;
+&#13;
+The source reference and url are provided as part of package metadata. Any Composer package repository can serve package metadata declaring perforce as a source type with a malicious source reference or source url. This means the vulnerability can be exploited through any package served by a compromised or malicious Composer repository. An attack does not require Perforce to be installed on the client, as Composer will attempt to execute the constructed command regardless.&#13;
+&#13;
+This vulnerability is exploitable when installing or updating dependencies from source (`--prefer-source`, default when installing dev prefixed versions), even if you do not use Perforce.&#13;
+&#13;
+### Patches&#13;
+Fixed in Composer 2.2.27 (2.2 LTS) and 2.9.6 (mainline)&#13;
+&#13;
+Note, the fix for the source url in the `Perforce::generateP4Command()` was addressed as part of the patches for GHSA-wg36-wvj6-r67p / CVE-2026-40176 in the same versions.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+- Avoid installing dependencies from source by using `--prefer-dist` or the `preferred-install: dist` config setting.&#13;
+- Only use trusted Composer repositories.</description>
+      <guid isPermaLink="false">GHSA-gqw4-4w2p-838q</guid>
+      <pubDate>Tue, 14 Apr 2026 09:46:31 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Command injection via malicious Perforce repository definition</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-wg36-wvj6-r67p</link>
+      <description>### Impact&#13;
+The `Perforce::generateP4Command()` method constructed shell commands by interpolating user-supplied Perforce connection parameters (port, user, client) without proper escaping. An attacker controlling a repository configuration in a malicious composer.json declaring a Perforce VCS repository could inject arbitrary commands through these values, leading to command execution in the context of the user running Composer. Composer would execute these injected commands even if Perforce is not installed.&#13;
+&#13;
+VCS repositories are only loaded from the root composer.json file located in the directory you execute Composer commands in and from the composer config directory (e.g. `~/.config/composer/composer.json`). So this vulnerability cannot be exploited through composer.json files of packages installed as dependencies.&#13;
+&#13;
+You are at risk of command execution if you run Composer commands on untrusted projects with attacker supplied composer.json files, regardless of whether you or any of your dependencies use Perforce.&#13;
+&#13;
+### Patches&#13;
+Fixed in Composer 2.2.27 (2.2 LTS) and 2.9.6 (mainline)&#13;
+&#13;
+### Workarounds&#13;
+- Carefully inspect composer.json files before running Composer on them. Verify that Perforce-related fields contain valid values.&#13;
+- Only run Composer commands on projects from trusted sources.</description>
+      <guid isPermaLink="false">GHSA-wg36-wvj6-r67p</guid>
+      <pubDate>Tue, 14 Apr 2026 09:46:34 +0000</pubDate>
     </item>
   </channel>
 </rss>
