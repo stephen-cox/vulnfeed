@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "0 4 * * *"
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: write
@@ -11,7 +13,8 @@ permissions:
   id-token: write
 
 jobs:
-  update:
+  build-index:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -30,16 +33,52 @@ jobs:
           ruff check .
           ruff format --check .
 
-      - name: Generate feed
+      - name: Generate index
+        run: python vulnfeed.py --index-only
+
+      - name: Commit index if changed
+        run: |
+          git add public/index.html
+          if git diff --cached --quiet; then
+            echo "No changes to index.html"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: regenerate index.html"
+          git push
+
+  update-feed:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run lint checks
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Generate feed and index
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python vulnfeed.py
 
-      - name: Commit and push feed if changed
+      - name: Commit and push if changed
         run: |
-          git add public/feed.xml
+          git add public/feed.xml public/index.html
           if git diff --cached --quiet; then
-            echo "No changes to feed.xml"
+            echo "No changes"
             exit 0
           fi
 
@@ -49,7 +88,10 @@ jobs:
           git push
 
   deploy:
-    needs: update
+    needs: [build-index, update-feed]
+    if: |
+      always() && !cancelled() &&
+      (needs.build-index.result == 'success' || needs.update-feed.result == 'success')
     runs-on: ubuntu-latest
     environment:
       name: github-pages

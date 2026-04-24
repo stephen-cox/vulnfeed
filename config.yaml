@@ -1,3 +1,7 @@
+site:
+  url: https://stephen-cox.github.io/vulnfeed
+  github: https://github.com/stephen-cox/vulnfeed
+
 feeds:
   - source: github
     repos:
