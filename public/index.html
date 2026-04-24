@@ -1,0 +1,70 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>VulnFeed</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          max-width: 640px;
+          margin: 4rem auto;
+          padding: 0 1.5rem;
+          color: #1a1a1a;
+          line-height: 1.6;
+        }
+        h1 { margin-bottom: 0.25rem; }
+        .subtitle { color: #555; margin-top: 0; }
+        .feed-link {
+          display: inline-block;
+          margin: 1.5rem 0;
+          padding: 0.6rem 1.2rem;
+          background: #f60;
+          color: #fff;
+          text-decoration: none;
+          border-radius: 4px;
+          font-weight: 600;
+        }
+        .feed-link:hover { background: #d55; }
+        code {
+          background: #f4f4f4;
+          padding: 0.15em 0.4em;
+          border-radius: 3px;
+          font-size: 0.9em;
+        }
+        ul { padding-left: 1.2rem; }
+        footer { margin-top: 3rem; font-size: 0.85rem; color: #888; }
+        footer a { color: #888; }
+      </style>
+    </head>
+    <body>
+      <h1>VulnFeed</h1>
+      <p class="subtitle">Aggregated security advisories from GitHub repositories</p>
+
+      <a class="feed-link" href="feed.xml">Subscribe to RSS Feed</a>
+
+      <p>
+        VulnFeed polls GitHub's security advisory API for a curated list of open-source
+        projects and publishes a single consolidated RSS feed, updated daily.
+      </p>
+
+      <h2>Usage</h2>
+      <p>Add the feed URL to your RSS reader:</p>
+      <p><code>https://stephen-cox.github.io/vulnfeed/feed.xml</code></p>
+
+      <h2>Monitored repositories</h2>
+      <ul>
+        <li>composer/composer</li>
+<li>mautic/mautic</li>
+<li>RocketChat/Rocket.Chat</li>
+<li>taigaio/taiga-back</li>
+<li>taigaio/taiga-events</li>
+<li>taigaio/taiga-front</li>
+<li>zammad/zammad</li>
+      </ul>
+
+      <footer>
+        <a href="https://github.com/stephen-cox/vulnfeed">View source on GitHub</a>
+      </footer>
+    </body>
+    </html>
