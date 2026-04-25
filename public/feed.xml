@@ -1,15 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
   <channel>
-    <title>VulnFeed — Security Advisories</title>
-    <link>https://github.com/vulnfeed</link>
+    <title>VulnFeed – Security Advisories</title>
+    <link>https://stephen-cox.github.io/vulnfeed/feed.xml</link>
     <description>Aggregated security advisories from GitHub repositories</description>
-    <atom:link href="https://github.com/vulnfeed" rel="self"/>
+    <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 24 Apr 2026 08:46:29 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 25 Apr 2026 05:46:33 +0000</lastBuildDate>
     <item>
-      <title>[HIGH] composer/composer — Missing argument delimiter can lead to command execution via VCS repository URLs or source download URLs on systems with Mercurial</title>
+      <title>[HIGH] composer/composer – Missing argument delimiter can lead to command execution via VCS repository URLs or source download URLs on systems with Mercurial</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-h5h8-pc6h-jvvx</link>
       <description>URLs for Mercurial repositories in the root composer.json and package source download URLs are not sanitized correctly. Specifically crafted URL values allow commands to be executed in the HgDriver if hg/Mercurial is installed on the system.&#13;
 &#13;
@@ -25,7 +25,7 @@
       <pubDate>Tue, 27 Apr 2021 11:17:42 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] composer/composer — Improper escaping of command arguments on Windows leading to command injection</title>
+      <title>[MEDIUM] composer/composer – Improper escaping of command arguments on Windows leading to command injection</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-frqg-7g38-6gcf</link>
       <description>### Impact&#13;
 Windows users running Composer to install untrusted dependencies are affected and should definitely upgrade for safety. Other OSs and WSL are not affected.&#13;
@@ -40,7 +40,7 @@ None&#13;
       <pubDate>Tue, 05 Oct 2021 07:54:53 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Improper regex in htaccess file</title>
+      <title>[MEDIUM] mautic/mautic – Improper regex in htaccess file</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-mj6m-246h-9w56</link>
       <description>### Impact&#13;
 the default .htaccess file has some restrictions in the access to PHP files to only allow specific PHP files to be executed in the root of the application.&#13;
@@ -66,7 +66,7 @@ If you have any questions or comments about this advisory:&#13;
       <pubDate>Mon, 28 Feb 2022 23:26:31 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] composer/composer — Missing input validation can lead to command execution via VcsDriver::getFileContent()</title>
+      <title>[MEDIUM] composer/composer – Missing input validation can lead to command execution via VcsDriver::getFileContent()</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-x7cr-6qr6-2hh6</link>
       <description>The Composer method `VcsDriver::getFileContent()` with user-controlled `$file` or `$identifier` arguments is susceptible to an argument injection vulnerability. It can be leveraged to gain arbitrary command execution if the Mercurial or the Git driver are used.&#13;
 &#13;
@@ -79,7 +79,7 @@ To the best of our knowledge, this was not actively exploited. The vulnerability
       <pubDate>Wed, 13 Apr 2022 14:55:37 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — XSS vulnerability in installer</title>
+      <title>[HIGH] mautic/mautic – XSS vulnerability in installer</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-jrwm-pr9x-cgq3</link>
       <description>⚠️ After this security fix was released we identified an issue which has been resolved in releasing hotfix version 4.3.1.&#13;
 &#13;
@@ -110,7 +110,7 @@ If you have any questions or comments about this advisory:&#13;
       <pubDate>Mon, 23 May 2022 13:00:23 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — XSS vulnerability in tracking pixel functionality</title>
+      <title>[HIGH] mautic/mautic – XSS vulnerability in tracking pixel functionality</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-pjpc-87mp-4332</link>
       <description>### Impact&#13;
 &#13;
@@ -137,7 +137,7 @@ If you have any questions or comments about this advisory:&#13;
       <pubDate>Mon, 23 May 2022 13:01:04 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] composer/composer — Remote Code Execution via web-accessible composer.phar</title>
+      <title>[LOW] composer/composer – Remote Code Execution via web-accessible composer.phar</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-jm6m-4632-36hf</link>
       <description>### Impact&#13;
 &#13;
@@ -155,7 +155,7 @@ Make sure `register_argc_argv` is disabled in php.ini, and avoid publishing comp
       <pubDate>Fri, 29 Sep 2023 08:56:11 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] composer/composer — Code execution and possible privilege escalation via compromised InstalledVersions.php or installed.php</title>
+      <title>[HIGH] composer/composer – Code execution and possible privilege escalation via compromised InstalledVersions.php or installed.php</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-7c6p-848j-wh5h</link>
       <description>### Impact&#13;
 &#13;
@@ -193,7 +193,7 @@ composer install --no-scripts --no-plugins&#13;
       <pubDate>Thu, 08 Feb 2024 14:12:39 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — XSS Cross-site Scripting Stored (XSS) - Description field</title>
+      <title>[HIGH] mautic/mautic – XSS Cross-site Scripting Stored (XSS) - Description field</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-2rc5-2755-v422</link>
       <description>### Impact&#13;
 Prior to the patched version, there is an XSS vulnerability in the description fields within the Mautic application which could be exploited by a logged in user of Mautic with the appropriate permissions.&#13;
@@ -218,7 +218,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
       <pubDate>Thu, 11 Apr 2024 14:47:11 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — XSS in Notifications via saving Dashboards</title>
+      <title>[MEDIUM] mautic/mautic – XSS in Notifications via saving Dashboards</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-fhcx-f7jg-jx3f</link>
       <description>### Impact&#13;
 Prior to the patched version, logged in users of Mautic are vulnerable to a self XSS vulnerability in the notifications within Mautic.&#13;
@@ -242,7 +242,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
       <pubDate>Thu, 11 Apr 2024 14:47:27 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — Relative Path Traversal / Arbitrary File Deletion in Mautic (GrapesJS)</title>
+      <title>[HIGH] mautic/mautic – Relative Path Traversal / Arbitrary File Deletion in Mautic (GrapesJS)</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-9fcx-cv56-w58p</link>
       <description>### Impact&#13;
 Prior to the patched version, logged in users of Mautic are vulnerable to Relative Path Traversal/Arbitrary File Deletion.  Regardless of the level of access the Mautic user had, they could delete files other than those in the media folders such as system files, libraries or other important files.&#13;
@@ -270,7 +270,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Thu, 11 Apr 2024 14:47:40 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — SQL Injection in dynamic Reports</title>
+      <title>[MEDIUM] mautic/mautic – SQL Injection in dynamic Reports</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-jj6w-2cqg-7p94</link>
       <description>### Impact&#13;
 Prior to the patched version, logged in users of Mautic are vulnerable to an SQL injection vulnerability in the Reports bundle.&#13;
@@ -291,7 +291,7 @@ No&#13;
       <pubDate>Thu, 11 Apr 2024 14:47:50 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — Sensitive Data Exposure due to inadequate user permission settings</title>
+      <title>[HIGH] mautic/mautic – Sensitive Data Exposure due to inadequate user permission settings</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-qjx3-2g35-6hv8</link>
       <description>### Impact&#13;
 Prior to the patched version, logged in users of Mautic are able to access areas of the application that they should be prevented from accessing.&#13;
@@ -311,7 +311,7 @@ https://owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure&#13;
       <pubDate>Thu, 11 Apr 2024 14:48:15 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Server-Side Request Forgery in Asset section </title>
+      <title>[MEDIUM] mautic/mautic – Server-Side Request Forgery in Asset section </title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-mgv8-w49f-822w</link>
       <description>### Impact&#13;
 Prior to the patched version, an authenticated user of Mautic could read system files and access the internal addresses of the application due to a Server-Side Request Forgery (SSRF) vulnerability.&#13;
@@ -332,7 +332,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Thu, 11 Apr 2024 14:48:30 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] composer/composer — Command injection via malicious git branch name</title>
+      <title>[HIGH] composer/composer – Command injection via malicious git branch name</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-47f6-5gq3-vx9c</link>
       <description>### Impact&#13;
 &#13;
@@ -350,7 +350,7 @@ Avoid installing dependencies via git by using `--prefer-dist` or the `preferred
       <pubDate>Mon, 10 Jun 2024 20:54:07 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] composer/composer — Multiple command injections via malicious git/hg branch names</title>
+      <title>[HIGH] composer/composer – Multiple command injections via malicious git/hg branch names</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-v9qv-c7wm-wgmf</link>
       <description>### Impact&#13;
 &#13;
@@ -368,7 +368,7 @@ Avoid cloning potentially compromised repositories.&#13;
       <pubDate>Mon, 10 Jun 2024 20:54:10 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — Improper Access Control in UI upgrade process</title>
+      <title>[HIGH] mautic/mautic – Improper Access Control in UI upgrade process</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-x3jx-5w6m-q2fc</link>
       <description>### Impact&#13;
 The logic in place to facilitate the update process via the user interface lacks access control to verify if permission exists to perform the tasks. Prior to this patch being applied it might be possible for an attacker to access the Mautic version number or to execute parts of the upgrade process without permission. As upgrading in the user interface is deprecated, this functionality is no longer required.&#13;
@@ -387,7 +387,7 @@ If you have any questions or comments about this advisory:&#13;
       <pubDate>Wed, 18 Sep 2024 17:00:57 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] mautic/mautic — Cross-site Scripting (XSS) - stored (edit form HTML field)</title>
+      <title>[LOW] mautic/mautic – Cross-site Scripting (XSS) - stored (edit form HTML field)</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-xv68-rrmw-9xwf</link>
       <description>### Impact&#13;
 With access to edit a Mautic form, the attacker can add Cross-Site Scripting stored in the html filed. This could be used to steal sensitive information from the user's current session.&#13;
@@ -410,7 +410,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
       <pubDate>Wed, 18 Sep 2024 20:28:03 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — XSS in contact tracking and page hits report</title>
+      <title>[HIGH] mautic/mautic – XSS in contact tracking and page hits report</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-xpc5-rr39-v8v2</link>
       <description>### Summary&#13;
 Prior to this patch, a stored XSS vulnerability existed in the contact tracking and page hits report.&#13;
@@ -433,7 +433,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
       <pubDate>Wed, 18 Sep 2024 20:35:32 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — Insufficient authentication in upgrade flow</title>
+      <title>[HIGH] mautic/mautic – Insufficient authentication in upgrade flow</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-qf6m-6m4g-rmrc</link>
       <description>### Impact&#13;
 &#13;
@@ -458,7 +458,7 @@ If you have any questions or comments about this advisory:&#13;
       <pubDate>Wed, 18 Sep 2024 20:41:24 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Users enumeration - weak password login</title>
+      <title>[MEDIUM] mautic/mautic – Users enumeration - weak password login</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-8vff-35qm-qjvv</link>
       <description>### Summary&#13;
 &#13;
@@ -479,7 +479,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Wed, 18 Sep 2024 20:46:50 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — XSS in contact/company tracking (no authentication)</title>
+      <title>[HIGH] mautic/mautic – XSS in contact/company tracking (no authentication)</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-73gr-32wg-qhh7</link>
       <description>## Summary&#13;
 Prior to this patch being applied, Mautic's tracking was vulnerable to Cross-Site Scripting through the Page URL variable.&#13;
@@ -501,7 +501,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Wed, 18 Sep 2024 20:48:37 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] mautic/mautic — Remote Code Execution &amp; File Deletion in Asset Uploads</title>
+      <title>[CRITICAL] mautic/mautic – Remote Code Execution &amp; File Deletion in Asset Uploads</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-73gx-x7r9-77x2</link>
       <description>### Summary&#13;
 This advisory addresses two critical security vulnerabilities present in Mautic versions before 5.2.3.  These vulnerabilities could be exploited by authenticated users.&#13;
@@ -527,7 +527,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Tue, 25 Feb 2025 11:44:27 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Relative Path Traversal in assets file upload</title>
+      <title>[MEDIUM] mautic/mautic – Relative Path Traversal in assets file upload</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-4w2w-36vm-c8hf</link>
       <description>### Summary&#13;
 &#13;
@@ -552,7 +552,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Tue, 25 Feb 2025 11:44:35 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — Improper Authorization in Reporting API</title>
+      <title>[HIGH] mautic/mautic – Improper Authorization in Reporting API</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-8xv7-g2q3-fqgc</link>
       <description>### Summary&#13;
 &#13;
@@ -579,7 +579,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Tue, 25 Feb 2025 11:44:42 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Predictable Page Indexing Might Lead to Sensitive Data Exposure</title>
+      <title>[MEDIUM] mautic/mautic – Predictable Page Indexing Might Lead to Sensitive Data Exposure</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-cqx4-9vqf-q3m8</link>
       <description>### Summary&#13;
 This advisory addresses a security vulnerability in Mautic where unpublished page previews could be accessed by unauthenticated users and potentially indexed by search engines. This could lead to the unintended disclosure of draft content or sensitive information.&#13;
@@ -594,7 +594,7 @@ Mautic has patched this vulnerability by enforcing proper permission checks on p
       <pubDate>Wed, 28 May 2025 16:07:44 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Mautic does not shield .env files from web traffic</title>
+      <title>[MEDIUM] mautic/mautic – Mautic does not shield .env files from web traffic</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-h2wg-v8wg-jhxh</link>
       <description>### Summary &#13;
 This advisory addresses a security vulnerability in Mautic where sensitive `.env` configuration files may be directly accessible via a web browser. This exposure could lead to the disclosure of sensitive information, including database credentials, API keys, and other critical system configurations.&#13;
@@ -620,7 +620,7 @@ After modifying your Nginx configuration, remember to reload or restart your Ngi
       <pubDate>Wed, 28 May 2025 16:09:23 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — User name enumeration possible due to response time difference on password reset form</title>
+      <title>[MEDIUM] mautic/mautic – User name enumeration possible due to response time difference on password reset form</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-424x-cxvh-wq9p</link>
       <description>### Summary&#13;
 &#13;
@@ -640,7 +640,7 @@ Email us at security@mautic.org</description>
       <pubDate>Wed, 28 May 2025 16:09:57 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Segment cloning doesn't have a proper permission check</title>
+      <title>[MEDIUM] mautic/mautic – Segment cloning doesn't have a proper permission check</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-vph5-ghq3-q782</link>
       <description>### Summary&#13;
 This advisory addresses a security vulnerability in Mautic related to the segment cloning functionality. This vulnerability allows any authenticated user to clone segments without proper authorization checks.&#13;
@@ -659,7 +659,7 @@ Email us at security@mautic.org</description>
       <pubDate>Wed, 28 May 2025 16:10:21 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Open Redirect vulnerability on user unlock path.</title>
+      <title>[MEDIUM] mautic/mautic – Open Redirect vulnerability on user unlock path.</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-6vx9-9r2g-8373</link>
       <description>### Summary&#13;
 This advisory addresses an Open Redirection vulnerability in Mautic's user unlocking endpoint. This vulnerability could be exploited by an attacker to redirect legitimate users to malicious websites, potentially leading to phishing attacks or the delivery of exploit kits.&#13;
@@ -672,7 +672,7 @@ Update Mautic to a version that properly validates or sanitizes the `returnUrl` 
       <pubDate>Wed, 28 May 2025 16:11:20 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] mautic/mautic — SSRF via webhook function</title>
+      <title>[LOW] mautic/mautic – SSRF via webhook function</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-hj6f-7hp7-xg69</link>
       <description>### Summary&#13;
 Users with webhook permissions can conduct SSRF via webhooks. If they have permission to view the webhook logs, the (partial) request response is also disclosed&#13;
@@ -691,7 +691,7 @@ https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Preve
       <pubDate>Wed, 03 Sep 2025 08:56:19 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Secret data extraction via elfinder</title>
+      <title>[MEDIUM] mautic/mautic – Secret data extraction via elfinder</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-438m-6mhw-hq5w</link>
       <description>### Summary&#13;
 _A user with administrator rights can change the configuration of the mautic application and extract secrets that are not normally available._&#13;
@@ -704,7 +704,7 @@ _An administrator who usually does not have access to certain parameters, such a
       <pubDate>Wed, 03 Sep 2025 08:56:26 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — User Enumeration via Response Timing</title>
+      <title>[MEDIUM] mautic/mautic – User Enumeration via Response Timing</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-3ggv-qwcp-j6xg</link>
       <description>### Impact&#13;
 The attacker can validate if a user exists by checking the time login returns. This timing difference can be used to enumerate valid usernames, after which an attacker could attempt brute force attacks.&#13;
@@ -729,7 +729,7 @@ No workarounds are available. Users should upgrade to the patched version.&#13;
       <pubDate>Wed, 03 Sep 2025 08:56:40 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] mautic/mautic — Reflected XSS in lead:addLeadTags - Quick Add</title>
+      <title>[MEDIUM] mautic/mautic – Reflected XSS in lead:addLeadTags - Quick Add</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-9v8p-m85m-f7mm</link>
       <description>## Summary&#13;
 &#13;
@@ -749,21 +749,21 @@ A Reflected XSS attack can have a significant impact, allowing attackers to stea
       <pubDate>Wed, 03 Sep 2025 08:56:47 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] taigaio/taiga-back — Blind SQL Injection Time Based</title>
+      <title>[MEDIUM] taigaio/taiga-back – Blind SQL Injection Time Based</title>
       <link>https://github.com/taigaio/taiga-back/security/advisories/GHSA-chm9-9wwq-xffj</link>
       <description>Taiga API is vulnerable to Time‑based blind SQL injection allowing sensitive data disclosure via response timing.</description>
       <guid isPermaLink="false">GHSA-chm9-9wwq-xffj</guid>
       <pubDate>Tue, 28 Oct 2025 11:49:58 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] taigaio/taiga-back — Authenticated Remote Code Execution</title>
+      <title>[CRITICAL] taigaio/taiga-back – Authenticated Remote Code Execution</title>
       <link>https://github.com/taigaio/taiga-back/security/advisories/GHSA-cpcf-9276-fwc5</link>
       <description>A remote code execution vulnerability exists in the Taiga API due to unsafe deserialization of untrusted data. </description>
       <guid isPermaLink="false">GHSA-cpcf-9276-fwc5</guid>
       <pubDate>Tue, 28 Oct 2025 11:50:52 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] mautic/mautic — Mautic user without privileged access to the Marketplace can install and uninstall composer packages</title>
+      <title>[CRITICAL] mautic/mautic – Mautic user without privileged access to the Marketplace can install and uninstall composer packages</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-3fq7-c5m8-g86x</link>
       <description>### Summary&#13;
 &#13;
@@ -776,7 +776,7 @@ A low-privileged user of the platform can install malicious code to obtain highe
       <pubDate>Tue, 02 Dec 2025 16:57:51 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — GrapesJsBuilder File Upload allows all file uploads</title>
+      <title>[HIGH] mautic/mautic – GrapesJsBuilder File Upload allows all file uploads</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-5xw2-57jx-pgjp</link>
       <description>### Summary&#13;
 &#13;
@@ -789,7 +789,7 @@ If the media folder is not restricted from running files this can lead to a remo
       <pubDate>Tue, 02 Dec 2025 16:58:03 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] composer/composer — ANSI sequence injection</title>
+      <title>[LOW] composer/composer – ANSI sequence injection</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-59pp-r3rg-353g</link>
       <description>### Impact&#13;
 Attackers controlling remote sources that Composer downloads from might in some way inject ANSI control characters in the terminal output of various Composer commands, causing mangled output and potentially leading to confusion or DoS of the terminal application.&#13;
@@ -803,7 +803,7 @@ There is no proven exploit and this has thus a low severity but we still publish
       <pubDate>Tue, 30 Dec 2025 12:53:59 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] RocketChat/Rocket.Chat — Unauthorized Access to OAuth App Details (Versions ≤ 6.12.0)</title>
+      <title>[HIGH] RocketChat/Rocket.Chat – Unauthorized Access to OAuth App Details (Versions ≤ 6.12.0)</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-g4wm-fg3c-g4p2</link>
       <description>### Summary&#13;
 A vulnerability in Rocket.Chat &lt;6.12.0 allows low-privileged users, if they know an app ID, to access sensitive information about configured OAuth applications by invoking an API endpoint that lacks proper authorization checks.&#13;
@@ -853,7 +853,7 @@ Potential compliance issues depending on how OAuth integrations are used (e.g., 
       <pubDate>Wed, 14 Jan 2026 11:50:54 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic — SQL Injection in Contact Activity API Sorting</title>
+      <title>[HIGH] mautic/mautic – SQL Injection in Contact Activity API Sorting</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-r5j5-q42h-fc93</link>
       <description>### Summary&#13;
 This advisory addresses a SQL injection vulnerability in the API endpoint used for retrieving contact activities. A vulnerability exists in the query construction for the Contact Activity timeline where the parameter responsible for determining the sort direction was not strictly validated against an allowlist, potentially allowing authenticated users to inject arbitrary SQL commands via the API.&#13;
@@ -875,7 +875,7 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Tue, 24 Feb 2026 14:55:11 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] RocketChat/Rocket.Chat — Users can login with any password via the EE ddp-streamer-service</title>
+      <title>[CRITICAL] RocketChat/Rocket.Chat – Users can login with any password via the EE ddp-streamer-service</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-w6vw-mrgv-69vf</link>
       <description>### Issue 1: Users can login with any password via the EE ddp-streamer-service `GHSL-2026-004`)&#13;
 &#13;
@@ -943,7 +943,7 @@ This report is subject to a 90-day disclosure deadline, as described in more det
       <pubDate>Thu, 05 Mar 2026 19:49:21 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] RocketChat/Rocket.Chat — 2FA bypass and login of deactivated users via EE ddp-streamer</title>
+      <title>[HIGH] RocketChat/Rocket.Chat – 2FA bypass and login of deactivated users via EE ddp-streamer</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-7qr6-q62g-hm63</link>
       <description>### 2FA bypass and login of deactivated users via EE ddp-streamer (`GHSL-2026-008`)&#13;
 &#13;
@@ -983,7 +983,7 @@ This report is subject to a 90-day disclosure deadline, as described in more det
       <pubDate>Thu, 05 Mar 2026 20:09:23 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] RocketChat/Rocket.Chat — NoSQL injection in the EE ddp-streamer-service</title>
+      <title>[HIGH] RocketChat/Rocket.Chat – NoSQL injection in the EE ddp-streamer-service</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-hgq6-9jg2-wf3f</link>
       <description>### Issue 2: NoSQL injection in the EE ddp-streamer-service  (`GHSL-2026-005`)&#13;
 &#13;
@@ -1034,7 +1034,7 @@ This report is subject to a 90-day disclosure deadline, as described in more det
       <pubDate>Thu, 05 Mar 2026 20:21:29 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] zammad/zammad — Information disclosure in ticket detail view of customers in shared organizations</title>
+      <title>[LOW] zammad/zammad – Information disclosure in ticket detail view of customers in shared organizations</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-prww-84vh-w978</link>
       <description>### Impact&#13;
 &#13;
@@ -1043,7 +1043,7 @@ Customers in shared organizations (means they can see each other's tickets) coul
       <pubDate>Wed, 08 Apr 2026 06:17:58 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] zammad/zammad — Incorrect access control in getting_started_controller</title>
+      <title>[HIGH] zammad/zammad – Incorrect access control in getting_started_controller</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-hcm9-ch62-5727</link>
       <description>### Impact&#13;
 &#13;
@@ -1053,7 +1053,7 @@ Unauthenticated remote attackers were able to access the getting started endpoin
       <pubDate>Wed, 08 Apr 2026 06:18:12 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Improper neutralization of script-related HTML tags in ticket articles</title>
+      <title>[MEDIUM] zammad/zammad – Improper neutralization of script-related HTML tags in ticket articles</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-c2cf-9fc7-jhf3</link>
       <description>### Impact&#13;
 The HTML sanitizer for ticket articles was missing proper sanitization of `data: ...` URI schemes, resulting in storing such malicious content in the database of the Zammad instance.&#13;
@@ -1063,7 +1063,7 @@ The Zammad GUI is rendering this content, due to applied CSP rules no harm was d
       <pubDate>Wed, 08 Apr 2026 06:18:16 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] zammad/zammad — Server-side request forgery (SSRF) via webhooks</title>
+      <title>[HIGH] zammad/zammad – Server-side request forgery (SSRF) via webhooks</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-2vgc-vfh2-rw75</link>
       <description>### Impact&#13;
 &#13;
@@ -1075,7 +1075,7 @@ The existing check is now extended and is applied when configuring webhooks as w
       <pubDate>Wed, 08 Apr 2026 06:18:19 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Missing authorization in AI assistance controller for text tools</title>
+      <title>[MEDIUM] zammad/zammad – Missing authorization in AI assistance controller for text tools</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-96r7-29c8-2j7q</link>
       <description>### Impact&#13;
 &#13;
@@ -1086,7 +1086,7 @@ The endpoint got improved and is now checking for having `ticket.agent` permissi
       <pubDate>Wed, 08 Apr 2026 06:18:26 +0000</pubDate>
     </item>
     <item>
-      <title>[LOW] zammad/zammad — Origin validation error in SSO mechanism</title>
+      <title>[LOW] zammad/zammad – Origin validation error in SSO mechanism</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-hcv6-w4h9-p2p7</link>
       <description>### Impact&#13;
 The SSO mechanism in Zammad was not verifying the header originates from a trusted SSO proxy/gateway before applying further actions on it.&#13;
@@ -1096,7 +1096,7 @@ This is now possible to configure properly within Zammad.</description>
       <pubDate>Wed, 08 Apr 2026 06:18:29 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Cross-site request forgery (CSRF) in OAuth callback endpoints</title>
+      <title>[MEDIUM] zammad/zammad – Cross-site request forgery (CSRF) in OAuth callback endpoints</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-mfwp-hx66-626c</link>
       <description>### Impact&#13;
 The OAuth callback endpoints for Microsoft, Google, and Facebook external credentials do not validate a CSRF state parameter.&#13;
@@ -1106,7 +1106,7 @@ The external credentials handling got hardened by introducing CSRF state paramet
       <pubDate>Wed, 08 Apr 2026 06:18:31 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Missing authorization in ticket create endpoint</title>
+      <title>[MEDIUM] zammad/zammad – Missing authorization in ticket create endpoint</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-28m3-wwgv-ppw8</link>
       <description>### Impact&#13;
 The used endpoint for ticket creation was missing authorization if the related parameter for adding links is used.&#13;
@@ -1116,7 +1116,7 @@ The endpoint got improved to ensure having proper permissions.</description>
       <pubDate>Wed, 08 Apr 2026 06:18:35 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] zammad/zammad — Server-side template injection leading to RCE via AI Agent</title>
+      <title>[HIGH] zammad/zammad – Server-side template injection leading to RCE via AI Agent</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-fg9w-jg8f-4j94</link>
       <description>### Impact&#13;
 &#13;
@@ -1132,7 +1132,7 @@ The endpoint got improved to ensure having proper permissions.</description>
       <pubDate>Wed, 08 Apr 2026 06:18:39 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Missing authorization in AI assistance controller for context data used in text tools</title>
+      <title>[MEDIUM] zammad/zammad – Missing authorization in AI assistance controller for context data used in text tools</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-89vv-6639-wcv8</link>
       <description>### Impact&#13;
 &#13;
@@ -1145,7 +1145,7 @@ A user needs to have `ticket.agent` permission to be able to use the provided co
       <pubDate>Wed, 08 Apr 2026 06:18:42 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] composer/composer — Command injection via malicious Perforce source reference/url</title>
+      <title>[HIGH] composer/composer – Command injection via malicious Perforce source reference/url</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-gqw4-4w2p-838q</link>
       <description>### Impact&#13;
 The `Perforce::syncCodeBase()` method appended the `$sourceReference` parameter to a shell command without proper escaping, allowing an attacker to inject arbitrary commands through a crafted source reference containing shell metacharacters. Further as in GHSA-wg36-wvj6-r67p / CVE-2026-40176 the `Perforce::generateP4Command()` method constructed shell commands by interpolating user-supplied Perforce connection parameters (port, user, client) without proper escaping from the source url field. Composer would execute these injected commands even if Perforce is not installed.&#13;
@@ -1167,7 +1167,7 @@ Note, the fix for the source url in the `Perforce::generateP4Command()` was addr
       <pubDate>Tue, 14 Apr 2026 09:46:31 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] composer/composer — Command injection via malicious Perforce repository definition</title>
+      <title>[HIGH] composer/composer – Command injection via malicious Perforce repository definition</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-wg36-wvj6-r67p</link>
       <description>### Impact&#13;
 The `Perforce::generateP4Command()` method constructed shell commands by interpolating user-supplied Perforce connection parameters (port, user, client) without proper escaping. An attacker controlling a repository configuration in a malicious composer.json declaring a Perforce VCS repository could inject arbitrary commands through these values, leading to command execution in the context of the user running Composer. Composer would execute these injected commands even if Perforce is not installed.&#13;
@@ -1186,7 +1186,7 @@ Fixed in Composer 2.2.27 (2.2 LTS) and 2.9.6 (mainline)&#13;
       <pubDate>Tue, 14 Apr 2026 09:46:34 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] taigaio/taiga-front — XSS in taiga-front</title>
+      <title>[MEDIUM] taigaio/taiga-front – XSS in taiga-front</title>
       <link>https://github.com/taigaio/taiga-front/security/advisories/GHSA-fpm6-3pvx-3c46</link>
       <description>Taiga front is vulnerable to stored XSS.</description>
       <guid isPermaLink="false">GHSA-fpm6-3pvx-3c46</guid>
