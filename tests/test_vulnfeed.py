@@ -143,6 +143,35 @@ def test_generate_feed() -> None:
     assert items[0].find("guid").text == "GHSA-1234-5678-9abc"
 
 
+def test_generate_feed_preserves_order() -> None:
+    advisories = [
+        {
+            "ghsa_id": "GHSA-new",
+            "html_url": "https://example.com/new",
+            "summary": "Newer",
+            "severity": "high",
+            "published_at": "2026-04-01T00:00:00Z",
+            "description": "Newer one",
+            "repo": "owner/repo",
+        },
+        {
+            "ghsa_id": "GHSA-old",
+            "html_url": "https://example.com/old",
+            "summary": "Older",
+            "severity": "low",
+            "published_at": "2026-01-01T00:00:00Z",
+            "description": "Older one",
+            "repo": "owner/repo",
+        },
+    ]
+
+    xml_bytes = generate_feed(advisories)
+
+    root = ET.fromstring(xml_bytes)
+    items = root.find("channel").findall("item")
+    assert [item.find("guid").text for item in items] == ["GHSA-new", "GHSA-old"]
+
+
 def test_main_writes_feed_xml(tmp_path) -> None:
     config_file = tmp_path / "config.yaml"
     output_file = tmp_path / "output" / "feed.xml"

@@ -43,7 +43,7 @@ def generate_feed(advisories: list[dict], feed_url: str = "") -> bytes:
         severity = (advisory.get("severity") or "unknown").upper()
         repo = advisory.get("repo", "")
 
-        entry = fg.add_entry()
+        entry = fg.add_entry(order="append")
         entry.id(advisory["ghsa_id"])
         entry.title(f"[{severity}] {repo} – {advisory['summary']}")
         entry.link(href=advisory["html_url"])
