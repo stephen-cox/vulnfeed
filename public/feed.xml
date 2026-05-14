@@ -7,7 +7,60 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 13 May 2026 06:45:29 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 14 May 2026 06:44:01 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] RocketChat/Rocket.Chat – Lack of SAML Signature Check During Logout Could Lead To DoS</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-pw6f-q8ww-vqfq</link>
+      <description>## Summary&#13;
+&#13;
+Rocket.Chat's SAML integration in versions &lt;8.5.0, &lt;8.4.1, &lt;8.3.3, &lt;8.2.3, &lt;8.1.4, &lt;8.0.5, &lt;7.13.7, and &lt;7.10.11 does not verify the signature on inbound `LogoutRequest` messages. An unauthenticated remote attacker who knows a target user's SAML NameID - which major identity providers (Okta, Google Workspace, Microsoft Entra ID, JumpCloud) expose as the user's email address - can craft a valid-looking unsigned `LogoutRequest` and submit it to the SP logout endpoint. The server processes it as legitimate, immediately destroying the victim's session.&#13;
+&#13;
+Because the attack requires no authentication and no interaction from the victim, it can be repeated in a loop against individual users or scripted across many accounts, effectively rendering the Rocket.Chat instance unusable for SAML-authenticated users.</description>
+      <guid isPermaLink="false">GHSA-pw6f-q8ww-vqfq</guid>
+      <pubDate>Thu, 14 May 2026 00:19:23 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer – Github Actions issued GITHUB_TOKEN disclosure in GitHub Actions logs</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-f9f8-rm49-7jv2</link>
+      <description>### Summary&#13;
+&#13;
+Composer leaks the full contents of tokens configured as GitHub OAuth tokens if they do not match Composer's expected format for such tokens to stderr. GitHub has introduced a new format for GitHub Actions GITHUB_TOKEN values. These tokens are validated in the same way by Composer on GitHub Actions. The new format including a `-` (hyphen) fails Composer's validation and leads to disclosure of the GITHUB_TOKEN in logs.&#13;
+&#13;
+Many widely-used Actions (e.g. `shivammathur/setup-php`) auto-register `GITHUB_TOKEN` into composer's global `auth.json`, so the leak triggers without any unusual user configuration.&#13;
+&#13;
+GitHub Actions tokens expire when the associated job finishes, and they are scoped to the respective repository only. So in most regular cases the Composer validation, which errors while leaking the token, also immediately ends the job, expiring the token immediately. Tokens expire at the very latest after 6 hours on GitHub-hosted runners. If you use self-hosted runner, expiration is at most 24 hours after creation. The new token format is being rolled out gradually, so not all repositories are affected yet, but will be soon.&#13;
+&#13;
+Classic `ghp_` PATs are not affected by the regex bug per se, but the same leak primitive applies to any future credential that fails validation for any reason.&#13;
+&#13;
+### Details&#13;
+&#13;
+When a GitHub token fails regular expression validation of the character set, the rejected token is interpolated verbatim into the `UnexpectedValueException` message thrown by `Composer\IO\BaseIO::loadConfiguration()`, which Symfony Console then prints. Validation reliably fails for any token containing a `-` (hyphen), which includes the modern `ghs_&lt;id&gt;_&lt;base64url-JWT&gt;` GitHub App installation token format, the same format used by GitHub Actions' built-in `GITHUB_TOKEN` and by `actions/create-github-app-token`. &#13;
+&#13;
+Severity: medium. Pre-conditions are common in real-world CI. Practical blast radius is bounded by the leaked credential's scope and TTL (short for a workflow `GITHUB_TOKEN`, longer for App-minted tokens or user-issued credentials that happen to contain `-`).&#13;
+&#13;
+Vulnerable code, `src/Composer/IO/BaseIO.php` (line 139 on `main`, line 143 on 2.8.x), inside `loadConfiguration()`:&#13;
+&#13;
+```php&#13;
+// allowed chars for GH tokens are from https://github.blog/changelog/2021-03-04-authentication-token-format-updates/&#13;
+// plus dots which were at some point used for GH app integration tokens&#13;
+if (!Preg::isMatch('{^[.A-Za-z0-9_]+$}', $token)) {&#13;
+    throw new \UnexpectedValueException(&#13;
+        'Your github oauth token for '.$domain.' contains invalid characters: "'.$token.'"'&#13;
+    );&#13;
+}&#13;
+```&#13;
+&#13;
+Three issues combine to produce the leak:&#13;
+&#13;
+1. **The rejected token is interpolated into the exception message.** The exception bubbles up to Symfony Console's default error renderer, which writes it to stderr. Any environment that captures stderr (CI logs, log shippers, monitoring, support transcripts) now has the raw token.&#13;
+&#13;
+2. **The validation regex `^[.A-Za-z0-9_]+$` does not permit `-`.** GitHub's current `ghs_&lt;numeric-id&gt;_&lt;base64url-JWT&gt;` structured installation tokens routinely contain `-`, because base64url (RFC 4648 §5) uses `-` and `_` as URL-safe replacements for `+` and `/`. The regex was chosen in 2021 on the understanding that GitHub tokens use only `[A-Za-z0-9_]` plus `.`.&#13;
+&#13;
+3. **Detection / mitigation in upstream platforms is unreliable.** GitHub Actions' built-in secret masker matches registered values as exact substrings. When the exception message is rendered by Symfony Console it may wrap, embed in `In BaseIO.php line N:` framing, or interleave with ANSI control sequences. So the masker does not redact, and the plaintext token reaches the log.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-f9f8-rm49-7jv2</guid>
+      <pubDate>Wed, 13 May 2026 09:34:17 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] taigaio/taiga-front – XSS in taiga-front</title>
       <link>https://github.com/taigaio/taiga-front/security/advisories/GHSA-fpm6-3pvx-3c46</link>
