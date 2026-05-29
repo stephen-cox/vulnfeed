@@ -7,7 +7,30 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 28 May 2026 07:54:22 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 29 May 2026 07:52:14 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] mautic/mautic – SQL Injection in API Contact Filtering</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-fcmw-wx57-9p75</link>
+      <description>### Summary&#13;
+An SQL injection vulnerability exists in Mautic's API contact filtering mechanism. Due to insufficient recursive sanitization of nested query parameters, an authenticated API user can bypass input filtering and inject arbitrary SQL commands.&#13;
+&#13;
+### Impact&#13;
+An authenticated user with API access can exploit this vulnerability to execute arbitrary SQL queries against the underlying database. This allows unauthorized retrieval of sensitive database contents—including user credentials, system configurations, and personal identifiable information (PII) of contacts—bypassing standard data access permissions.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been fixed in the following releases:&#13;
+* **7.1.2**&#13;
+* **6.0.9**&#13;
+* **5.2.11**&#13;
+* **4.4.20** [ELTS](https://mautic.org/extended-long-term-support-elts/)&#13;
+&#13;
+We strongly recommend upgrading to the latest version corresponding to your release branch.&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this issue without upgrading, you may temporarily disable API access or restrict API permissions to highly trusted accounts.</description>
+      <guid isPermaLink="false">GHSA-fcmw-wx57-9p75</guid>
+      <pubDate>Fri, 29 May 2026 06:58:48 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] RocketChat/Rocket.Chat – Livechat Visitor Profile Disclosure Leaks Bearer Token and Enables Visitor Impersonation</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-cqj7-h8cj-jmf2</link>
@@ -1693,37 +1716,6 @@ If you have any questions or comments about this advisory:&#13;
 </description>
       <guid isPermaLink="false">GHSA-pjpc-87mp-4332</guid>
       <pubDate>Mon, 23 May 2022 13:01:04 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] mautic/mautic – XSS vulnerability in installer</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-jrwm-pr9x-cgq3</link>
-      <description>⚠️ After this security fix was released we identified an issue which has been resolved in releasing hotfix version 4.3.1.&#13;
-&#13;
-### Impact&#13;
-&#13;
-Mautic allows you to install the application via an installer.&#13;
-&#13;
-The installer logic doesn't sufficiently sanitise the input of the install information, which may lead to vulnerable situation.&#13;
-&#13;
-This vulnerability is mitigated by the fact that the attacker needs to have access to the install process.&#13;
-&#13;
-&#13;
-### Patches&#13;
-&#13;
-Please upgrade to 4.3.1&#13;
-&#13;
-### Workarounds&#13;
-None.&#13;
-&#13;
-### References&#13;
-* Internally tracked under MST-28&#13;
-&#13;
-### For more information&#13;
-If you have any questions or comments about this advisory:&#13;
-* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
-</description>
-      <guid isPermaLink="false">GHSA-jrwm-pr9x-cgq3</guid>
-      <pubDate>Mon, 23 May 2022 13:00:23 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] composer/composer – Missing input validation can lead to command execution via VcsDriver::getFileContent()</title>
