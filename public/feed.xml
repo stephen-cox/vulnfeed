@@ -7,7 +7,135 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 29 May 2026 07:52:14 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 30 May 2026 06:43:07 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] mautic/mautic – Stored Cross-Site Scripting (XSS) in Project Option Selector</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-5hvg-w58j-545m</link>
+      <description>### Summary&#13;
+A stored Cross-Site Scripting (XSS) vulnerability exists in the project selector component of Mautic 7. When rendering selection menus for associating projects with system entities, the application fails to sanitize project names returned via AJAX before injecting them into the DOM as option fields. An authenticated user with permissions to create projects can exploit this to store a malicious script payload in the project's name.&#13;
+&#13;
+### Impact&#13;
+When another administrative user subsequently opens an entity editor containing the project selector, the injected script executes within the context of their active browser session. This could allow an attacker to hijack the session, perform unauthorized state coordination, or access organizational data within the dashboard.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following release:&#13;
+* **7.1.2**&#13;
+&#13;
+*Note: Mautic 6.x, 5.x, and 4.x branches do not contain the Projects feature or the associated AJAX selector and are not affected by this vulnerability. For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, restrict project creation and modification permissions to trusted administrative users.</description>
+      <guid isPermaLink="false">GHSA-5hvg-w58j-545m</guid>
+      <pubDate>Fri, 29 May 2026 10:38:17 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic – Stored Cross-Site Scripting (XSS) in Projects Component</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-7h65-whp7-rgqf</link>
+      <description>### Summary&#13;
+A stored Cross-Site Scripting (XSS) vulnerability exists in the Projects component of Mautic 7. When displaying project tags and popovers on administrative detail views (such as campaigns, emails, or forms), user-supplied project names are rendered without proper sanitization. An authenticated user with permissions to create or edit projects can exploit this to inject malicious script payloads.&#13;
+&#13;
+### Impact&#13;
+When an administrative user views an entity associated with a compromised project and hovers over its tag, the injected script executes within the context of their active browser session. This could allow an attacker to perform administrative actions on behalf of the victim, alter system configurations, or exfiltrate sensitive data.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following release:&#13;
+* **7.1.2**&#13;
+&#13;
+*Note: Mautic 6.x, 5.x, and 4.x branches do not contain the Projects feature and are not affected by this vulnerability. For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, restrict project creation and modification permissions to trusted administrative users.</description>
+      <guid isPermaLink="false">GHSA-7h65-whp7-rgqf</guid>
+      <pubDate>Fri, 29 May 2026 10:35:54 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic – Authorization Bypass in API v2 Endpoints</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-2jrw-c95w-h43g</link>
+      <description>### Summary&#13;
+An authorization bypass vulnerability exists in the Mautic 7 API v2 endpoints (utilizing API Platform). Under certain conditions, roles configured with owner-scope restrictions (such as `viewown` or `editown`) are not properly enforced. This allows low-privilege authenticated API users to bypass ownership-logic controls and access or modify resources belonging to other users.&#13;
+&#13;
+### Impact&#13;
+Authenticated API users with limited roles can read or modify restricted resources—including reports, contacts, and companies—that they do not own and should not have access to. This bypasses structural tenant and privilege boundaries on the platform.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following release:&#13;
+* **7.1.2**&#13;
+&#13;
+*Note: Mautic 6.x, 5.x, and 4.x branches are not affected by this vulnerability. For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this issue without upgrading, temporarily revoke API credentials or narrow access permissions for any users whose roles rely on owner-scope permission containment.</description>
+      <guid isPermaLink="false">GHSA-2jrw-c95w-h43g</guid>
+      <pubDate>Fri, 29 May 2026 10:28:42 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] mautic/mautic – Path Traversal via Campaign Import</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-6r9h-4h75-7q4x</link>
+      <description>### Summary&#13;
+A path traversal vulnerability exists in the campaign import feature of Mautic 7. When extracting uploaded ZIP files during campaign imports, a flaw in the validation logic allows file paths to escape the intended temporary directories. &#13;
+&#13;
+### Impact&#13;
+An authenticated user with campaign import privileges (`campaign:imports:create`) can write arbitrary PHP files to sensitive system directories. An attacker can exploit this to overwrite critical internal configuration or cache components, resulting in Remote Code Execution (RCE) under the context of the web server user.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following release:&#13;
+* **7.1.2**&#13;
+&#13;
+*Note: Mautic 6.x, 5.x, and 4.x branches are not affected by this vulnerability. For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this risk without upgrading, revoke campaign import permissions (`campaign:imports:create`) from non-administrative users.</description>
+      <guid isPermaLink="false">GHSA-6r9h-4h75-7q4x</guid>
+      <pubDate>Fri, 29 May 2026 10:19:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] mautic/mautic – Server-Side Template Injection (SSTI) in Theme Templates</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-9fx4-7cmj-47vg</link>
+      <description>### Summary&#13;
+A Server-Side Template Injection (SSTI) vulnerability exists in Mautic's theme engine. The platform renders uploaded Twig templates without a sandbox or strict function restrictions. Authenticated users with permissions to create or upload themes can abuse this to execute arbitrary code.&#13;
+&#13;
+### Impact&#13;
+An authenticated user with theme upload and creation privileges can bypass boundaries to execute arbitrary system commands on the hosting server (Remote Code Execution) or access restricted system files and configuration settings.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following releases:&#13;
+* **7.1.2**&#13;
+* **6.0.9**&#13;
+* **5.2.11**&#13;
+&#13;
+For users on Mautic 4.x, this fix is available in:&#13;
+* **4.4.20** via [ELTS](https://mautic.org/extended-long-term-support-elts/)&#13;
+&#13;
+We strongly recommend upgrading to a patched version immediately.&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, restrict theme upload and creation permissions (`core:themes:create`) to only highly trusted administrators.</description>
+      <guid isPermaLink="false">GHSA-9fx4-7cmj-47vg</guid>
+      <pubDate>Fri, 29 May 2026 10:01:22 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic – SSRF in the Mautic Focus component</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-jmv8-8j9j-rcpc</link>
+      <description>### Summary&#13;
+A Server-Side Request Forgery (SSRF) vulnerability exists in the Mautic Focus component (`MauticFocusBundle`). Under certain conditions, insufficiency in validating user-supplied URLs allows authenticated users to trigger outbound HTTP requests from the hosting server.&#13;
+&#13;
+### Impact&#13;
+An authenticated user with access to the Mautic panel can exploit this vulnerability to perform internal port probing or force the server to initiate requests to external or arbitrary internal destinations. This can enable internal network reconnaissance or mapping of firewalled infrastructure.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been fixed in the following releases:&#13;
+* **7.1.2**&#13;
+* **6.0.9**&#13;
+* **5.2.11**&#13;
+* **4.4.20** [ELTS](https://mautic.org/extended-long-term-support-elts/)&#13;
+&#13;
+We strongly recommend upgrading to the latest version corresponding to your release branch.&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To completely mitigate the exposure without upgrading, disabling or limiting external network access from the Mautic web server to internal-only subnets/local hosts is recommended.</description>
+      <guid isPermaLink="false">GHSA-jmv8-8j9j-rcpc</guid>
+      <pubDate>Fri, 29 May 2026 09:17:43 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] mautic/mautic – SQL Injection in API Contact Filtering</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-fcmw-wx57-9p75</link>
@@ -1370,31 +1498,6 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Wed, 18 Sep 2024 20:46:50 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic – Insufficient authentication in upgrade flow</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-qf6m-6m4g-rmrc</link>
-      <description>### Impact&#13;
-&#13;
-Mautic allows you to update the application via an upgrade script.&#13;
-&#13;
-The upgrade logic isn't shielded off correctly, which may lead to vulnerable situation.&#13;
-&#13;
-This vulnerability is mitigated by the fact that Mautic needs to be installed in a certain way to be vulnerable&#13;
-&#13;
-### Patches&#13;
-&#13;
-Please upgrade to 4.4.1 or 5.1.1 or later.&#13;
-&#13;
-### Workarounds&#13;
-None.&#13;
-&#13;
-### For more information&#13;
-If you have any questions or comments about this advisory:&#13;
-* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
-</description>
-      <guid isPermaLink="false">GHSA-qf6m-6m4g-rmrc</guid>
-      <pubDate>Wed, 18 Sep 2024 20:41:24 +0000</pubDate>
-    </item>
-    <item>
       <title>[HIGH] mautic/mautic – XSS in contact tracking and page hits report</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-xpc5-rr39-v8v2</link>
       <description>### Summary&#13;
@@ -1439,25 +1542,6 @@ Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
 </description>
       <guid isPermaLink="false">GHSA-xv68-rrmw-9xwf</guid>
       <pubDate>Wed, 18 Sep 2024 20:28:03 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] mautic/mautic – Improper Access Control in UI upgrade process</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-x3jx-5w6m-q2fc</link>
-      <description>### Impact&#13;
-The logic in place to facilitate the update process via the user interface lacks access control to verify if permission exists to perform the tasks. Prior to this patch being applied it might be possible for an attacker to access the Mautic version number or to execute parts of the upgrade process without permission. As upgrading in the user interface is deprecated, this functionality is no longer required.&#13;
-&#13;
-### Patches&#13;
-Upgrade to 4.4.13 or 5.1.1 or later.&#13;
-&#13;
-### Workarounds&#13;
-None.&#13;
-&#13;
-### For more information&#13;
-If you have any questions or comments about this advisory:&#13;
-* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
-</description>
-      <guid isPermaLink="false">GHSA-x3jx-5w6m-q2fc</guid>
-      <pubDate>Wed, 18 Sep 2024 17:00:57 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] composer/composer – Multiple command injections via malicious git/hg branch names</title>
@@ -1535,55 +1619,6 @@ https://owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure&#13;
 </description>
       <guid isPermaLink="false">GHSA-qjx3-2g35-6hv8</guid>
       <pubDate>Thu, 11 Apr 2024 14:48:15 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] mautic/mautic – SQL Injection in dynamic Reports</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-jj6w-2cqg-7p94</link>
-      <description>### Impact&#13;
-Prior to the patched version, logged in users of Mautic are vulnerable to an SQL injection vulnerability in the Reports bundle.&#13;
-&#13;
-The user could retrieve and alter data like sensitive data, login, and depending on database permission the attacker can manipulate file systems.&#13;
-&#13;
-### Patches&#13;
-Update to 4.4.12 or 5.0.4&#13;
-&#13;
-### Workarounds&#13;
-No&#13;
-&#13;
-### References&#13;
-- https://owasp.org/www-community/attacks/SQL_Injection&#13;
-- https://owasp.org/www-community/attacks/Blind_SQL_Injection&#13;
-</description>
-      <guid isPermaLink="false">GHSA-jj6w-2cqg-7p94</guid>
-      <pubDate>Thu, 11 Apr 2024 14:47:50 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] mautic/mautic – Relative Path Traversal / Arbitrary File Deletion in Mautic (GrapesJS)</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-9fcx-cv56-w58p</link>
-      <description>### Impact&#13;
-Prior to the patched version, logged in users of Mautic are vulnerable to Relative Path Traversal/Arbitrary File Deletion.  Regardless of the level of access the Mautic user had, they could delete files other than those in the media folders such as system files, libraries or other important files.&#13;
-&#13;
-This vulnerability exists in the implementation of the GrapesJS builder in Mautic.&#13;
-&#13;
-### Patches&#13;
-Update to 4.4.12 or 5.0.4.&#13;
-&#13;
-### Workarounds&#13;
-No&#13;
-&#13;
-### References&#13;
-- https://cwe.mitre.org/data/definitions/23.html&#13;
-- https://cwe.mitre.org/data/definitions/22.html&#13;
-- https://attack.mitre.org/techniques/T1630/002/&#13;
-_Are there any links users can visit to find out more?_&#13;
-&#13;
-### For more information&#13;
-&#13;
-If you have any questions or comments about this advisory:&#13;
-&#13;
-Email us at [security@mautic.org](mailto:security@mautic.org)</description>
-      <guid isPermaLink="false">GHSA-9fcx-cv56-w58p</guid>
-      <pubDate>Thu, 11 Apr 2024 14:47:40 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] mautic/mautic – XSS in Notifications via saving Dashboards</title>
@@ -1691,33 +1726,6 @@ Make sure `register_argc_argv` is disabled in php.ini, and avoid publishing comp
       <pubDate>Fri, 29 Sep 2023 08:56:11 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] mautic/mautic – XSS vulnerability in tracking pixel functionality</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-pjpc-87mp-4332</link>
-      <description>### Impact&#13;
-&#13;
-Mautic allows you to track open rates by using tracking pixels. &#13;
-The tracking information is stored together with extra metadata of the tracking request.&#13;
-&#13;
-The output isn't sufficiently filtered when showing the metadata of the tracking information, which may lead to a vulnerable situation.&#13;
-&#13;
-### Patches&#13;
-&#13;
-Please upgrade to 4.3.0&#13;
-&#13;
-### Workarounds&#13;
-None.&#13;
-&#13;
-### References&#13;
-* Internally tracked under MST-38&#13;
-&#13;
-### For more information&#13;
-If you have any questions or comments about this advisory:&#13;
-* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
-</description>
-      <guid isPermaLink="false">GHSA-pjpc-87mp-4332</guid>
-      <pubDate>Mon, 23 May 2022 13:01:04 +0000</pubDate>
-    </item>
-    <item>
       <title>[MEDIUM] composer/composer – Missing input validation can lead to command execution via VcsDriver::getFileContent()</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-x7cr-6qr6-2hh6</link>
       <description>The Composer method `VcsDriver::getFileContent()` with user-controlled `$file` or `$identifier` arguments is susceptible to an argument injection vulnerability. It can be leveraged to gain arbitrary command execution if the Mercurial or the Git driver are used.&#13;
@@ -1729,32 +1737,6 @@ Composer itself can be attacked through branch names by anyone controlling a Git
 To the best of our knowledge, this was not actively exploited. The vulnerability has been patched on Packagist.org and Private Packagist within a day of the vulnerability report.</description>
       <guid isPermaLink="false">GHSA-x7cr-6qr6-2hh6</guid>
       <pubDate>Wed, 13 Apr 2022 14:55:37 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] mautic/mautic – Improper regex in htaccess file</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-mj6m-246h-9w56</link>
-      <description>### Impact&#13;
-the default .htaccess file has some restrictions in the access to PHP files to only allow specific PHP files to be executed in the root of the application.&#13;
-&#13;
-This logic isn't correct, as the regex in the second FilesMatch only checks the filename, not the full path.&#13;
-&#13;
-### Patches&#13;
-Please upgrade to 3.3.5 or 4.2.0 &#13;
-&#13;
-### Workarounds&#13;
-No&#13;
-&#13;
-### References&#13;
-&#13;
-- Release post: https://www.mautic.org/blog/community/mautic-4-2-one-small-step-mautic&#13;
-- Internally tracked under MST-32&#13;
-&#13;
-### For more information&#13;
-If you have any questions or comments about this advisory:&#13;
-* Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
-</description>
-      <guid isPermaLink="false">GHSA-mj6m-246h-9w56</guid>
-      <pubDate>Mon, 28 Feb 2022 23:26:31 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] composer/composer – Improper escaping of command arguments on Windows leading to command injection</title>
