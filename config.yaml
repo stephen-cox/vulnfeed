@@ -5,8 +5,10 @@ site:
 feeds:
   - source: github
     repos:
+      - argoproj/argo-cd
       - composer/composer
       - mautic/mautic
+      - open-webui/open-webui
       - RocketChat/Rocket.Chat
       - taigaio/taiga-back
       - taigaio/taiga-events
