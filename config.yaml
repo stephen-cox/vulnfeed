@@ -7,6 +7,7 @@ feeds:
     repos:
       - argoproj/argo-cd
       - composer/composer
+      - espocrm/espocrm
       - mautic/mautic
       - open-webui/open-webui
       - RocketChat/Rocket.Chat
