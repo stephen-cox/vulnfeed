@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 04 Jun 2026 08:17:14 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 05 Jun 2026 08:03:36 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] mautic/mautic – Stored Cross-Site Scripting (XSS) in Project Option Selector</title>
       <link>https://github.com/mautic/mautic/security/advisories/GHSA-5hvg-w58j-545m</link>
@@ -3451,7 +3451,16 @@ if not has_access(user_id, type, id, 'read', db=db):&#13;
 ## Preconditions&#13;
 &#13;
 - Attacker must have a valid user account with read access to a shared note&#13;
-- The note must be open for collaborative editing (at least one other user viewing it, or the attacker can wait for a write-access user to open and save)</description>
+- The note must be open for collaborative editing (at least one other user viewing it, or the attacker can wait for a write-access user to open and save)&#13;
+&#13;
+## Consolidation&#13;
+&#13;
+This advisory covers read-only users modifying collaborative notes over Socket.IO. Two handlers were affected, both fixed in v0.9.0:&#13;
+&#13;
+- `ydoc:document:update` — checked only room membership, not write permission, so a read-only collaborator could inject in-memory document updates broadcast to other collaborators (persistence indirect). @Classic298.&#13;
+- `document_save_handler` — checked `permission='read'` while persisting via `Notes.update_note_by_id`, so a read-only collaborator could persist note changes directly. Reported by @hacnho &#13;
+&#13;
+One CVE for the consolidated advisory.</description>
       <guid isPermaLink="false">GHSA-vrfh-rj4q-rmhr</guid>
       <pubDate>Tue, 05 May 2026 11:19:31 +0000</pubDate>
     </item>
