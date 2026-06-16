@@ -7,7 +7,63 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 15 Jun 2026 10:21:11 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 16 Jun 2026 09:22:39 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] RocketChat/Rocket.Chat – Any Authenticated User Can Permanently Deregister Workspace from Rocket.Chat Cloud via Unprotected `/api/v1/fingerprint` Endpoint</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-8hhc-j325-rxqp</link>
+      <description>## Summary&#13;
+&#13;
+The `POST /api/v1/fingerprint` REST endpoint enforces authentication (`authRequired: true`) but performs **no authorization check**. Any authenticated user — including a standard `user` role account — can call this endpoint with `{"setDeploymentAs": "new-workspace"}` to permanently deregister the workspace from Rocket.Chat Cloud. This wipes all cloud credentials, removes the workspace license, breaks push notifications for all users, and requires manual re-registration to recover.&#13;
+&#13;
+## Root Cause&#13;
+&#13;
+**File:** `apps/meteor/app/api/server/v1/misc.ts`, lines 634–700&#13;
+&#13;
+The route handler has `authRequired: true` but performs zero authorization:&#13;
+&#13;
+```javascript&#13;
+API.v1.addRoute('fingerprint', { authRequired: true }, {&#13;
+  async post() {&#13;
+    // ❌ No check: no hasPermission('manage-cloud'), no isAdmin(), nothing&#13;
+    const { setDeploymentAs } = this.bodyParams;&#13;
+&#13;
+    if (setDeploymentAs === 'new-workspace') {&#13;
+      await WorkspaceCredentials.removeAllCredentials();         // line 649&#13;
+      await Settings.updateValueById('Cloud_Workspace_Id', ''); // line 651&#13;
+      await Settings.updateValueById('Cloud_Workspace_Client_Id', '');&#13;
+      await Settings.updateValueById('Cloud_Workspace_Client_Secret', '');&#13;
+      await Settings.updateValueById('Cloud_Workspace_PublicKey', '');&#13;
+      await Settings.updateValueById('Cloud_Workspace_License', '');&#13;
+      await Settings.updateValueById('uniqueID', generateUniqueId()); // line 662&#13;
+    }&#13;
+  }&#13;
+});&#13;
+```&#13;
+&#13;
+**Contrast with correct pattern** (same file, different endpoint):&#13;
+```javascript&#13;
+// cloud.manualSync endpoint — properly authorized&#13;
+API.v1.addRoute('cloud.manualSync', { authRequired: true }, {&#13;
+  async post() {&#13;
+    if (!this.userId) throw new Meteor.Error('error-not-allowed');&#13;
+    await hasPermissionAsync(this.userId, 'manage-cloud'); // ← correct check&#13;
+    // ...&#13;
+  }&#13;
+});&#13;
+```&#13;
+&#13;
+---&#13;
+&#13;
+## Impact&#13;
+&#13;
+An attacker with any valid account on a target Rocket.Chat instance can:&#13;
+&#13;
+1. **Wipe the workspace license** — `Cloud_Workspace_License` cleared; paid features disabled immediately&#13;
+2. **Break push notifications** — `Cloud_Workspace_Client_Id/Secret` cleared; all mobile push delivery stops for every user&#13;
+3. **Sever Rocket.Chat Marketplace access** — workspace is no longer recognized; apps stop receiving updates or may be disabled</description>
+      <guid isPermaLink="false">GHSA-8hhc-j325-rxqp</guid>
+      <pubDate>Mon, 15 Jun 2026 23:32:37 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui – Authenticated users can target arbitrary configured Ollama backends via unguarded url_idx path parameter</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-9rpj-v7hf-vv2w</link>
