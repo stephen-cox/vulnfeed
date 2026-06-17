@@ -7,7 +7,207 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 16 Jun 2026 09:22:39 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 17 Jun 2026 08:59:45 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] zammad/zammad – Missing authorization on ticket attachment download</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-374g-4f73-g7m7</link>
+      <description>A customer who can view a ticket cannot see internal ticket articles through the article listing API. However, the same customer can directly request an attachment belonging to an internal article via the attachment download endpoint, bypassing article-level authorization. &#13;
+&#13;
+**This results in an inconsistency:** The article listing hides internal articles from customers. The attachment download only checks the parent ticket, not the article - so the same customer can download the attachment directly.</description>
+      <guid isPermaLink="false">GHSA-374g-4f73-g7m7</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:24 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – Incorrect implementation of permission checks in the knowledge base module</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pv3q-74g5-w7fv</link>
+      <description>### Summary&#13;
+An issue with permission checks in the knowledge base management area has been identified. Under certain conditions, data validation for linked items was not fully enforced. This could have allowed users with limited read permissions to interact with items outside their assigned access scope. Data access has been strengthened in the current version through additional validation routines.</description>
+      <guid isPermaLink="false">GHSA-pv3q-74g5-w7fv</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:21 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – Denial of Service via OTRS Import Controller</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-45cx-9mrq-mmcj</link>
+      <description>### Summary&#13;
+An unauthenticated request to POST `/api/v1/import/otrs/import_check` blocks a Zammad request worker for roughly two minutes. The `import_check` and `import_status` actions are missing the `setup_done_response` guard that other actions in the same controller carry, so they execute on fully set-up production instances. The action enters a retry loop against a blank OTRS endpoint, sleeping for 30 s + 45 s between attempts.&#13;
+&#13;
+### Impact&#13;
+&#13;
+An unauthenticated remote attacker denies service to a production Zammad instance. Each request costs almost nothing and forces ~115 seconds of server-side blocking. A few requests per second saturate the Puma worker pool. The condition persists as long as the traffic continues.&#13;
+&#13;
+No account, valid import configuration, or target knowledge beyond the hostname is needed. CSRF token is trivially obtained from any prior GET response.</description>
+      <guid isPermaLink="false">GHSA-45cx-9mrq-mmcj</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:18 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – PGP signature spoofing via unvalidated verification return</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-56jc-34c8-2xq4</link>
+      <description>### Summary&#13;
+&#13;
+In Zammad's inbound PGP email processing, the return value of the gpg verification call was silently discarded. Regardless of whether gpg reported a valid, invalid, or missing signature, the handler unconditionally wrote `sign: { success: true, comment: "Good signature" }` to the article's security preferences.&#13;
+&#13;
+### Impact&#13;
+&#13;
+Any sender could tamper with the body of a `multipart/signed` PGP email - or craft a message with an entirely fabricated or mismatched signature - and Zammad would display it to the recipient as cryptographically verified with a "Good signature" label. Users and agents relying on Zammad's signature indicator to confirm message authenticity and integrity would be misled into trusting modified or forged content. The vulnerability affects all inbound PGP-signed emails processed while the PGP integration is enabled.</description>
+      <guid isPermaLink="false">GHSA-56jc-34c8-2xq4</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:14 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Missing authorization check in GitHub + GitLab integration allows cross-ticket data leak</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-96hh-fmj3-h4hp</link>
+      <description>This vulnerability breaks normal ticket isolation boundaries between agents.&#13;
+&#13;
+Any authenticated agent - even one with no active tickets assigned to them - can view the titles, status, labels, and URL links of GitHub/GitLab issues attached to any ticket in the system.&#13;
+&#13;
+This allows an internal user to systematically view GitHub/GitLab issue data linked by other agents or administrators across the organization by simply querying random or sequential ticket IDs.</description>
+      <guid isPermaLink="false">GHSA-96hh-fmj3-h4hp</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:10 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Malicious input in Ticket Body Enables Session Termination</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-6rmm-28j9-q99q</link>
+      <description>A vulnerability in Zammad's HTML sanitization allows injection of specific HTML elements into ticket bodies. When another user views the crafted ticket, the injected element can trigger a logout request, terminating the viewer's session.</description>
+      <guid isPermaLink="false">GHSA-6rmm-28j9-q99q</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad – Missing authorization in GraphQL mutation for suggesting knowledge base answers</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pf47-8964-pp23</link>
+      <description>An authorization bypass vulnerability was found that allows an authenticated agent to read knowledge base answer content they should not be able to access.&#13;
+&#13;
+The vulnerable GraphQL mutation is meant to transform a knowledge base answer suggestion so it can be inserted into the ticket editor, but it only checks if the user has the `ticket.agent` permission. Checking the authorization to the knowledge base answer itself is missing.</description>
+      <guid isPermaLink="false">GHSA-pf47-8964-pp23</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:04 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Cross-User Taskbar Item Access Control Vulnerability</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-jvcg-5539-vvc3</link>
+      <description>A broken access control vulnerability exists in Zammad's GraphQL API. An authenticated user can access taskbar item data belonging to another user by crafting a request with the target user's taskbar identifier. The taskbar feature stores transient state for active user sessions, including auto-saved ticket drafts. Under certain conditions, the authorization check for taskbar item access is not enforced, allowing a user to read another user's taskbar item data.&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-jvcg-5539-vvc3</guid>
+      <pubDate>Wed, 17 Jun 2026 06:49:01 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad – Titles of knowledge base answers will be shown across all categories via the global search</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-4m54-p3mr-22g2</link>
+      <description>When multiple KB categories have different editor roles assigned, a user with knowledge_base.editor in one category can see answer titles and updated_at timestamps from categories they do not have editor access to — via the global quick search. Category names are not leaked, and opening the answer returns "Page not found," but the title alone may disclose sensitive information.</description>
+      <guid isPermaLink="false">GHSA-4m54-p3mr-22g2</guid>
+      <pubDate>Wed, 17 Jun 2026 06:48:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – Cross-Site Scripting in Ticket Notifications</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-p9xp-gx8r-4397</link>
+      <description>A low-privilege authenticated user may inject arbitrary HTML markup, including JavaScript event handlers, into a ticket title via the standard ticket creation workflow. The title is persisted without sanitization. &#13;
+</description>
+      <guid isPermaLink="false">GHSA-p9xp-gx8r-4397</guid>
+      <pubDate>Wed, 17 Jun 2026 06:48:55 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Avatar Image URL Server-Side Request Forwarding</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-q3cr-3wq3-29hx</link>
+      <description>During federated authentication (OAuth/OIDC/SAML), a profile image URL from the external identity provider is fetched without verifying the target address. An actor who controls their profile at a connected provider may cause the server to connect to internal network locations.&#13;
+&#13;
+Response timing and error patterns differ between reachable and unreachable targets, allowing internal service probing. Worker processes may be blocked for several seconds per request.&#13;
+&#13;
+Requires a configured external authentication provider where the actor can modify their profile image URL.</description>
+      <guid isPermaLink="false">GHSA-q3cr-3wq3-29hx</guid>
+      <pubDate>Wed, 17 Jun 2026 06:48:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – Incorrect Authorization and Improper Privilege Management in Zammad</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-p3mg-2jxr-hww2</link>
+      <description>This issue concerns a lack of discursive validation within the authorization cascade. It has been determined that the system-level enforcement of access restrictions during the initialization of new identity objects exhibits a discrepancy: Under specific conditions, the granular restrictions of the access key being used are overridden by the latent authorization authority of the parent account.&#13;
+&#13;
+Consequently, this means that the intended separation of functional areas is nullified, resulting in an uncontrolled expansion of administrative discretion. Due to this potential integrity breach of the entire trust environment, an immediate evaluation of the authorization hierarchies is imperative.&#13;
+&#13;
+### Impact&#13;
+&#13;
+An attacker can create new administrator accounts despite token restrictions. This grants full access to all system data (tickets, customers, configuration) and allows the attacker to take complete control of the Zammad instance.&#13;
+&#13;
+### Abuse Scenario&#13;
+&#13;
+The vulnerability stems from a lack of synergy between the token-based authorization logic and the target system's functional authorization hierarchy, which allows for iterative escalation of the privileged access context.</description>
+      <guid isPermaLink="false">GHSA-p3mg-2jxr-hww2</guid>
+      <pubDate>Wed, 17 Jun 2026 06:48:49 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Improper neutralization of `srcset` attribute in IMG tags in Zammad</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-7fwx-3xr4-qm6w</link>
+      <description>Zammad's HTML sanitizer (`HtmlSanitizer::Strict`) blocks external URLs in `&lt;img src&gt;` to prevent remote content loading, but the `srcset` attribute - also allowlisted for `&lt;img&gt;` - is not subject to the same check.&#13;
+&#13;
+This oversight allows an attacker to embed arbitrary external URLs in the `srcset` attribute just by sending an e-mail, effectively bypassing the external content protection.&#13;
+&#13;
+When an agent views the ticket containing the malicious `srcset`, the browser will silently load the attacker-controlled URL, resulting in the leakage of the agent's IP address, `User-Agent`, `Referer`, and the exact time the ticket was viewed.&#13;
+&#13;
+`HtmlSanitizer::Strict` got extended to block external URLs in the `srcset` attribute of `&lt;img&gt;` tags. This was done to prevent tracking pixels and external content loading, which could compromise user privacy.</description>
+      <guid isPermaLink="false">GHSA-7fwx-3xr4-qm6w</guid>
+      <pubDate>Wed, 17 Jun 2026 06:48:45 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] RocketChat/Rocket.Chat – Email Parameter Fallback Leads To Account Takeover Within Apple OAuth</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-wx3c-76rf-wpwf</link>
+      <description>In `apps/meteor/app/apple/server/loginHandler.ts`, the following code is present:&#13;
+&#13;
+```js&#13;
+const { identityToken, fullName, email } = loginRequest;&#13;
+	try {&#13;
+		const serviceData = await handleIdentityToken(identityToken);&#13;
+		if (!serviceData.email &amp;&amp; email) {&#13;
+			serviceData.email = email;&#13;
+		}&#13;
+```&#13;
+&#13;
+In short, `handleIdentityToken` parses a JWT issued by Apple during the OAuth flow. The `try` block checks for an email parameter. If the JWT does not contain an email address, the application falls back to accepting an arbitrary email value supplied directly in the request. Attackers are able to forge Apple JWTs that do not contain an email address and leverage this vulnerability to carry out account takeover attacks.&#13;
+&#13;
+This issue was found by [hacktron.ai](https://www.hacktron.ai/)'s PR scan.</description>
+      <guid isPermaLink="false">GHSA-wx3c-76rf-wpwf</guid>
+      <pubDate>Tue, 16 Jun 2026 09:36:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] RocketChat/Rocket.Chat – Apple Sign-In skips JWT claims validation, allowing expired and cross-audience token replay</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-c75c-5hc7-j4vp</link>
+      <description>Rocket.Chat's Apple Sign-In handler verifies JWT signatures but skips claims validation. Any Apple-signed JWT with a non-empty `iss` is accepted regardless of `aud`, `exp`, `nbf`, or `nonce`. An attacker who obtains a target user's Apple identity token (from server logs, an intercepted sign-in flow, or another application sharing the same Apple developer team) can replay it to authenticate as that user, with no expiration on the replay window.&#13;
+&#13;
+## The defect&#13;
+&#13;
+The signature verification and claims handling both live in `apps/meteor/app/apple/lib/handleIdentityToken.ts`.&#13;
+&#13;
+Line 24:&#13;
+&#13;
+​```ts&#13;
+return KJUR.jws.JWS.verify(identityToken, userKey, ['RS256']);&#13;
+​```&#13;
+&#13;
+The jsrsasign API exposes two distinct functions: `JWS.verify` validates the signature only, and `JWS.verifyJWT` validates signature plus claims (`iss`, `aud`, `exp`, `nbf`). This handler uses `JWS.verify`.&#13;
+&#13;
+Lines 41-42, after the decoded payload is parsed:&#13;
+&#13;
+​```ts&#13;
+const { iss, sub } = decodedToken.payloadObj as any;&#13;
+if (!iss) {&#13;
+​```&#13;
+&#13;
+This is the only post-verification claim check. `iss` is asserted truthy but is never compared against `https://appleid.apple.com`. There is no `aud` check, no `exp` check, no `nbf` check, and no `nonce` binding anywhere in the function.&#13;
+&#13;
+Line 48 spreads the entire decoded payload into `serviceData`:&#13;
+&#13;
+​```ts&#13;
+...decodedToken.payloadObj,&#13;
+​```&#13;
+&#13;
+and the function returns `serviceData` at line 51.&#13;
+&#13;
+Three call sites consume the result and pass it to `Accounts.updateOrCreateUserFromExternalService`:&#13;
+&#13;
+- `apps/meteor/app/apple/server/loginHandler.ts:19` (primary login flow), reaching `Accounts.updateOrCreateUserFromExternalService('apple', serviceData, { profile })` at line 32.&#13;
+- `apps/meteor/app/apple/server/AppleCustomOAuth.ts:19` (custom OAuth flow).&#13;
+- `apps/meteor/app/apple/server/appleOauthRegisterService.ts:69` (profile-link flow), reaching `Accounts.updateOrCreateUserFromExternalService` at line 80.&#13;
+&#13;
+No upstream layer enforces the missing claims.</description>
+      <guid isPermaLink="false">GHSA-c75c-5hc7-j4vp</guid>
+      <pubDate>Tue, 16 Jun 2026 09:27:12 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] RocketChat/Rocket.Chat – Any Authenticated User Can Permanently Deregister Workspace from Rocket.Chat Cloud via Unprotected `/api/v1/fingerprint` Endpoint</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-8hhc-j325-rxqp</link>
