@@ -7,7 +7,62 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 17 Jun 2026 08:59:45 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 18 Jun 2026 08:42:38 +0000</lastBuildDate>
+    <item>
+      <title>[CRITICAL] espocrm/espocrm – Authenticated admin RCE via object deserialization in MassAction/Export params </title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-7q78-jjr9-mqcg</link>
+      <description>## From vendor&#13;
+&#13;
+Exploitable by an admin user.&#13;
+&#13;
+## Summary&#13;
+&#13;
+EspoCRM contains an insecure deserialization vulnerability in the processing of stored data associated with background operations. Serialized PHP objects may be deserialized without restricting allowed classes, which can allow an authenticated administrator to trigger arbitrary code execution on the server by supplying specially crafted data that is later processed by the application.&#13;
+&#13;
+## Credit&#13;
+&#13;
+PhuongNA - MiSoft CyberX Team&#13;
+</description>
+      <guid isPermaLink="false">GHSA-7q78-jjr9-mqcg</guid>
+      <pubDate>Thu, 18 Jun 2026 06:57:41 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Target list Opt-Out actions allow opting out record without edit access to Target List</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-mqp6-23xq-7q3r</link>
+      <description>## Summary&#13;
+&#13;
+EspoCRM's target-list opt-out actions enforce read access on the target list itself but do not enforce read or edit access on the target contact or lead whose opt-out state is being changed. A low-privileged user who can access a shared `TargetList` can toggle the `opted_out` state of a protected contact they cannot directly read or edit.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-mqp6-23xq-7q3r</guid>
+      <pubDate>Thu, 18 Jun 2026 06:53:32 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Portal user ACL bypass exposing internal stream notes with known ID</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-cg9f-34hj-p238</link>
+      <description>### From vendor&#13;
+&#13;
+An attacker would need to know the note ID and have stream access to the parent record, which reduces the likelihood of exploitation in real-world scenarios.&#13;
+&#13;
+### Summary&#13;
+EspoCRM portal users can read internal stream notes (`isInternal=true`) by fetching them directly via the portal Note API endpoint. Internal notes are designed to be visible only to internal agents; they are correctly hidden from portal users in stream list responses. However, the ACL checker for direct single-Note fetches does not enforce the `isInternal` restriction, allowing any portal user with stream access to a parent record to read all of its internal notes if they know the note ID.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-cg9f-34hj-p238</guid>
+      <pubDate>Thu, 18 Jun 2026 06:51:53 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – IDOR in Import exportErrors endpoint leaks CSV data of imports with known ID made by other users</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-rrcj-rhc2-ch5q</link>
+      <description>## From vendor&#13;
+&#13;
+An attacker would need to know the import record ID, which reduces the likelihood of exploitation in real-world scenarios.&#13;
+&#13;
+## Summary&#13;
+&#13;
+An authenticated user with Import scope access can retrieve the original CSV rows from any other user's import job by calling `POST /api/v1/Import/{id}/exportErrors` with an arbitrary import ID. The endpoint performs only a scope-level permission check and omits the entity-level ownership check that the `AccessChecker` for Import explicitly enforces and that all sibling import endpoints correctly apply. A successful call returns an `attachmentId` pointing to a CSV file containing rows from the victim's original import data.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-rrcj-rhc2-ch5q</guid>
+      <pubDate>Thu, 18 Jun 2026 06:50:34 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] zammad/zammad – Missing authorization on ticket attachment download</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-374g-4f73-g7m7</link>
