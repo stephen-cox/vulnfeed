@@ -7,7 +7,16 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 25 Jun 2026 07:39:13 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 26 Jun 2026 07:47:40 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] zammad/zammad – Arbitrary File Deletion via Unvalidated Session Identifier in Long Polling Controller</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-xp9w-hhf3-vfxx</link>
+      <description>Zammad's session management for websocket and long-polling connections is susceptible to a path traversal attack. Session identifiers supplied by the client are insufficiently validated before being used to construct internal file paths. When the file-based session store is active (the default configuration), an authenticated attacker can manipulate the session identifier to reference locations outside the intended storage directory, leading to the deletion of arbitrary files and directories on the server.&#13;
+&#13;
+Exploitation requires only a low-privilege authenticated session and a single crafted request. Instances configured to use the Redis-based session store are not affected.</description>
+      <guid isPermaLink="false">GHSA-xp9w-hhf3-vfxx</guid>
+      <pubDate>Thu, 25 Jun 2026 10:16:57 +0000</pubDate>
+    </item>
     <item>
       <title>[CRITICAL] espocrm/espocrm – Authenticated admin RCE via object deserialization in MassAction/Export params </title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-7q78-jjr9-mqcg</link>
