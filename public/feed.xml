@@ -7,7 +7,149 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 29 Jun 2026 08:55:36 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 30 Jun 2026 07:50:41 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui – POST /api/v1/images/edit bypasses the global image-edit switch and the per-user image-generation permission</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-rqj7-6wrp-6g2g</link>
+      <description>## Summary&#13;
+&#13;
+`POST /api/v1/images/edit` performed no authorization beyond requiring a verified account. Every other image-editing surface in Open WebUI enforces the global image-edit switch and the per-user image-generation permission — the `/api/v1/images/generations` route, the built-in `edit_image` tool, and the chat image-edit middleware — but the direct edit route enforced neither. A verified non-admin user could therefore invoke server-side image editing, reaching the configured image-edit provider with the administrator's credentials, even when the administrator had globally disabled image editing (`ENABLE_IMAGE_EDIT=False`) or denied that user image-generation permission. The image-editing UI is surfaced only to administrators (Playground), so the route additionally exposed an admin-only capability to any verified user.&#13;
+&#13;
+## Impact&#13;
+&#13;
+An authenticated, non-admin user can:&#13;
+&#13;
+- bypass the global `ENABLE_IMAGE_EDIT=False` administrator control;&#13;
+- bypass a denied per-user/group `features.image_generation` permission;&#13;
+- cause the server to send billable image-edit requests to the configured provider (OpenAI-compatible, Gemini, or ComfyUI) using administrator-configured credentials (`IMAGES_EDIT_OPENAI_API_KEY` for the OpenAI engine).&#13;
+&#13;
+No cross-user data is exposed and the provider credentials are never returned to the caller; the impact is the control/permission bypass and the associated billable resource consumption.&#13;
+&#13;
+## Affected Versions&#13;
+&#13;
+`&gt;= 0.8.11, &lt; 0.10.0` (the `/api/v1/images/edit` route was introduced in 0.8.11 and was ungated from the outset). Fixed in **v0.10.0**.&#13;
+&#13;
+## Details&#13;
+&#13;
+`/api/v1/images/generations` enforces `ENABLE_IMAGE_GENERATION` (403 if globally disabled) and `features.image_generation` (403 for non-admins without the permission). The `edit_image` built-in tool and the chat image-edit middleware likewise gate on `ENABLE_IMAGE_EDIT` and `features.image_generation`. The direct `POST /api/v1/images/edit` route ran on `Depends(get_verified_user)` alone and proceeded straight to provider dispatch, applying none of these controls.&#13;
+&#13;
+## Proof of Concept&#13;
+&#13;
+As a verified non-admin user, with image editing globally disabled (`ENABLE_IMAGE_EDIT=False`) or `features.image_generation` denied for the user:&#13;
+&#13;
+```http&#13;
+POST /api/v1/images/edit&#13;
+Authorization: Bearer &lt;non_admin_user_token&gt;&#13;
+Content-Type: application/json&#13;
+&#13;
+{"image":"data:image/png;base64,&lt;png&gt;","prompt":"edit","model":"gpt-image-1"}&#13;
+```&#13;
+&#13;
+The request reaches the configured image-edit provider and returns an edited image despite the disabled control/permission.&#13;
+&#13;
+## Patch&#13;
+&#13;
+The direct route is split from its shared implementation (mirroring `generate_images`/`image_generations`): a thin `/edit` route now enforces `ENABLE_IMAGE_EDIT` and the per-user `features.image_generation` permission before delegating to the shared `image_edits()` implementation. The internal callers (the `edit_image` tool and the chat middleware) call the implementation directly and already gate themselves, so they are unaffected.</description>
+      <guid isPermaLink="false">GHSA-rqj7-6wrp-6g2g</guid>
+      <pubDate>Mon, 29 Jun 2026 23:29:25 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui – ReDoS in skill-mention regexes causes whole-instance DoS on default config</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-ffpj-xv5c-p3gw</link>
+      <description>## Summary&#13;
+Two regexes in `backend/open_webui/utils/middleware.py` that parse `&lt;$skillId|label&gt;` skill-mention tags backtrack in O(n²) on input that contains `&lt;$` followed by a long run with no closing `&gt;`. Both run synchronously, on the asyncio event loop, on **every** chat completion with no feature gate. Because the default deployment is a single uvicorn worker, one such input pins a CPU core inside `re` and freezes the entire instance for all users until the worker is killed. Any authenticated user can trigger it with one chat message; it also fires accidentally on benign retrieved content (a RAG chunk or tool output) containing the pattern.&#13;
+&#13;
+## Affected versions&#13;
+`&gt;= 0.9.2, &lt; 0.10.0`. Fixed in **v0.10.0** (there is no 0.9.7 release).&#13;
+- `SKILL_MENTION_RE` (the extract pattern) has been O(n²) since **v0.9.2**; exploitable on 0.9.2–0.9.5 with a large input (hundreds of KB).&#13;
+- **v0.9.6** added a second, far more aggressive O(n²) in the strip pattern (introduced by the "keep label as readable text" change), so on 0.9.6 a small input is enough to hang the instance.&#13;
+&#13;
+Both are fixed by the same patch.&#13;
+&#13;
+## Affected component&#13;
+`backend/open_webui/utils/middleware.py` (line numbers as of v0.9.6):&#13;
+&#13;
+```python&#13;
+# line 2223 — used by extract_skill_ids_from_messages(), called unconditionally (~line 2625)&#13;
+SKILL_MENTION_RE = re.compile(r'&lt;\$([^|&gt;]+)\|?[^&gt;]*&gt;')&#13;
+&#13;
+# line 2247 — used by strip_skill_mentions(), called unconditionally (line 2662)&#13;
+strip_re = re.compile(r'&lt;\$[^|&gt;]+\|?([^&gt;]*)&gt;')&#13;
+```&#13;
+&#13;
+`extract_skill_ids_from_messages()` runs before the `if all_skill_ids:` block (that guard gates only skill *injection*, not the regex), and `strip_skill_mentions()` runs with no guard at all. Neither requires a skill to exist or any setting to be enabled. Both functions are plain synchronous calls inside the async `process_chat_payload` coroutine, so they block the event loop; with the default `UVICORN_WORKERS=1` (`backend/start.sh`) the whole instance stalls.&#13;
+&#13;
+## Root cause&#13;
+`[^|&gt;]` is a subset of `[^&gt;]`, so the quantifier pair `[^|&gt;]+ \|? [^&gt;]*` is ambiguous: on input that never closes with `&gt;`, `[^|&gt;]+` greedily consumes the tail, `&gt;` fails, and the engine backtracks through every split point between `[^|&gt;]+` and `[^&gt;]*` — O(n) positions each doing O(n) work. Polynomial, not exponential, but more than enough to hang a single worker on a ~100 KB input.&#13;
+&#13;
+## Proof of concept&#13;
+Standalone (no Open WebUI required):&#13;
+&#13;
+```python&#13;
+import re, time&#13;
+EXTRACT = re.compile(r'&lt;\$([^|&gt;]+)\|?[^&gt;]*&gt;')&#13;
+STRIP   = re.compile(r'&lt;\$[^|&gt;]+\|?([^&gt;]*)&gt;')&#13;
+for n in (8_000, 16_000, 32_000, 64_000):&#13;
+    s = '&lt;$' + ('a' * n)&#13;
+    for name, rx in (('extract', EXTRACT), ('strip', STRIP)):&#13;
+        t = time.perf_counter(); rx.search(s)&#13;
+        print(f'n={n:&gt;6} {name:&gt;7} = {(time.perf_counter()-t)*1000:8.1f} ms')&#13;
+```&#13;
+&#13;
+Time quadruples per doubling of `n` (textbook O(n²)); the strip pattern runs for ~6 seconds on a 64k blob and for minutes on a ~96 KB one.&#13;
+&#13;
+End-to-end against a live instance (default config):&#13;
+1. `docker run ghcr.io/open-webui/open-webui:v0.9.6` on defaults.&#13;
+2. Log in as any user (no admin or skill setup).&#13;
+3. Send a chat message containing `&lt;$` followed by 50k+ characters with no `&gt;`.&#13;
+4. One CPU core pegs in `re`; UI and API stop responding for every user until the worker is killed.&#13;
+&#13;
+## Patch&#13;
+Rewrite the optional `|label` as a non-capturing optional group so the two quantifiers no longer overlap. Both patterns become linear; captures and substituted output are unchanged on well-formed `&lt;$id|label&gt;`, `&lt;$id|&gt;`, and bare `&lt;$id&gt;` mentions.&#13;
+&#13;
+```python&#13;
+SKILL_MENTION_RE = re.compile(r'&lt;\$([^|&gt;]+)(?:\|[^&gt;]*)?&gt;')&#13;
+strip_re         = re.compile(r'&lt;\$[^|&gt;]+(?:\|([^&gt;]*))?&gt;')&#13;
+```&#13;
+&#13;
+After the patch the same hostile input returns in under 1 ms. Shipped in v0.10.0.&#13;
+&#13;
+## Credit&#13;
+Reported by @Vlad-WKG, including a correct root-cause analysis and patch.</description>
+      <guid isPermaLink="false">GHSA-ffpj-xv5c-p3gw</guid>
+      <pubDate>Mon, 29 Jun 2026 23:25:59 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] open-webui/open-webui – Scheduled automations continue after pending-user deactivation and stored model ACL revocation</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-mvx4-532p-xfm9</link>
+      <description>**Title:** Scheduled automations continue after pending-user deactivation and stored model ACL revocation&#13;
+&#13;
+### Summary&#13;
+&#13;
+Open WebUI documents `pending` as a zero-access role used for new sign-ups and deactivated users, and normal HTTP routes enforce that with `get_verified_user()` (which rejects `pending`), while automation create/update/run routes additionally require the `features.automations` permission. Two paths missed that lifecycle gate, so a deactivated (`pending`) account could keep acting through the background automation scheduler:&#13;
+&#13;
+1. **Scheduler did not re-gate the owner.** When a stored automation became due, `execute_automation()` rehydrated the owner with `Users.get_user_by_id(...)` and re-entered the chat completion pipeline without re-checking that the owner was still `user`/`admin` or still held `features.automations`. A still-active automation therefore kept running after its owner was deactivated.&#13;
+2. **Model ACL only enforced for exact role `user`.** `check_model_access()` applied private-model grants only when `user.role == "user"`, so a `pending` principal fell through a branch that denies a normal non-owner `user`.&#13;
+&#13;
+Net effect: a deactivated account could continue scheduled chat generation through the background worker, consuming the operator's configured model-provider credentials and reaching a stored automation model ID that its current role/ACL state would no longer permit through normal routes.&#13;
+&#13;
+### Impact&#13;
+&#13;
+A `pending`/deactivated account continues to execute due scheduled automations after its access has been revoked, consuming the operator's provider credentials, quota and shared capacity, and bypassing the private-model ACL for the automation's stored model ID. Exploitation requires a previously created active automation and a later transition to `pending` (deactivation or approval rollback), so it is bounded and not interactive. It does not grant unauthenticated access, account takeover, code execution, or cross-user data exfiltration.&#13;
+&#13;
+### Patched&#13;
+&#13;
+In 0.10.0:&#13;
+&#13;
+- `execute_automation()` aborts and records an error unless the rehydrated owner is still `user` or `admin` and (for non-admins) still holds `features.automations`, so a deactivated or de-permissioned owner's due automation no longer runs.&#13;
+- `check_model_access()` enforces model ACLs for every non-admin role rather than only the exact role `user`, so a `pending` or otherwise unrecognised role no longer falls through.&#13;
+&#13;
+### Credits&#13;
+&#13;
+@rexpository</description>
+      <guid isPermaLink="false">GHSA-mvx4-532p-xfm9</guid>
+      <pubDate>Mon, 29 Jun 2026 23:19:39 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] zammad/zammad – Arbitrary File Deletion via Unvalidated Session Identifier in Long Polling Controller</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-xp9w-hhf3-vfxx</link>
@@ -5372,100 +5514,6 @@ Recommended fixes:&#13;
       <pubDate>Fri, 08 May 2026 15:33:41 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui – Ollama Model Access Control Bypass via /api/generate, /api/embed, /api/embeddings, and /api/show</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-rcvp-6fgw-c7fh</link>
-      <description># Ollama Model Access Control Bypass via /api/generate, /api/embed, /api/embeddings, and /api/show&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Ollama proxy endpoints missing model access control:&#13;
-- `backend/open_webui/routers/ollama.py` (lines 955-995, `generate_completion`)&#13;
-- `backend/open_webui/routers/ollama.py` (lines 835-881, `embed`)&#13;
-- `backend/open_webui/routers/ollama.py` (lines 891-937, `embeddings`)&#13;
-- `backend/open_webui/routers/ollama.py` (lines 791-820, `show_model_info`)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions with Ollama model access control support.&#13;
-&#13;
-## Description&#13;
-&#13;
-Four Ollama proxy endpoints accept any model name from the user and forward the request to the Ollama backend without checking whether the user is authorized to access that model. These endpoints only require `get_verified_user` (any authenticated non-pending user) and validate that the model exists in the full unfiltered model list, but never check `AccessGrants.has_access()`.&#13;
-&#13;
-This is in direct contrast with the `/ollama/api/chat` endpoint (line 1101-1122) which correctly validates model access grants and returns 403 for unauthorized users:&#13;
-&#13;
-```python&#13;
-# /api/chat (line 1101-1122) — CORRECTLY checks access&#13;
-if not bypass_filter and user.role == 'user':&#13;
-    user_group_ids = {group.id for group in Groups.get_groups_by_member_id(user.id)}&#13;
-    if not (&#13;
-        user.id == model_info.user_id&#13;
-        or AccessGrants.has_access(&#13;
-            user_id=user.id, resource_type='model',&#13;
-            resource_id=model_info.id, permission='read',&#13;
-            user_group_ids=user_group_ids,&#13;
-        )&#13;
-    ):&#13;
-        raise HTTPException(status_code=403, detail='Model not found')&#13;
-&#13;
-# /api/generate (line 955-995) — NO access check at all&#13;
-# /api/embed (line 835-881) — NO access check at all&#13;
-# /api/embeddings (line 891-937) — NO access check at all&#13;
-# /api/show (line 791-820) — NO access check at all&#13;
-```&#13;
-&#13;
-## CVSS 3.1 Breakdown&#13;
-&#13;
-| Metric | Value | Rationale |&#13;
-|--------|-------|-----------|&#13;
-| Attack Vector | Network (N) | Exploited remotely via API calls |&#13;
-| Attack Complexity | Low (L) | Single API call with a known model name |&#13;
-| Privileges Required | Low (L) | Requires any authenticated user account |&#13;
-| User Interaction | None (N) | No victim interaction required |&#13;
-| Scope | Unchanged (U) | Impact within the Ollama model access boundary |&#13;
-| Confidentiality | Low (L) | `/api/show` exposes restricted model details including system prompts and parameters |&#13;
-| Integrity | None (N) | No data modification |&#13;
-| Availability | Low (L) | Unauthorized consumption of GPU/compute resources on restricted models |&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. Admin configures model access control, restricting `llama3:70b` to the "ML Engineers" group. Regular user Alice is only authorized for `llama3:8b`.&#13;
-2. Alice knows the restricted model name (model names are predictable — `llama3:70b`, `mistral:latest`, etc.).&#13;
-3. Alice calls the unprotected endpoints directly:&#13;
-   ```bash&#13;
-   # Run completions on restricted model&#13;
-   curl -X POST /ollama/api/generate \&#13;
-     -H "Authorization: Bearer &lt;alice_token&gt;" \&#13;
-     -d '{"model": "llama3:70b", "prompt": "..."}'&#13;
-&#13;
-   # View restricted model details and system prompt&#13;
-   curl -X POST /ollama/api/show \&#13;
-     -H "Authorization: Bearer &lt;alice_token&gt;" \&#13;
-     -d '{"model": "llama3:70b"}'&#13;
-&#13;
-   # Generate embeddings with restricted model&#13;
-   curl -X POST /ollama/api/embed \&#13;
-     -H "Authorization: Bearer &lt;alice_token&gt;" \&#13;
-     -d '{"model": "llama3:70b", "input": "..."}'&#13;
-   ```&#13;
-4. All requests succeed and are proxied to Ollama without any access control check.&#13;
-&#13;
-## Impact&#13;
-&#13;
-- Model access control is silently ineffective for four out of five Ollama proxy endpoints&#13;
-- Unauthorized users can consume GPU/compute resources on restricted models (cost and capacity impact in multi-user deployments)&#13;
-- `/api/show` exposes restricted model configurations including system prompts, parameters, templates, and license information&#13;
-- Admins have a false sense of security — access restrictions appear to work via the main chat interface but are trivially bypassed via direct API calls&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Ollama must be configured as a backend&#13;
-- Admin must have configured model access control (not using `BYPASS_MODEL_ACCESS_CONTROL=true`)&#13;
-- Attacker must know the restricted model name (model names follow predictable conventions)</description>
-      <guid isPermaLink="false">GHSA-rcvp-6fgw-c7fh</guid>
-      <pubDate>Tue, 05 May 2026 11:19:27 +0000</pubDate>
-    </item>
-    <item>
       <title>[MEDIUM] open-webui/open-webui – Channel Access Grants Bypass filter_allowed_access_grants</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-7rjh-px4v-5w55</link>
       <description># Channel Access Grants Bypass filter_allowed_access_grants&#13;
@@ -5693,90 +5741,6 @@ The same bypass is available via the import endpoint, which additionally allows 
       <pubDate>Tue, 05 May 2026 11:18:42 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui – Knowledge Base Destruction and RAG Poisoning via Unauthorized Collection Overwrite</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-7r82-qhg4-6wvj</link>
-      <description># Knowledge Base Destruction and RAG Poisoning via Unauthorized Collection Overwrite&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Retrieval web/YouTube processing endpoints:&#13;
-- `backend/open_webui/routers/retrieval.py` (lines 1810-1837, `process_web`)&#13;
-- `backend/open_webui/routers/retrieval.py` (the parallel `process_youtube` endpoint)&#13;
-- `backend/open_webui/routers/retrieval.py` (line 1445, `save_docs_to_vector_db` call chain)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions with RAG/knowledge base functionality.&#13;
-&#13;
-## Description&#13;
-&#13;
-The `POST /api/v1/retrieval/process/web` endpoint accepts a user-supplied `collection_name` and an `overwrite` query parameter (default: `True`). It performs no authorization check on whether the calling user owns or has write access to the target collection. When `overwrite=True`, `save_docs_to_vector_db` calls `VECTOR_DB_CLIENT.delete_collection()` on the target collection before writing new content.&#13;
-&#13;
-Combined with the knowledge base enumeration vulnerability (separate report), an attacker can trivially discover any user's knowledge base UUID and then destroy or poison it.&#13;
-&#13;
-```python&#13;
-# retrieval.py:1810-1837 — no collection authorization check&#13;
-@router.post('/process/web')&#13;
-async def process_web(&#13;
-    request: Request,&#13;
-    form_data: ProcessUrlForm,&#13;
-    user=Depends(get_verified_user),&#13;
-    ...&#13;
-):&#13;
-    # ... fetch and process the URL ...&#13;
-    save_docs_to_vector_db(&#13;
-        request=request,&#13;
-        docs=docs,&#13;
-        collection_name=form_data.collection_name,  # attacker-controlled, unchecked&#13;
-        overwrite=overwrite,                        # defaults to True&#13;
-        ...&#13;
-    )&#13;
-```&#13;
-&#13;
-## CVSS 3.1 Breakdown&#13;
-&#13;
-| Metric | Value | Rationale |&#13;
-|--------|-------|-----------|&#13;
-| Attack Vector | Network (N) | Exploited remotely via API call |&#13;
-| Attack Complexity | Low (L) | Single API call with a known KB UUID |&#13;
-| Privileges Required | Low (L) | Requires any authenticated user account |&#13;
-| User Interaction | None (N) | No victim interaction required |&#13;
-| Scope | Unchanged (U) | Impact within the knowledge base authorization boundary |&#13;
-| Confidentiality | None (N) | No data disclosure from this vulnerability directly |&#13;
-| Integrity | High (H) | Complete replacement of victim's KB content with attacker-controlled data |&#13;
-| Availability | High (H) | Victim's original KB embeddings are deleted; KB effectively destroyed |&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. Attacker discovers victim's KB UUID via the `knowledge-bases` meta-collection (separate finding) or other enumeration.&#13;
-2. Attacker sends:&#13;
-   ```&#13;
-   POST /api/v1/retrieval/process/web?overwrite=true&#13;
-   {&#13;
-     "url": "https://attacker.com/poison",&#13;
-     "collection_name": "&lt;victim_kb_uuid&gt;"&#13;
-   }&#13;
-   ```&#13;
-3. The endpoint fetches content from the attacker's URL.&#13;
-4. `save_docs_to_vector_db` deletes the entire vector collection belonging to the victim's knowledge base.&#13;
-5. The attacker's fetched content is embedded and written as the new collection content.&#13;
-6. Victim's RAG queries against their KB now return attacker-controlled content instead of their original documents.&#13;
-&#13;
-## Impact&#13;
-&#13;
-- **Data destruction:** Victim's original KB embeddings are permanently deleted from the vector store&#13;
-- **RAG poisoning:** Attacker-controlled content replaces legitimate knowledge, causing the LLM to return misleading or malicious answers to the victim&#13;
-- **Indirect prompt injection:** Poisoned content can contain crafted prompts that manipulate the victim's LLM behavior when queried&#13;
-- **Persistence:** The poisoned content persists until the KB is rebuilt from source files&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Attacker must have a valid user account&#13;
-- Attacker must know the target collection name (KB UUID) — easily obtained via the `knowledge-bases` enumeration finding</description>
-      <guid isPermaLink="false">GHSA-7r82-qhg4-6wvj</guid>
-      <pubDate>Tue, 05 May 2026 11:18:35 +0000</pubDate>
-    </item>
-    <item>
       <title>[HIGH] open-webui/open-webui – Stale Admin Role in Socket.IO Session Pool Enables Post-Demotion Cross-User Note Access</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-45m8-cpm2-3v65</link>
       <description># Stale Admin Role in Socket.IO Session Pool Enables Post-Demotion Cross-User Note Access&#13;
@@ -5918,91 +5882,6 @@ The same cross-instance poisoning applies to `terminal_servers`.&#13;
 - Attacker has admin access on one of the instances (or escalates to admin via any available path)</description>
       <guid isPermaLink="false">GHSA-3x8w-4f7p-xxc2</guid>
       <pubDate>Tue, 05 May 2026 11:18:22 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] open-webui/open-webui – LDAP Empty Password Authentication Bypass</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2r4p-jpmg-48f4</link>
-      <description># LDAP Empty Password Authentication Bypass&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-LDAP authentication endpoint:&#13;
-- `backend/open_webui/routers/auths.py` (lines 468-477, user bind with empty password)&#13;
-- `backend/open_webui/models/auths.py` (lines 58-60, `LdapForm` model)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions with LDAP authentication support.&#13;
-&#13;
-## Description&#13;
-&#13;
-The LDAP authentication endpoint does not validate that the submitted password is non-empty before performing a Simple Bind against the LDAP server. Per RFC 4513 Section 5.1.2, a Simple Bind with a valid DN and an empty password constitutes an "unauthenticated simple authentication" — many LDAP servers (including OpenLDAP in default configuration and some Active Directory setups) return success (resultCode 0) for this operation.&#13;
-&#13;
-The `LdapForm` Pydantic model accepts `password: str` with no minimum length constraint, so an empty string passes validation. The subsequent `Connection.bind()` call succeeds on vulnerable LDAP servers, and the application issues a full session token for the target user.&#13;
-&#13;
-```python&#13;
-# models/auths.py:58-60 — no min_length on password&#13;
-class LdapForm(BaseModel):&#13;
-    user: str&#13;
-    password: str&#13;
-&#13;
-# auths.py:469-477 — empty password reaches LDAP bind&#13;
-connection_user = Connection(&#13;
-    server,&#13;
-    user_dn,&#13;
-    form_data.password,    # can be ""&#13;
-    auto_bind='NONE',&#13;
-    authentication='SIMPLE',&#13;
-)&#13;
-if not await asyncio.to_thread(connection_user.bind):&#13;
-    raise HTTPException(400, 'Authentication failed.')&#13;
-&#13;
-# If bind succeeds (which it does with empty password on many servers),&#13;
-# execution continues and a full session token is issued&#13;
-```&#13;
-&#13;
-## CVSS 3.1 Breakdown&#13;
-&#13;
-| Metric | Value | Rationale |&#13;
-|--------|-------|-----------|&#13;
-| Attack Vector | Network (N) | Exploited remotely via the LDAP login endpoint |&#13;
-| Attack Complexity | Low (L) | Single request with an empty password field |&#13;
-| Privileges Required | None (N) | No prior authentication needed |&#13;
-| User Interaction | None (N) | No victim interaction required |&#13;
-| Scope | Unchanged (U) | Impact within the application's authentication boundary |&#13;
-| Confidentiality | High (H) | Full access to victim's account data — chats, files, API keys, settings |&#13;
-| Integrity | High (H) | Can modify victim's data, settings, send messages as victim |&#13;
-| Availability | None (N) | No direct denial of service |&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. LDAP authentication is enabled on the Open WebUI instance.&#13;
-2. The underlying LDAP server accepts unauthenticated simple binds (OpenLDAP default, some AD configs).&#13;
-3. Attacker sends:&#13;
-   ```&#13;
-   POST /api/v1/auths/ldap&#13;
-   {"user": "admin_username", "password": ""}&#13;
-   ```&#13;
-4. The app DN bind succeeds normally (line 366), finds the target user via LDAP search.&#13;
-5. The user bind (line 469-477) sends a Simple Bind with the target's DN and an empty password.&#13;
-6. The LDAP server returns success for the unauthenticated bind.&#13;
-7. `authenticate_user_by_email` (line 507) issues a full session token for the target user.&#13;
-8. Attacker has complete access to the victim's account.&#13;
-&#13;
-## Impact&#13;
-&#13;
-- Complete authentication bypass — any LDAP user account can be taken over without knowing the password&#13;
-- Includes admin accounts if they authenticate via LDAP&#13;
-- No rate limiting on the LDAP endpoint (unlike the password signin endpoint)&#13;
-- Zero interaction required from the victim&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- LDAP must be enabled (`ENABLE_LDAP=True`, disabled by default)&#13;
-- The LDAP server must accept unauthenticated simple binds with empty passwords (OpenLDAP default behavior, configurable on AD)&#13;
-- Attacker must know a valid LDAP username</description>
-      <guid isPermaLink="false">GHSA-2r4p-jpmg-48f4</guid>
-      <pubDate>Tue, 05 May 2026 11:18:17 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui – Mass Assignment via Pydantic extra='allow' Allows Creating Folders in Other Users' Accounts</title>
