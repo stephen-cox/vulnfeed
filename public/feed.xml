@@ -7,7 +7,111 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 01 Jul 2026 08:08:18 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 02 Jul 2026 07:27:42 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] composer/composer – Path traversal in package bin field lets dependencies chmod arbitrary host files</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-gjfg-22fp-rrxx</link>
+      <description>## Summary&#13;
+&#13;
+A Composer package declares its executables in the `bin` field of its `composer.json`. When Composer installs a package, it processes each `bin` entry and changes the file mode of the corresponding file so it is executable.&#13;
+&#13;
+If a `bin` entry contains `..` path segments, it can resolve to a path outside the package's own install directory. A malicious package can use this to make Composer run `chmod` against a file that already exists elsewhere on the machine. The resulting mode is world-readable and world-executable (0755 under the common umask of 022). This happens when the package is installed, e.g. during `composer install`, `composer update`, and `composer require`. Any dependency can trigger it, including a transitive dependency several levels deep.&#13;
+&#13;
+The vulnerability *changes file permissions only, and does not read, modify, or execute the contents of the target file, and it is not remote code execution*. The impact is to confidentiality: a file with deliberately restrictive permissions, such as a private key at mode 0600, can be made readable by other users on the same host.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+We reviewed packagist.org data and found no evidence that any published package exploited this vulnerability. If you install packages only from packagist.org, you are not affected by any known exploitation.&#13;
+&#13;
+You are potentially affected if *all* of the following are true:&#13;
+&#13;
+- Your Composer project depends, directly or transitively, on a package you do not fully trust.&#13;
+- A file you rely on for its restrictive permissions already exists at a path the Composer process can write to. Examples include SSH private keys, `.env` files, `~/.aws/credentials`, and `.netrc`.&#13;
+&#13;
+The most likely way to be affected is to add or update a dependency that is malicious or has been compromised, then run an install on a machine that holds sensitive, permission-restricted files.&#13;
+&#13;
+Two points to note:&#13;
+&#13;
+- `--no-scripts`, `--no-plugins`, and an `allow-plugins` allow-list do not prevent this. The permission change happens during normal binary installation, outside the plugin and script trust model.&#13;
+- Impact scales with privilege: As a regular user, only files owned by that user can be affected, which typically means your own secrets becoming readable by other local users on a shared machine. As root (for example, a CI container with no non-root user, or `sudo composer install`), any file on the system can be affected, including system credential stores.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+The fix makes Composer reject any package whose binary entry contains a `..` path segment. During install/update the operation aborts before any file permission is changed, and the same check now also applies when a package is published to Packagist.org, so such packages are refused upstream.&#13;
+&#13;
+Fixed in 2.2.29 (2.2 LTS line) and 2.10.2 (current 2.x line). Composer 1.x is end of life and will not be patched. 1.x users should upgrade to a patched 2.x release.&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+Upgrading to a patched release is the only complete fix. There is no configuration option that disables the vulnerable behavior.</description>
+      <guid isPermaLink="false">GHSA-gjfg-22fp-rrxx</guid>
+      <pubDate>Wed, 01 Jul 2026 09:31:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] composer/composer –  URL-embedded HTTP-Basic username leaks to verbose logs (GitHub PAT exposure)</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-g6xq-892h-64w3</link>
+      <description>## Summary&#13;
+&#13;
+When Composer is run with -vvv (debug verbosity), it could print a credential that was embedded directly in a repository or package URL, but not as a password, to its debug output. Composer already masked the password portion of such URLs, but the username portion was shown in clear text. Because GitHub and several other services support placing an access token in the username position of a URL (for example https://[token]@github.com/owner/repo), a token used that way could end up written to the verbose log in full.&#13;
+&#13;
+This is an information disclosure issue. The credential is only ever exposed to whoever can already read Composer's debug output.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You are potentially affected only if **all** of the following apply:&#13;
+&#13;
+- A credential is embedded inside a URL that Composer handles, e.g. in a `repositories` entry in composer.json, in a package dist/source URL - rather than being supplied through auth.json or the COMPOSER_AUTH environment variable.&#13;
+- The secret sits in the username slot of that URL (e.g. `https://TOKEN@host/…`). A normal `username:password@host` pair where the username is an ordinary account name did not expose the password, that was already masked.&#13;
+- Composer is run with -vvv (debug verbosity), and that output is retained or shared somewhere others can read it: public CI build logs, output pasted into an issue or chat, archived terminal sessions, and so on.&#13;
+&#13;
+If you keep credentials in auth.json or environment variables, or you never run Composer at debug verbosity, you were not exposed.&#13;
+&#13;
+The most realistic exposure is the documented pattern of embedding a GitHub Personal Access Token in a URL's username position on a machine (often CI) that captures verbose output.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+The username is now masked the same way the password already was, so an embedded token no longer appears in verbose output (a short, non-secret prefix may be shown to aid debugging, but never the full value).&#13;
+&#13;
+Fixed in Composer 2.10.2 and the 2.2.29.&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+There is no configuration setting that prevents outputting credentials while keeping normal behavior.&#13;
+&#13;
+If you cannot upgrade right away, you can reduce exposure by:&#13;
+&#13;
+- Not running Composer with -vvv (debug verbosity) in environments where output is captured or shared.&#13;
+- Moving credentials out of URLs and into auth.json or COMPOSER_AUTH.&#13;
+- Scrubbing existing CI/build logs that may already contain a leaked token.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-g6xq-892h-64w3</guid>
+      <pubDate>Wed, 01 Jul 2026 09:31:06 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer – Arbitrary file write outside vendor via malicious transitive package name</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-499r-g7pc-vmp9</link>
+      <description>## Summary&#13;
+&#13;
+A maliciously crafted package, published on an untrusted third party repository other than Packagist.org or Private Packagist, can cause Composer to write files outside the `vendor/` directory and outside your project, with attacker-controlled content, during a normal `install` or `update` through using an invalid package name, which was not correctly validated by Composer.&#13;
+&#13;
+This is an arbitrary file write that can be used to execute code outside the Composer project's context in which you expected the package code to execute (for example by writing shell startup files, SSH `authorized_keys`, or a cron entry). It is a supply-chain issue: it requires a malicious or compromised package to be present in the dependency graph, it is not otherwise remotely exploitable against a machine.&#13;
+&#13;
+The fix makes Composer validate every package produced by dependency resolution before anything is written to `composer.lock` or installed, and abort with a security error if a package name is not a valid `vendor/package` name.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You may be affected if you install packages from an untrusted third party repository, which does not sufficiently validate package names. Packagist.org and Private Packagist are safe, as they validate package names correctly.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Fixed in **2.2.29** and **2.10.2**. Composer 1.x is also affected and you should move to a safe 2.x release.&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+Do not use untrusted package repositories. If you have to, mirror them through an internal repository like Private Packagist.</description>
+      <guid isPermaLink="false">GHSA-499r-g7pc-vmp9</guid>
+      <pubDate>Wed, 01 Jul 2026 09:31:04 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui – POST /api/v1/images/edit bypasses the global image-edit switch and the per-user image-generation permission</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-rqj7-6wrp-6g2g</link>
