@@ -7,7 +7,22 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Sat, 11 Jul 2026 06:09:54 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 12 Jul 2026 06:29:36 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] RocketChat/Rocket.Chat – Insecure implementation of websocket notifications</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-27jx-236m-3f5j</link>
+      <description>The Rocket.Chat web application supports many types of notifications, implemented as subscriptions to specific streams via the WebSocket protocol. The `stream-notify-user` stream is implemented insecurely. It is intended for notifications from other users and allows arbitrary authorized users to write arbitrary messages to it. The sender of the message is not checked and the client side UI generates notifications based only on the parameters passed in the notification body. Using this vulnerability, an attacker can create an ephemeral fake message in a user's currently open chat.</description>
+      <guid isPermaLink="false">GHSA-27jx-236m-3f5j</guid>
+      <pubDate>Sat, 11 Jul 2026 06:22:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] RocketChat/Rocket.Chat – Broken Access Control in channels.convertToTeam Allows Unauthorized Conversion of Public Channels into Teams</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-4mvx-9h2h-hmg3</link>
+      <description>### Summary&#13;
+The `channels.convertToTeam` REST endpoint lets any authenticated user convert an arbitrary public channel they have no relationship to into a team, simply by identifying the channel with `channelName` instead of `channelId` in the request body. The endpoint's own default permission (`create-team`) is granted to every registered user, and the one guard meant to restrict this to the channel's actual owner/moderator/admin (`edit-room`) is only evaluated when `channelId` is supplied.</description>
+      <guid isPermaLink="false">GHSA-4mvx-9h2h-hmg3</guid>
+      <pubDate>Sat, 11 Jul 2026 06:19:59 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] open-webui/open-webui – open-webui terminal proxy path traversal guard bypass via 9x encoded traversal</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-frvj-c5qp-xj4w</link>
