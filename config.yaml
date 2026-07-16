@@ -8,6 +8,7 @@ feeds:
       - argoproj/argo-cd
       - composer/composer
       - espocrm/espocrm
+      - icinga/icinga2
       - mautic/mautic
       - open-webui/open-webui
       - RocketChat/Rocket.Chat
