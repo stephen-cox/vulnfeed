@@ -15,4 +15,5 @@ feeds:
       - taigaio/taiga-back
       - taigaio/taiga-events
       - taigaio/taiga-front
+      - WordPress/wordpress-develop
       - zammad/zammad
