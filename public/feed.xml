@@ -7,7 +7,35 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 21 Jul 2026 06:24:48 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 22 Jul 2026 06:24:53 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – Facilitated SQL injection vulnerability in the `author__not_in` parameter of `WP_Query`</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-fpp7-x2x2-2mjf</link>
+      <description>WordPress versions 6.8 and higher are vulnerable to an SQL injection issue.&#13;
+&#13;
+In WordPress versions 6.9 and higher, this combined with a REST API batch-route confusion issue (GHSA-ff9f-jf42-662q) leads to Remote Code Execution.&#13;
+&#13;
+WordPress versions 7.0.2, 6.9.5, 6.8.6, and 7.1 beta2 have been released, containing fixes for the vulnerability.&#13;
+&#13;
+Due to the severity of the vulnerability it is recommended that you update your sites immediately.&#13;
+&#13;
+Discovered and responsibly disclosed as a team by TF1T, dtro, and haongo.</description>
+      <guid isPermaLink="false">GHSA-fpp7-x2x2-2mjf</guid>
+      <pubDate>Fri, 17 Jul 2026 19:00:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] WordPress/wordpress-develop – REST API batch-route confusion and SQL injection issue leading to Remote Code Execution</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-ff9f-jf42-662q</link>
+      <description>WordPress versions 6.9 and higher are vulnerable to a REST API batch-route confusion weakness, which combined with an SQL injection issue ([GHSA-fpp7-x2x2-2mjf](https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-fpp7-x2x2-2mjf)) leads to Remote Code Execution.&#13;
+&#13;
+WordPress versions 7.0.2, 6.9.5, and 7.1 beta2 have been released, containing fixes for the vulnerability.&#13;
+&#13;
+Due to the severity of the vulnerability it is recommended that you update your sites immediately.&#13;
+&#13;
+Discovered and responsibly disclosed by Adam Kues at Assetnote / Searchlight Cyber.</description>
+      <guid isPermaLink="false">GHSA-ff9f-jf42-662q</guid>
+      <pubDate>Fri, 17 Jul 2026 19:00:46 +0000</pubDate>
+    </item>
     <item>
       <title>[LOW] espocrm/espocrm – Stored XSS in wysiwyg template fields if CSP is disabled</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-x5p5-8mxj-9wv6</link>
@@ -10036,6 +10064,47 @@ Email us at [security@mautic.org](mailto:security@mautic.org)&#13;
       <pubDate>Thu, 11 Apr 2024 14:47:11 +0000</pubDate>
     </item>
     <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – Remote Code Execution in `WP_HTML_Token`</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-m257-q4m5-j653</link>
+      <description>### Impact&#13;
+&#13;
+Unserialization of instances of the `WP_HTML_Token` class allows for code execution via its `__destruct()` magic method.&#13;
+&#13;
+### Patches&#13;
+&#13;
+This issue was fixed in WordPress 6.4.2 on December 6th, 2023. Versions prior to 6.4.0 are not affected.&#13;
+&#13;
+### References&#13;
+&#13;
+This vulnerability was not responsibly disclosed to the WordPress security team and was published publicly as a zero-day vulnerability. [Find out more about responsibly reporting security vulnerabilities](https://make.wordpress.org/core/handbook/testing/reporting-security-vulnerabilities/).</description>
+      <guid isPermaLink="false">GHSA-m257-q4m5-j653</guid>
+      <pubDate>Wed, 03 Apr 2024 22:49:48 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop – PHP file upload bypass via Plugin installer</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-x79f-xrjv-jx5r</link>
+      <description>### Impact&#13;
+&#13;
+It's possible for a file of a type other than a zip file to be submitted as a new plugin by an administrative user on the Plugins -&gt; Add New -&gt; Upload Plugin screen in WordPress. If FTP credentials are requested for installation (in order to move the file into place outside of the `uploads` directory) then the uploaded file remains temporary available in the Media Library despite it not being allowed.&#13;
+&#13;
+If the `DISALLOW_FILE_EDIT` constant is set to `true` on the site _and_ FTP credentials are required when uploading a new theme or plugin, then this technically allows an RCE when the user would otherwise have no means of executing arbitrary PHP code. This issue _only_ affects Administrator level users on single site installations, and Super Admin level users on Multisite installations where it's otherwise expected that the user does not have permission to upload or execute arbitrary PHP code.&#13;
+&#13;
+* Lower level users are not affected&#13;
+* Sites where the `DISALLOW_FILE_MODS` constant is set to `true` are not affected&#13;
+* Sites where an administrative user either does not need to enter FTP credentials or they have access to the valid FTP credentials, are not affected&#13;
+&#13;
+### Patches&#13;
+&#13;
+The issue was fixed in WordPress 6.4.3 on January 30, 2024 and backported to branches back to 4.1.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+If the `DISALLOW_FILE_MODS` constant is defined as `true` then it will not be possible for any user to upload a plugin and therefore this issue will not be exploitable.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-x79f-xrjv-jx5r</guid>
+      <pubDate>Wed, 03 Apr 2024 22:25:47 +0000</pubDate>
+    </item>
+    <item>
       <title>[MEDIUM] argoproj/argo-cd – Uncontrolled Resource Consumption vulnerability in ArgoCD's repo server</title>
       <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-jhwx-mhww-rgc3</link>
       <description>### Impact&#13;
@@ -10724,6 +10793,84 @@ To the best of our knowledge, this was not actively exploited. The vulnerability
       <pubDate>Wed, 13 Apr 2022 14:55:37 +0000</pubDate>
     </item>
     <item>
+      <title>[HIGH] WordPress/wordpress-develop – WordPress: SQL Injection through WP_Query</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-6676-cqfm-gw84</link>
+      <description>### Impact&#13;
+Due to improper sanitization in WP_Query, there can be cases where SQL injection is possible through plugins or themes that use it in a certain way.&#13;
+ &#13;
+### Patches&#13;
+This has been patched in WordPress version 5.8.3. Older affected versions are also fixed via security release, that go back till 3.7.37. We strongly recommend that you keep auto-updates enabled.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/releases/&#13;
+https://hackerone.com/reports/1378209&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-6676-cqfm-gw84</guid>
+      <pubDate>Thu, 06 Jan 2022 21:12:48 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: Stored XSS through authenticated users</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-699q-3hj9-889w</link>
+      <description>### Impact&#13;
+Low-privileged authenticated users (like author) in WordPress core are able to execute JavaScript/perform stored XSS attack, which can affect high-privileged users. &#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress version 5.8.3. Older affected versions are also fixed via security release, that go back till 3.7.37. We strongly recommend that you keep auto-updates enabled.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/releases/&#13;
+https://hackerone.com/reports/425342&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-699q-3hj9-889w</guid>
+      <pubDate>Thu, 06 Jan 2022 21:12:28 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – WordPress: Authenticated Object Injection in Multisites</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-jmmq-m8p8-332h</link>
+      <description>### Impact&#13;
+On a multisite, users with Super Admin role can bypass explicit/additional hardening under certain conditions through object injection.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress version 5.8.3. Older affected versions are also fixed via security release, that go back till 3.7.37. We strongly recommend that you keep auto-updates enabled.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/releases/&#13;
+https://hackerone.com/reports/541469&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-jmmq-m8p8-332h</guid>
+      <pubDate>Thu, 06 Jan 2022 21:12:14 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: SQL injection due to improper sanitization in WP_Meta_Query</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-jp3p-gw8h-6x86</link>
+      <description>### Impact&#13;
+Due to lack of proper sanitization in `WP_Meta_Query`, there's potential for blind SQL Injection.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress version 5.8.3. Older affected versions are also fixed via security release, that go back till 4.1.34. We strongly recommend that you keep auto-updates enabled.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/releases/&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-jp3p-gw8h-6x86</guid>
+      <pubDate>Thu, 06 Jan 2022 21:11:52 +0000</pubDate>
+    </item>
+    <item>
       <title>[MEDIUM] composer/composer – Improper escaping of command arguments on Windows leading to command injection</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-frqg-7g38-6gcf</link>
       <description>### Impact&#13;
@@ -10737,6 +10884,82 @@ None&#13;
 </description>
       <guid isPermaLink="false">GHSA-frqg-7g38-6gcf</guid>
       <pubDate>Tue, 05 Oct 2021 07:54:53 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – Authenticated cross-site scripting (XSS) in WordPress editor</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-wh69-25hr-h94v</link>
+      <description>### Impact&#13;
+The issue allows an authenticated but low-privileged user (like contributor/author) to execute XSS in the editor. This bypasses the restrictions imposed on users who do not have the permission to post `unfiltered_html`.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.8, and will be pushed to older versions via minor releases (automatic updates). It's strongly recommended that you keep auto-updates enabled to receive the fix.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/releases/&#13;
+https://hackerone.com/reports/1142140&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-wh69-25hr-h94v</guid>
+      <pubDate>Thu, 09 Sep 2021 17:03:09 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress 5.8 beta: Private data disclosure/privilege escalation through the block editor</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-qxvw-qxm9-qvg6</link>
+      <description>### Impact&#13;
+Authenticated users who don't have permission to view private post types/data can bypass restrictions in the block editor under certain conditions.&#13;
+&#13;
+### Patches&#13;
+This affected WordPress 5.8 beta during the testing period. It's fixed in the final 5.8 release.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/releases/&#13;
+https://hackerone.com/reports/1225282&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-qxvw-qxm9-qvg6</guid>
+      <pubDate>Thu, 09 Sep 2021 17:02:24 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: Information Disclosure in wp_die() via JSONP, leading to CSRF</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-m9hc-7v5q-x8q5</link>
+      <description>### Impact&#13;
+Output data of the function wp_die() can be leaked under certain conditions, which can include data like nonces. It can then be used to perform actions on your behalf.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.8.1, along with any older affected versions via minor releases. It's strongly recommended that you keep auto-updates enabled to receive the fix.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/releases/&#13;
+https://hackerone.com/reports/1142140&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-m9hc-7v5q-x8q5</guid>
+      <pubDate>Thu, 09 Sep 2021 17:02:08 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – WordPress 5.8 beta: Stored Cross-Site Scripting (XSS) vulnerability in widget editor</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-fr6h-3855-j297</link>
+      <description>### Impact&#13;
+The widgets editor introduced in WordPress 5.8 beta 1 has improper handling of HTML input in the Custom HTML feature. This leads to stored XSS in the custom HTML widget.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.8. It was only present during the testing/beta phase of WordPress 5.8.&#13;
+&#13;
+### References&#13;
+https://hackerone.com/reports/1222797&#13;
+https://wordpress.org/news/category/releases/&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-fr6h-3855-j297</guid>
+      <pubDate>Thu, 09 Sep 2021 17:01:42 +0000</pubDate>
     </item>
     <item>
       <title>[LOW] icinga/icinga2 – Missing TLS server certificate validation in ElasticsearchWriter, GelfWriter, InfluxdbWriter and Influxdb2Writer</title>
@@ -10937,6 +11160,44 @@ If you have any questions or comments about this advisory:&#13;
       <pubDate>Tue, 27 Apr 2021 11:17:42 +0000</pubDate>
     </item>
     <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated XXE attack when installation is running PHP 8</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-rv47-pc52-qrhh</link>
+      <description>### Impact&#13;
+A user with the ability to upload files (like an Author) can exploit an XML parsing issue in the Media Library leading to XXE attacks. This requires WordPress installation to be using PHP 8. Access to internal files is possible in a successful XXE attack.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress version 5.7.1, along with the older affected versions via a minor release. We strongly recommend you keep auto-updates enabled.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/security/&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-rv47-pc52-qrhh</guid>
+      <pubDate>Thu, 15 Apr 2021 10:14:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated disclosure of password-protected posts and pages </title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-pmmh-2f36-wvhq</link>
+      <description>### Impact&#13;
+One of the blocks in the WordPress editor can be exploited in a way that exposes password-protected posts and pages. This requires at least contributor privileges.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.7.1, along with the older affected versions via minor releases. It's strongly recommended that you keep auto-updates enabled to receive the fix.&#13;
+&#13;
+### References&#13;
+https://wordpress.org/news/category/security/&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue in [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-pmmh-2f36-wvhq</guid>
+      <pubDate>Thu, 15 Apr 2021 10:14:22 +0000</pubDate>
+    </item>
+    <item>
       <title>[LOW] icinga/icinga2 – Revoked certificates due for renewal will automatically be renewed ignoring the CRL</title>
       <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-pcmr-2p2f-r7j6</link>
       <description>### Impact&#13;
@@ -10947,6 +11208,251 @@ When a CRL is specified in the ApiListener configuration, Icinga 2 only used it 
 Because Icinga 2 currently (v2.12.3 and earlier) uses a validity duration of 15 years, this only affects setups with external certificate signing and revoked certificates that expire in less then 30 days.</description>
       <guid isPermaLink="false">GHSA-pcmr-2p2f-r7j6</guid>
       <pubDate>Tue, 15 Dec 2020 13:26:39 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated XSS through embed block</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-rpwf-hrh2-39jf</link>
+      <description>### Impact&#13;
+Users with low privileges (like contributors and authors) can use the embed block in a certain way to inject unfiltered HTML in the block editor. When affected posts are viewed by a higher privileged user, this could lead to script execution in the editor/wp-admin.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.2, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-rpwf-hrh2-39jf</guid>
+      <pubDate>Fri, 12 Jun 2020 05:31:41 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated XSS via media attachment page</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-8q2w-5m27-wm27</link>
+      <description>### Impact&#13;
+Authenticated users with upload permissions (like authors) are able to inject JavaScript into some media file attachment pages in a certain way. This can lead to script execution in the context of a higher privileged user when the file is viewed by them.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.2, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-8q2w-5m27-wm27</guid>
+      <pubDate>Fri, 12 Jun 2020 05:31:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – WordPress: Open redirect in wp_validate_redirect()</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-q6pw-gvf4-5fj5</link>
+      <description>### Impact&#13;
+Due to an issue in wp_validate_redirect() and URL sanitization, an arbitrary external link can be crafted leading to unintended/open redirect when clicked.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.2, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-q6pw-gvf4-5fj5</guid>
+      <pubDate>Fri, 12 Jun 2020 05:31:29 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – WordPress: Authenticated self-XSS via theme uploads</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-87h4-phjv-rm6p</link>
+      <description>### Impact&#13;
+When uploading themes, the name of the theme folder can be crafted in a way that could lead to JavaScript execution in /wp-admin on the themes page. This does require an admin to upload the theme, and is low severity self-XSS.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.2, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-87h4-phjv-rm6p</guid>
+      <pubDate>Fri, 12 Jun 2020 05:31:25 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: 'set-screen-option' filter misuse by plugins leading to privilege escalation</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-4vpv-fgg2-gcqc</link>
+      <description>### Impact&#13;
+Misuse of the `set-screen-option` filter's return value allows arbitrary user meta fields to be saved. It does require an admin to install a plugin that would misuse the filter. Once installed, it can be leveraged by low privileged users.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.2, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-4vpv-fgg2-gcqc</guid>
+      <pubDate>Fri, 12 Jun 2020 05:31:18 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – Authenticated cross-site scripting (XSS) in WordPress Customizer</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-4mhg-j6fx-5g3c</link>
+      <description>### Impact&#13;
+A cross-site scripting (XSS) vulnerability in the navigation section of Customizer allows JavaScript code to be executed. Exploitation requires an authenticated user.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.1, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-4mhg-j6fx-5g3c</guid>
+      <pubDate>Thu, 30 Apr 2020 00:07:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – Specially crafted filenames in WordPress leading to XSS</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-3gw2-4656-pfr2</link>
+      <description>### Impact&#13;
+Files with a specially crafted name when uploaded to the Media section can lead to script execution upon accessing the file. This requires an authenticated user with privileges to upload files.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.1, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-3gw2-4656-pfr2</guid>
+      <pubDate>Thu, 30 Apr 2020 00:07:10 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – Password reset links invalidation issue in WordPress</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-ww7v-jg8c-q6jw</link>
+      <description>### Impact&#13;
+Password reset link emailed to a user do not expire upon changing the user password. Access would be needed to the email account of the user by a malicious party for successful execution.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.1, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-ww7v-jg8c-q6jw</guid>
+      <pubDate>Thu, 30 Apr 2020 00:06:57 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – WordPress: Unauthenticated disclosure of certain private posts</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-xhx9-759f-6p2w</link>
+      <description>### Impact&#13;
+Some private posts, which were previously public, can result in unauthenticated disclosure under a specific set of conditions.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.1, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-xhx9-759f-6p2w</guid>
+      <pubDate>Thu, 30 Apr 2020 00:06:41 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – WordPress: Cross-site scripting in stats method (object cache)</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-568w-8m88-8g2c</link>
+      <description>### Impact&#13;
+A vulnerability in the stats() method of class-wp-object-cache.php can be exploited to execute cross-site scripting (XSS) attacks.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.1, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-568w-8m88-8g2c</guid>
+      <pubDate>Thu, 30 Apr 2020 00:06:28 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – Cross-site scripting (XSS) in Search block - WordPress</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-vccm-6gmc-qhjh</link>
+      <description>### Impact&#13;
+A special payload can be crafted that can lead to scripts getting executed within the RSS and search block of the block editor. This requires an authenticated user with the ability to add content.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.4.1, along with all the previously affected versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-vccm-6gmc-qhjh</guid>
+      <pubDate>Thu, 30 Apr 2020 00:06:20 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop – Users without "publish_posts" rights can mark sticky/unsticky a post via REST API</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-g7rg-hchx-c2gw</link>
+      <description>### Impact&#13;
+Authenticated users who do not have the rights to publish a post are able to mark posts as sticky or unsticky via the REST API. For example, the contributor role does not have such rights, but this allowed them to bypass that.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.3.1, along with all the previous WordPress versions from 3.7 to 5.3 via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### References&#13;
+&#13;
+* https://wordpress.org/news/2019/12/wordpress-5-3-1-security-and-maintenance-release/&#13;
+* https://wordpress.org/support/wordpress-version/version-5-3-1/&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-g7rg-hchx-c2gw</guid>
+      <pubDate>Wed, 08 Jan 2020 17:15:37 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop – Stored cross-site scripting (XSS) through 'wp_targeted_link_rel'</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-xvg2-m2f4-83m7</link>
+      <description>### Impact&#13;
+The function `wp_targeted_link_rel()` can be used in a particular way to result in a stored cross-site scripting (XSS) vulnerability. &#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.3.1, along with all the previous affected WordPress versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### References&#13;
+* https://hackerone.com/reports/509930&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-xvg2-m2f4-83m7</guid>
+      <pubDate>Wed, 08 Jan 2020 16:11:05 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – Authenticated cross-site scripting (XSS) in WordPress block editor (within dashboard)</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-pg4x-64rh-3c9v</link>
+      <description>### Impact&#13;
+Authenticated users with lower privileges (like contributors) can inject JavaScript code in the block editor, which is executed within the dashboard. It can lead to an admin opening the affected post in the editor leading to XSS.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.3.1, along with all the previous affected WordPress versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### References&#13;
+* https://wordpress.org/news/2019/12/wordpress-5-3-1-security-and-maintenance-release/&#13;
+* https://hackerone.com/reports/731301&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-pg4x-64rh-3c9v</guid>
+      <pubDate>Fri, 20 Dec 2019 23:12:56 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop – Stored cross-site scripting (XSS) in WordPress block editor</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-x3wp-h3qx-9w94</link>
+      <description>### Impact&#13;
+WordPress users with lower privileges (like contributors) can inject JavaScript code in the block editor using a specific payload, which is executed within the dashboard. This can lead to XSS if an admin opens the post in the editor. Execution of this attack does require an authenticated user.&#13;
+&#13;
+### Patches&#13;
+This has been patched in WordPress 5.3.1, along with all the previous affected WordPress versions via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
+&#13;
+### References&#13;
+* https://wordpress.org/news/2019/12/wordpress-5-3-1-security-and-maintenance-release/&#13;
+* https://hackerone.com/reports/738644&#13;
+&#13;
+### For more information&#13;
+If you have any questions or comments about this advisory:&#13;
+* Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
+      <guid isPermaLink="false">GHSA-x3wp-h3qx-9w94</guid>
+      <pubDate>Fri, 20 Dec 2019 23:12:22 +0000</pubDate>
     </item>
   </channel>
 </rss>
