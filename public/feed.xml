@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 30 Jul 2026 06:23:39 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 31 Jul 2026 06:40:07 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] espocrm/espocrm – Admin path traversal in Label Manager allowing arbitrary JSON file read, write and delete</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-jr5q-25fw-27f8</link>
