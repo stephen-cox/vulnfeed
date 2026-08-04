@@ -7,7 +7,108 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 03 Aug 2026 06:55:41 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 04 Aug 2026 06:23:51 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Missing rate limiting allows password brute-forcing during two-factor login</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-6vh5-pfp2-5rmh</link>
+      <description>The two-factor login step let an attacker try unlimited password guesses for any account without triggering Zammad's normal lockout or rate limiting. The response also revealed whether a guess was correct, even before two-factor authentication was checked. This made it possible to brute-force weak or reused passwords.</description>
+      <guid isPermaLink="false">GHSA-6vh5-pfp2-5rmh</guid>
+      <pubDate>Tue, 04 Aug 2026 06:23:44 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad – Pending upload deletion bypass via legacy attachment endpoint</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-x4f3-367g-m93g</link>
+      <description>The legacy `destroy_form` action on AttachmentsController deletes UploadCache Store records based solely on a user-supplied `form_id` without verifying that the requesting user owns those records. An authenticated attacker who learns another user's pending-upload UUID can silently remove temporary file uploads before the victim submits their ticket or article.</description>
+      <guid isPermaLink="false">GHSA-x4f3-367g-m93g</guid>
+      <pubDate>Tue, 04 Aug 2026 06:23:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] zammad/zammad – Account takeover via unverified email matching during SSO auto-link</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-86cc-3ggh-mf2m</link>
+      <description>When the "Automatic account link on initial logon" setting is enabled, Zammad binds an incoming third-party (SSO) identity to an existing local account by matching the email address the identity provider reports, without verifying that the provider actually confirmed ownership of that email. An attacker who controls any identity at a configured provider - including, by default, any Azure AD tenant via Zammad's multi-tenant Microsoft 365 `/common` app registration - can set that identity's email to a victim's address, authenticate, and be logged in as the victim. This bypasses the victim's local password entirely and affects any existing account, including agents and administrators.&#13;
+&#13;
+Zammad will honor the `xms_edov` ID token claim when email verification is required in the Microsoft 365 setting, treating a missing claim as unverified.</description>
+      <guid isPermaLink="false">GHSA-86cc-3ggh-mf2m</guid>
+      <pubDate>Tue, 04 Aug 2026 06:23:23 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad – Authenticated agents can read AI summary error messages from inaccessible tickets</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-75j9-hpg4-j9f8</link>
+      <description>An authenticated user with agent permissions can supply an arbitrary AI analytics run identifier to the ticket summarize endpoint and receive the AI provider error message stored for that run, even if the run belongs to a ticket the agent is not authorized to access. The disclosure is limited to the provider error string; ticket content is not exposed.</description>
+      <guid isPermaLink="false">GHSA-75j9-hpg4-j9f8</guid>
+      <pubDate>Tue, 04 Aug 2026 06:23:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Channel admins can read unauthorized attachments via signature rich-text body</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pp8r-x7pp-5qj5</link>
+      <description>When creating or updating an email signature, Zammad processes inline images referenced in the signature body. If a signature body contains an HTML `img` tag pointing to any existing attachment, the system copies that attachment into a new signature-owned record - without checking whether the user has permission to access the original attachment.&#13;
+&#13;
+The newly created copy is then downloadable by the same channel-admin user, because attachment access is determined by the copy's owner (the signature), not the original object (e.g., a ticket or knowledge-base article). This allows a user with any of the `admin.channel_email`, `admin.channel_google`, `admin.channel_microsoft365`, or `admin.channel_microsoft_graph` permissions to read attachments they would otherwise be denied access to, such as ticket attachments belonging to groups they are not a member of.</description>
+      <guid isPermaLink="false">GHSA-pp8r-x7pp-5qj5</guid>
+      <pubDate>Tue, 04 Aug 2026 06:23:01 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Microsoft Graph error logs expose partially masked OAuth access tokens</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-qh8m-g5vr-7272</link>
+      <description>When a Microsoft Graph request fails, Zammad logs the error including the authentication token used to access the mailbox.&#13;
+&#13;
+The system attempts to hide this token in the log, but the masking is incomplete: for the token format Microsoft uses (JWT), only the first part is hidden, while the remaining parts remain readable in plain text.&#13;
+&#13;
+A Zammad admin with Microsoft Graph channel access can view these logs and see the partial token, which may reveal sensitive claims such as the account scope, tenant, or timing - and could assist in reconstructing the full token while it is still valid.</description>
+      <guid isPermaLink="false">GHSA-qh8m-g5vr-7272</guid>
+      <pubDate>Tue, 04 Aug 2026 06:22:55 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Remote image tracking bypass via shortened URL scheme</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fpwp-w2p4-hqg7</link>
+      <description>Zammad's HTML sanitizer, which blocks remote images in ticket articles and email views, can be bypassed using a shortened URL format that omits the double slash after the scheme (for example `http:tracking.example/pixel.gif` instead of `http://tracking.example/pixel.gif`).&#13;
+&#13;
+Modern browsers treat both forms as equivalent remote URLs. As a result, an attacker who sends a crafted email or ticket can cause the recipient's browser to silently load an image from an external server, revealing when and by whom the ticket was opened. Zammad's "remote content blocked" warning is not shown because the sanitizer does not recognize the shortened form as remote.</description>
+      <guid isPermaLink="false">GHSA-fpwp-w2p4-hqg7</guid>
+      <pubDate>Tue, 04 Aug 2026 06:22:48 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – HTML sanitizer API path allowlist bypass via interior path traversal in img src/srcset</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-33p2-cm7w-62g3</link>
+      <description>Attacker-controlled HTML in inbound emails or tickets could bypass the image URL sanitizer using path traversal sequences. &#13;
+&#13;
+When an authenticated agent views the content, the browser resolves the URL to a protected API endpoint and sends the request with the agent's session cookie, enabling side effects such as forced logout without any user interaction.</description>
+      <guid isPermaLink="false">GHSA-33p2-cm7w-62g3</guid>
+      <pubDate>Tue, 04 Aug 2026 06:22:39 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Stored XSS via unescaped option labels in the object attribute options context UI</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-r95m-ghj7-646x</link>
+      <description>Unsanitized option labels are rendered in the configuration dialogs of AI Agents within Zammad's admin UI.&#13;
+&#13;
+When rendering the list of selected options, the option label is output as raw HTML without escaping. An attacker who can control an option label - for example by setting a malicious string as a user or organization name used in a relation attribute, or by supplying a crafted custom attribute option value - can inject arbitrary HTML and JavaScript. The payload executes in the browser of any admin or agent who opens the affected object attribute configuration view.</description>
+      <guid isPermaLink="false">GHSA-r95m-ghj7-646x</guid>
+      <pubDate>Tue, 04 Aug 2026 06:22:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – Missing article authorization in ticket attachment clone endpoint</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-32gv-72x5-3983</link>
+      <description>A customer who can view a ticket cannot see its internal articles through the article listing API. However, the same customer can clone an attachment belonging to an internal article via the attachment `clone` endpoint, bypassing article-level authorization.&#13;
+&#13;
+This is the clone-action counterpart of [GHSA-374g-4f73-g7m7,](https://github.com/zammad/zammad/security/advisories/GHSA-374g-4f73-g7m7) which fixed only the direct download action (`attachment`). The sibling clone action in the same controller was left unpatched.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-32gv-72x5-3983</guid>
+      <pubDate>Tue, 04 Aug 2026 06:22:01 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Invalid PGP Detached Signatures Reported as Good Signature on Inbound Mail</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-r957-vp26-563q</link>
+      <description>Under certain conditions, Zammad's verification of inbound PGP-signed email can mark a message as carrying a valid ("Good") PGP signature from a registered sender key, even though the displayed message content is not actually covered by that signature. As a result, the inbound article may be stored with a successful signature status that does not reflect the authenticity of the shown content. This can mislead agents who rely on the signature indicator when assessing the trustworthiness of incoming mail.</description>
+      <guid isPermaLink="false">GHSA-r957-vp26-563q</guid>
+      <pubDate>Tue, 04 Aug 2026 06:21:56 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Sensitive Information Exposure in Integration Administration API</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-48h2-wv8r-fgp9</link>
+      <description>An authenticated administrator can obtain stored integration credentials in cleartext through the integration administration API. Certain responses do not consistently mask sensitive fields, so configured secrets can be returned in plain text instead of the expected masked placeholder. Both the LDAP and Exchange integrations are affected.</description>
+      <guid isPermaLink="false">GHSA-48h2-wv8r-fgp9</guid>
+      <pubDate>Tue, 04 Aug 2026 06:21:47 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] open-webui/open-webui – Any authenticated user can reach internal services and cloud metadata via NAT64-encoded URLs</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-8x5v-cpv7-8jjp</link>
@@ -5650,68 +5751,6 @@ The OAuth callback endpoints for Microsoft, Google, and Facebook external creden
 The external credentials handling got hardened by introducing CSRF state parameters for all supported providers.</description>
       <guid isPermaLink="false">GHSA-mfwp-hx66-626c</guid>
       <pubDate>Wed, 08 Apr 2026 06:18:31 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] zammad/zammad – Origin validation error in SSO mechanism</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-hcv6-w4h9-p2p7</link>
-      <description>### Impact&#13;
-The SSO mechanism in Zammad was not verifying the header originates from a trusted SSO proxy/gateway before applying further actions on it.&#13;
-&#13;
-This is now possible to configure properly within Zammad.</description>
-      <guid isPermaLink="false">GHSA-hcv6-w4h9-p2p7</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:29 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad – Missing authorization in AI assistance controller for text tools</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-96r7-29c8-2j7q</link>
-      <description>### Impact&#13;
-&#13;
-The REST endpoint POST `/api/v1/ai_assistance/text_tools/:id` was not checking if a user is privileged to use the text tool, resulting in being able to use it in all situations.&#13;
-&#13;
-The endpoint got improved and is now checking for having `ticket.agent` permission.</description>
-      <guid isPermaLink="false">GHSA-96r7-29c8-2j7q</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:26 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad – Server-side request forgery (SSRF) via webhooks</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-2vgc-vfh2-rw75</link>
-      <description>### Impact&#13;
-&#13;
-The webhook model was missing a proper validation for loop back addresses, or&#13;
-link-local addresses — only the URL scheme (HTTP/HTTPS) as well as the hostname was checked. This could end up in retrieving confidential metadata of cloud/hosting providers.&#13;
-&#13;
-The existing check is now extended and is applied when configuring webhooks as well as triggering webhook jobs.</description>
-      <guid isPermaLink="false">GHSA-2vgc-vfh2-rw75</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:19 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad – Improper neutralization of script-related HTML tags in ticket articles</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-c2cf-9fc7-jhf3</link>
-      <description>### Impact&#13;
-The HTML sanitizer for ticket articles was missing proper sanitization of `data: ...` URI schemes, resulting in storing such malicious content in the database of the Zammad instance.&#13;
-&#13;
-The Zammad GUI is rendering this content, due to applied CSP rules no harm was done by e.g., clicking such a link.</description>
-      <guid isPermaLink="false">GHSA-c2cf-9fc7-jhf3</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:16 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad – Incorrect access control in getting_started_controller</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-hcm9-ch62-5727</link>
-      <description>### Impact&#13;
-&#13;
-Unauthenticated remote attackers were able to access the getting started endpoint to get access to sensitive internal entity data, even after the system setup was completed.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-hcm9-ch62-5727</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:12 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] zammad/zammad – Information disclosure in ticket detail view of customers in shared organizations</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-prww-84vh-w978</link>
-      <description>### Impact&#13;
-&#13;
-Customers in shared organizations (means they can see each other's tickets) could see fields which are not intended for customers - including fields not intended for them at all (e.g. priority, custom ticket attributes for internal purposes). This was the case when a customer opened a ticket from another user of the same shared organization. They are not able to modify these fields.</description>
-      <guid isPermaLink="false">GHSA-prww-84vh-w978</guid>
-      <pubDate>Wed, 08 Apr 2026 06:17:58 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] RocketChat/Rocket.Chat – NoSQL injection in the EE ddp-streamer-service</title>
