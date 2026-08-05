@@ -7,7 +7,59 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 04 Aug 2026 06:23:51 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 05 Aug 2026 06:24:03 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Stored XSS in ticket article rendering in the new Vue-based interface</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-4x3x-65c5-8hx4</link>
+      <description>Under certain conditions, the new Vue-based interface could render ticket article content without applying the expected output encoding. This could be triggered by an authenticated user and affect other users viewing the ticket.&#13;
+&#13;
+The default Content Security Policy limits the real-world impact. The classic REST/CoffeeScript interface is not affected.</description>
+      <guid isPermaLink="false">GHSA-4x3x-65c5-8hx4</guid>
+      <pubDate>Tue, 04 Aug 2026 06:25:26 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – S/MIME signature verification allows forged sender impersonation</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-m9ff-hjr3-93h4</link>
+      <description>When Zammad checks the digital signature on an incoming S/MIME-signed email, it does not verify that the signing certificate is genuinely trusted - it only checks whether a certificate with a matching name is already stored in the system.&#13;
+&#13;
+An attacker can create their own certificate using the name of a real, previously trusted sender and use it to send a forged email. &#13;
+&#13;
+Zammad will display that email with the same "validly signed" indicator as a genuine message from the real sender, even though the attacker never had access to that sender's actual certificate or private key.</description>
+      <guid isPermaLink="false">GHSA-m9ff-hjr3-93h4</guid>
+      <pubDate>Tue, 04 Aug 2026 06:25:18 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Stored HTML injection in Knowledge Base video widget enables forced session switching via unescaped iframe attribute</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-cxjg-4gmf-5xqc</link>
+      <description>A user with Knowledge Base editing rights for a category can embed a video widget in a published answer with a specially crafted value. When the answer is rendered, that value is inserted into the page's HTML without being escaped for its attribute context, allowing it to break out and inject additional HTML into the page.&#13;
+&#13;
+When another user who has permission to switch between user sessions views the affected answer, the injected HTML causes their browser to silently send a request to Zammad's session-switching endpoint using their own active credentials. This results in switching their session to an account chosen by the person who wrote the Knowledge Base answer. No action is required from the viewer beyond opening the published answer.</description>
+      <guid isPermaLink="false">GHSA-cxjg-4gmf-5xqc</guid>
+      <pubDate>Tue, 04 Aug 2026 06:25:09 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad – Missing Authorization in TagsController#list Allows Cross-Object Tag Enumeration</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-6vgm-xxp4-p6jv</link>
+      <description>Any authenticated user can call the REST endpoint for getting a tag list and receive the tag names for the given ticket, regardless of whether they have access to that ticket. Tags are an internal categorization feature and may contain sensitive labels. Ticket IDs are sequential integers, making bulk enumeration straightforward.</description>
+      <guid isPermaLink="false">GHSA-6vgm-xxp4-p6jv</guid>
+      <pubDate>Tue, 04 Aug 2026 06:25:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – IDOR in External Data Source rendering exposes ticket, user, group, and organization data</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-jvm2-cr58-4qxp</link>
+      <description>Zammad's External Data Source feature, used to look up records from an external system, did not properly verify whether a user was allowed to see a specific ticket, user, group, or organization before including its details in a request to that external system.&#13;
+&#13;
+An authenticated user, including one with only basic customer access, could exploit this by referencing another record's ID, and thereby view details of tickets, customer accounts, teams, or organizations that did not belong to them.</description>
+      <guid isPermaLink="false">GHSA-jvm2-cr58-4qxp</guid>
+      <pubDate>Tue, 04 Aug 2026 06:24:54 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad – AI Agent template sanitizer bypass leads to remote code execution</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-gp3x-9xm8-rcj6</link>
+      <description>A security filter that protects Zammad's AI Agent configuration can be bypassed by entering specially crafted text into one of an AI Agent's fields. An administrator with permission to create or edit AI Agents could exploit this to run arbitrary commands on the server that hosts Zammad - potentially reading, modifying, or destroying all data stored on that server. No interaction from other users is needed; the malicious code runs automatically the next time the affected AI Agent processes a ticket.</description>
+      <guid isPermaLink="false">GHSA-gp3x-9xm8-rcj6</guid>
+      <pubDate>Tue, 04 Aug 2026 06:24:45 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] zammad/zammad – Missing rate limiting allows password brute-forcing during two-factor login</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-6vh5-pfp2-5rmh</link>
@@ -2150,36 +2202,6 @@ Response timing and error patterns differ between reachable and unreachable targ
 Requires a configured external authentication provider where the actor can modify their profile image URL.</description>
       <guid isPermaLink="false">GHSA-q3cr-3wq3-29hx</guid>
       <pubDate>Wed, 17 Jun 2026 06:48:52 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad – Incorrect Authorization and Improper Privilege Management in Zammad</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-p3mg-2jxr-hww2</link>
-      <description>This issue concerns a lack of discursive validation within the authorization cascade. It has been determined that the system-level enforcement of access restrictions during the initialization of new identity objects exhibits a discrepancy: Under specific conditions, the granular restrictions of the access key being used are overridden by the latent authorization authority of the parent account.&#13;
-&#13;
-Consequently, this means that the intended separation of functional areas is nullified, resulting in an uncontrolled expansion of administrative discretion. Due to this potential integrity breach of the entire trust environment, an immediate evaluation of the authorization hierarchies is imperative.&#13;
-&#13;
-### Impact&#13;
-&#13;
-An attacker can create new administrator accounts despite token restrictions. This grants full access to all system data (tickets, customers, configuration) and allows the attacker to take complete control of the Zammad instance.&#13;
-&#13;
-### Abuse Scenario&#13;
-&#13;
-The vulnerability stems from a lack of synergy between the token-based authorization logic and the target system's functional authorization hierarchy, which allows for iterative escalation of the privileged access context.</description>
-      <guid isPermaLink="false">GHSA-p3mg-2jxr-hww2</guid>
-      <pubDate>Wed, 17 Jun 2026 06:48:49 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad – Improper neutralization of `srcset` attribute in IMG tags in Zammad</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-7fwx-3xr4-qm6w</link>
-      <description>Zammad's HTML sanitizer (`HtmlSanitizer::Strict`) blocks external URLs in `&lt;img src&gt;` to prevent remote content loading, but the `srcset` attribute - also allowlisted for `&lt;img&gt;` - is not subject to the same check.&#13;
-&#13;
-This oversight allows an attacker to embed arbitrary external URLs in the `srcset` attribute just by sending an e-mail, effectively bypassing the external content protection.&#13;
-&#13;
-When an agent views the ticket containing the malicious `srcset`, the browser will silently load the attacker-controlled URL, resulting in the leakage of the agent's IP address, `User-Agent`, `Referer`, and the exact time the ticket was viewed.&#13;
-&#13;
-`HtmlSanitizer::Strict` got extended to block external URLs in the `srcset` attribute of `&lt;img&gt;` tags. This was done to prevent tracking pixels and external content loading, which could compromise user privacy.</description>
-      <guid isPermaLink="false">GHSA-7fwx-3xr4-qm6w</guid>
-      <pubDate>Wed, 17 Jun 2026 06:48:45 +0000</pubDate>
     </item>
     <item>
       <title>[CRITICAL] RocketChat/Rocket.Chat – Email Parameter Fallback Leads To Account Takeover Within Apple OAuth</title>
@@ -5702,55 +5724,6 @@ Confirmed impact:&#13;
 This may allow access to local-only services and other internal resources reachable from the application runtime.</description>
       <guid isPermaLink="false">GHSA-h7gx-8gwv-7g73</guid>
       <pubDate>Mon, 13 Apr 2026 10:30:38 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad – Missing authorization in AI assistance controller for context data used in text tools</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-89vv-6639-wcv8</link>
-      <description>### Impact&#13;
-&#13;
-The REST endpoint POST `/api/v1/ai_assistance/text_tools/:id` contains an authorization failure:&#13;
-&#13;
-Context data (e.g., a group or organization) supplied to be used in the AI prompt were not checked if they are accessible for the current user. This leads to having data present in the AI prompt that were not authorized before being used.&#13;
-&#13;
-A user needs to have `ticket.agent` permission to be able to use the provided context data.</description>
-      <guid isPermaLink="false">GHSA-89vv-6639-wcv8</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:42 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad – Server-side template injection leading to RCE via AI Agent</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fg9w-jg8f-4j94</link>
-      <description>### Impact&#13;
-&#13;
-- Remote code execution (RCE) on the Zammad application server in the context of the application process.&#13;
-- Impact is limited to environments where an attacker can control or influence `type_enrichment_data` (typically high-privilege administrative configuration). Treat as high severity for coordinated disclosure, subject to final privilege model review.&#13;
-&#13;
-### Important guidance for operators (temporary risk reduction)&#13;
-&#13;
-- Restrict and review privileged (admin) accounts; only trusted users should be able to configure AI Agents.&#13;
-- Audit `AI::Agent` records and `type_enrichment_data` for unexpected or suspicious content (e.g., ERB-like sequences).&#13;
-- Disable or limit the AI Agent feature if your risk assessment requires reducing attack surface until the patch is applied.</description>
-      <guid isPermaLink="false">GHSA-fg9w-jg8f-4j94</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:39 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad – Missing authorization in ticket create endpoint</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-28m3-wwgv-ppw8</link>
-      <description>### Impact&#13;
-The used endpoint for ticket creation was missing authorization if the related parameter for adding links is used.&#13;
-&#13;
-The endpoint got improved to ensure having proper permissions.</description>
-      <guid isPermaLink="false">GHSA-28m3-wwgv-ppw8</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:35 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad – Cross-site request forgery (CSRF) in OAuth callback endpoints</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-mfwp-hx66-626c</link>
-      <description>### Impact&#13;
-The OAuth callback endpoints for Microsoft, Google, and Facebook external credentials do not validate a CSRF state parameter.&#13;
-&#13;
-The external credentials handling got hardened by introducing CSRF state parameters for all supported providers.</description>
-      <guid isPermaLink="false">GHSA-mfwp-hx66-626c</guid>
-      <pubDate>Wed, 08 Apr 2026 06:18:31 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] RocketChat/Rocket.Chat – NoSQL injection in the EE ddp-streamer-service</title>
