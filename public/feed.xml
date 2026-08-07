@@ -7,7 +7,22 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 06 Aug 2026 06:25:57 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 07 Aug 2026 05:36:58 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop – Pre-auth reflected XSS on login screen with potential to lead to PHP code execution</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-52p2-r8wf-jcrf</link>
+      <description>WordPress is vulnerable to a pre-auth reflected XSS vulnerability on the login screen.&#13;
+&#13;
+Via a specially crafted malicious third-party website hosted by an attacker, it is possible for this to be escalated to an RCE vulnerability with conditions outside of the attackers control. This requires successful social engineering of and explicit interaction by the target victim.&#13;
+&#13;
+This issue affects all versions of WordPress. Version 7.0.3 has been released, containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
+&#13;
+Discovered and responsibly disclosed by [the team at pwn.ai](https://pwn.ai/).&#13;
+&#13;
+Full information about the WordPress 7.0.3 release can be found here: https://wordpress.org/news/2026/08/wordpress-7-0-3-release/.</description>
+      <guid isPermaLink="false">GHSA-52p2-r8wf-jcrf</guid>
+      <pubDate>Thu, 06 Aug 2026 18:54:17 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] zammad/zammad – Stored XSS in ticket article rendering in the new Vue-based interface</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-4x3x-65c5-8hx4</link>
