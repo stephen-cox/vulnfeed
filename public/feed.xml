@@ -7,7 +7,23 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 12 Aug 2026 05:27:44 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 13 Aug 2026 05:37:07 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop – Remote code execution vulnerability via malicious file upload by an Author level user or higher</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-8vr3-7mxf-gx8w</link>
+      <description>Certain installations of WordPress are vulnerable to a remote code execution vulnerability via malicious Postscript file upload by an Author level user or higher.&#13;
+&#13;
+Prerequisites:&#13;
+&#13;
+* Imagick and Ghostscript in use on the server (the weakness is in Ghostscript's handling of certain embedded files)&#13;
+* A malicious user with the `upload_files` capability&#13;
+&#13;
+WordPress version 7.0.4 has been released, containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
+&#13;
+Discovered and responsibly disclosed by [the team at pwn.ai](https://pwn.ai/).</description>
+      <guid isPermaLink="false">GHSA-8vr3-7mxf-gx8w</guid>
+      <pubDate>Wed, 12 Aug 2026 14:44:42 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] WordPress/wordpress-develop – Pre-auth reflected XSS on login screen with potential to lead to PHP code execution</title>
       <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-52p2-r8wf-jcrf</link>
@@ -9221,27 +9237,6 @@ If you have any questions or comments about this advisory:&#13;
 * Open an issue on [HackerOne](https://hackerone.com/wordpress)</description>
       <guid isPermaLink="false">GHSA-vccm-6gmc-qhjh</guid>
       <pubDate>Thu, 30 Apr 2020 00:06:20 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] WordPress/wordpress-develop – Users without "publish_posts" rights can mark sticky/unsticky a post via REST API</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-g7rg-hchx-c2gw</link>
-      <description>### Impact&#13;
-Authenticated users who do not have the rights to publish a post are able to mark posts as sticky or unsticky via the REST API. For example, the contributor role does not have such rights, but this allowed them to bypass that.&#13;
-&#13;
-### Patches&#13;
-This has been patched in WordPress 5.3.1, along with all the previous WordPress versions from 3.7 to 5.3 via a minor release. Automatic updates are enabled by default for minor releases and we strongly recommend that you keep them enabled.&#13;
-&#13;
-### References&#13;
-&#13;
-* https://wordpress.org/news/2019/12/wordpress-5-3-1-security-and-maintenance-release/&#13;
-* https://wordpress.org/support/wordpress-version/version-5-3-1/&#13;
-&#13;
-### For more information&#13;
-If you have any questions or comments about this advisory:&#13;
-* Open an issue on [HackerOne](https://hackerone.com/wordpress)&#13;
-</description>
-      <guid isPermaLink="false">GHSA-g7rg-hchx-c2gw</guid>
-      <pubDate>Wed, 08 Jan 2020 17:15:37 +0000</pubDate>
     </item>
     <item>
       <title>[HIGH] WordPress/wordpress-develop – Stored cross-site scripting (XSS) through 'wp_targeted_link_rel'</title>
