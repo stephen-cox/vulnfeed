@@ -7,7 +7,50 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 13 Aug 2026 05:37:07 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 14 Aug 2026 05:28:23 +0000</lastBuildDate>
+    <item>
+      <title>[LOW] espocrm/espocrm – SSRF via IPv6 transition address bypass of internal-host validation</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-xwmh-j8hf-cfqw</link>
+      <description>## Summary&#13;
+&#13;
+EspoCRM's `HostCheck::ipAddressIsNotInternal()` validates outbound URLs to block requests to internal/private IP addresses. The check strips `::ffff:` (IPv4-mapped IPv6) prefixes but does not recognize IPv6 transition addresses that embed private IPv4 addresses: NAT64 (`64:ff9b::`), 6to4 (`2002::`), and Teredo (`2001:0000::`). An attacker controlling a domain with AAAA DNS records pointing to these transition addresses can bypass both the host validation check and the CURLOPT_RESOLVE IP-pinning check, causing EspoCRM to issue outbound requests to internal network services. Affected endpoints include `POST /Attachment/fromImageUrl` (any authenticated user with attachment access) and outbound webhook delivery (admin/API user).&#13;
+&#13;
+&#13;
+## Credit&#13;
+&#13;
+Reported by tonghuaroot (tonghuaroot@gmail.com).&#13;
+</description>
+      <guid isPermaLink="false">GHSA-xwmh-j8hf-cfqw</guid>
+      <pubDate>Thu, 13 Aug 2026 07:38:45 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Email template renderer leaks restricted record fields in mass email and group email auto-reply </title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-28w2-h88g-6vgv</link>
+      <description>## Summary&#13;
+ &#13;
+Email template renderer does not strip restricted fields when ACL is disabled (which is the case for mass email and group email auto-reply).&#13;
+&#13;
+A user with edit access to email templates and access to mass email sending can extract restricted user fields.&#13;
+&#13;
+The same issue is applicable to group email auto-reply. Group emails are controlled by admin users but a regular user may have edit access to the used email template.&#13;
+&#13;
+## Reporter&#13;
+&#13;
+Yash Shendge (ashrexon)&#13;
+</description>
+      <guid isPermaLink="false">GHSA-28w2-h88g-6vgv</guid>
+      <pubDate>Thu, 13 Aug 2026 07:37:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm – Access control bypass in Mass Update letting regular user with Mass Update permission read any attachment with known ID</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-24pg-2q7q-m5p6</link>
+      <description>## Summary&#13;
+&#13;
+EspoCRM contains an access control vulnerability in the mass-update functionality that allows an authenticated user with mass-update permission to bypass attachment access restrictions. An attacker who knows a target attachment ID can gain unauthorized access to file contents, bypassing record-level and field-level permissions. Obtaining valid attachment IDs may be difficult, increasing the attack complexity.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-24pg-2q7q-m5p6</guid>
+      <pubDate>Thu, 13 Aug 2026 07:32:32 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] WordPress/wordpress-develop – Remote code execution vulnerability via malicious file upload by an Author level user or higher</title>
       <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-8vr3-7mxf-gx8w</link>
@@ -6128,7 +6171,7 @@ A fix is included in the following Icinga 2 versions: 2.15.1, 2.14.7, and 2.13.1
 &#13;
 In order to fix this, the following changes for filter expressions supplied in API request:&#13;
 - Global variables can only be used in filter expressions if the user is allowed to see them according to the `variables` permission (as used by `/v1/variables`).&#13;
-- The `get_object()` function now only returns an object if the user is allowed to see it according tot he corresponding `objects/query/&lt;type&gt;` permission (as used by `/v1/objects`).&#13;
+- The `get_object()` function now only returns an object if the user is allowed to see it according to the corresponding `objects/query/&lt;type&gt;` permission (as used by `/v1/objects`).&#13;
 - The following function can no longer be used in API filter expressions: `get_objects()`, `get_template()`, `get_templates()`, `getenv()`.&#13;
 &#13;
 ### Workarounds&#13;
