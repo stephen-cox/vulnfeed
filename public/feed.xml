@@ -7,7 +7,51 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 18 Aug 2026 04:31:22 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 19 Aug 2026 04:32:26 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 – Large memory allocations on JSON-RPC connections may result in denial of service</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-wm63-p2jg-5665</link>
+      <description>### Impact&#13;
+&#13;
+An authenticated peer on a JSON-RPC message can cause Icinga 2 to allocate and initialize a buffer of up to a size of roughly 1 GB, by announcing to send a large message. This may result in the Icinga 2 process crashing in an out of memory scenario. Note  that in order to allocate more than 1 GB, more than one endpoint certificate needs to be compromised as endpoints are limited to one allocation at a time.&#13;
+&#13;
+### Patches&#13;
+&#13;
+Icinga 2 [v2.16.5](https://github.com/Icinga/icinga2/releases/tag/v2.16.5) and [v2.15.6](https://github.com/Icinga/icinga2/releases/tag/v2.15.6) have been released, which fix this issue by introducing an additional 16 MiB message size limit on all connections except those from nodes in the same or parent zones (from these zones, large config file sync messages may be received).&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+There is no workaround for this in Icinga 2. Network access to port 5665 may be restricted using a firewall.&#13;
+&#13;
+### References&#13;
+&#13;
+- [Release announcement](https://icinga.com/blog/releasing-icinga-2-v2-16-5-and-v2-15-6/)&#13;
+- [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10999)</description>
+      <guid isPermaLink="false">GHSA-wm63-p2jg-5665</guid>
+      <pubDate>Tue, 18 Aug 2026 08:19:26 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 – /v1/events filter expressions allow unrestricted access to config objects, ignoring user-specific restrictions</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-v265-w3gm-99vg</link>
+      <description>### Impact&#13;
+&#13;
+An authenticated API user with some `events/*` permission allowing access to the `/v1/events` API endpoint may access config objects in filter expressions they may otherwise have no access to and deduce information about them. This can allow them to read attributes or custom variables that may contain sensitive information. This is because some of the restrictions added to `/v1/obects` to address [CVE-2025-61907](https://github.com/Icinga/icinga2/security/advisories/GHSA-gg32-w9rm-vp2v) were not applied to the `/v1/events` API endpoint.&#13;
+&#13;
+### Patches&#13;
+&#13;
+Icinga 2 [v2.16.5](https://github.com/Icinga/icinga2/releases/tag/v2.16.5) and [v2.15.6](https://github.com/Icinga/icinga2/releases/tag/v2.15.6) have been released, which addresses this by applying the same restrictions for filter expressions from the `/v1/objects` API endpoints on `/v1/events` as well.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+An attack requires any of the `events/*` permissions, so these can be removed from untrusted API users.&#13;
+&#13;
+### References&#13;
+&#13;
+- [Release announcement](https://icinga.com/blog/releasing-icinga-2-v2-16-5-and-v2-15-6/)&#13;
+- [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10998)</description>
+      <guid isPermaLink="false">GHSA-v265-w3gm-99vg</guid>
+      <pubDate>Tue, 18 Aug 2026 08:19:11 +0000</pubDate>
+    </item>
     <item>
       <title>[LOW] espocrm/espocrm – SSRF via IPv6 transition address bypass of internal-host validation</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-xwmh-j8hf-cfqw</link>
