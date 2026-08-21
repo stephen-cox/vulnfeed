@@ -7,7 +7,135 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 20 Aug 2026 04:32:45 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 21 Aug 2026 04:33:30 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] RocketChat/Rocket.Chat – Arbitrary notify-user event injection via stream-notify-room-users forward (incomplete fix of GHSA-27jx)</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-r3v3-v742-55j5</link>
+      <description>## Summary&#13;
+&#13;
+`GHSA-27jx-236m-3f5j` (fixed in 8.6.1) restricted `stream-notify-user`'s `allowWrite` so a client can no longer write arbitrary events directly to another user's notify-user stream (it now only accepts `video-conference` / `media-calls`). However, the sibling stream `stream-notify-room-users` still **forwards an arbitrary, caller-supplied event name to other room members' notify-user streams**, which re-opens the exact primitive GHSA-27jx set out to close - now reachable by any authenticated user who shares a room with the victim.&#13;
+&#13;
+By writing `"&lt;sharedRoomId&gt;/force_logout"` to `stream-notify-room-users`, an attacker delivers a `force_logout` event to every other member's notify-user stream, and the client's `useForceLogout` hook wipes local auth - a repeatable, targeted logout (denial of service). The same primitive can inject other high-impact notify-user events such as `uiInteraction` (renders attacker-controlled UIKit modals/banners → UI phishing) and the fake message/notification that GHSA-27jx originally described.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+`apps/meteor/server/modules/notifications/notifications.module.ts`:&#13;
+&#13;
+```ts&#13;
+// streamUser - the path GHSA-27jx fixed: only 'video-conference' / 'media-calls' are accepted, else return false.&#13;
+this.streamUser.allowWrite(async function (eventName, data) {&#13;
+  const [, e] = eventName.split('/');&#13;
+  if (e === 'video-conference') { /* VideoConf.validateAction(...) */ }&#13;
+  if (e === 'media-calls')      { /* ... */ return false; }&#13;
+  return false;                                   // everything else rejected&#13;
+});&#13;
+&#13;
+// streamRoomUsers - NOT covered by the fix: the event name `e` is taken from the caller and forwarded verbatim.&#13;
+this.streamRoomUsers.allowWrite(async function (eventName, ...args) {&#13;
+  const [roomId, e] = eventName.split('/');       // e is arbitrary at runtime (the type annotation is not a check)&#13;
+  if (this.userId &amp;&amp; (await Subscriptions.countByRoomIdAndUserId(roomId, this.userId)) &gt; 0) {&#13;
+    const subscriptions = await Subscriptions.findByRoomIdAndNotUserId(roomId, this.userId, {...}).toArray();&#13;
+    subscriptions.forEach((subscription) =&gt; self.notifyUser(subscription.u._id, e, ...args)); // forward to notify-user&#13;
+  }&#13;
+  return false;&#13;
+});&#13;
+&#13;
+// notifyUser emits straight onto the notify-user stream:&#13;
+notifyUser(userId, eventName, ...args) { return this.streamUser.emit(`${userId}/${eventName}`, ...args); }&#13;
+```&#13;
+&#13;
+Two things make it exploitable:&#13;
+&#13;
+1. **`e` is never whitelisted at runtime.** The TypeScript type says `` `${string}/video-conference` | `${string}/userData` ``, but at runtime `e = eventName.split('/')[1]` is whatever the caller sends, and it is forwarded to `notifyUser(otherMember, e, …)` → `streamUser.emit(`${otherMember}/${e}`, …)`.&#13;
+2. **The forward is a side-effect inside `allowWrite`.** The streamer method handler (`streamer.module.ts:244-254`) runs `isWriteAllowed()` (which invokes the `allowWrite` callback) *before* deciding to broadcast. The callback performs the `forEach notifyUser(...)` and then returns `false`. Returning `false` only suppresses the notify-room-users broadcast - the forward to notify-user has already happened.&#13;
+&#13;
+The client acts on the injected event without validating its origin, e.g. `apps/meteor/client/views/root/hooks/loggedIn/useForceLogout.ts`:&#13;
+&#13;
+```ts&#13;
+getNotifyUserStream(`${userId}/force_logout`, () =&gt; {&#13;
+  setForceLogout(true);&#13;
+  wipeLocalAuth();   // no payload/sender check - any force_logout event logs the user out&#13;
+});&#13;
+```</description>
+      <guid isPermaLink="false">GHSA-r3v3-v742-55j5</guid>
+      <pubDate>Thu, 20 Aug 2026 20:38:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] RocketChat/Rocket.Chat – Blind Server-Side Request Forgery (SSRF) In The downloadPublicImportFile Endpoint</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-6x96-99rg-wg67</link>
+      <description>The import download endpoint accepts a user-controlled fileUrl and performs an outbound HTTP request from the Rocket.Chat server using Node’s native http.get / https.get APIs. The native HTTP does not perform checks against SSRF attacks similarly to Rocket.Chat's serverFetch package.</description>
+      <guid isPermaLink="false">GHSA-6x96-99rg-wg67</guid>
+      <pubDate>Thu, 20 Aug 2026 19:35:28 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] RocketChat/Rocket.Chat – sendForgotPasswordEmail Meteor Method Lacks DDP Rate Limit</title>
+      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-7c6v-m68v-v73r</link>
+      <description>## Summary&#13;
+&#13;
+The Meteor method `sendForgotPasswordEmail`, callable unauthenticated over DDP / WebSocket and over the `POST /api/v1/method.callAnon/sendForgotPasswordEmail` HTTP route, has **no `DDPRateLimiter` rule attached**. Its sibling method `sendConfirmationEmail` (in the same directory, mostly the same shape) does have a rate limit.&#13;
+&#13;
+## Details&#13;
+&#13;
+`sendForgotPasswordEmail.ts` in its entirety:&#13;
+&#13;
+```ts&#13;
+// apps/meteor/server/methods/sendForgotPasswordEmail.ts&#13;
+export const sendForgotPasswordEmail = async (to: string): Promise&lt;boolean | undefined&gt; =&gt; {&#13;
+    const email = to.trim().toLowerCase();&#13;
+&#13;
+    const user = await Users.findOneByEmailAddress(email, { projection: { _id: 1, services: 1 } });&#13;
+&#13;
+    if (!user) {&#13;
+        return true;                                  // &lt;-- silent on non-existent&#13;
+    }&#13;
+&#13;
+    if (user.services &amp;&amp; !user.services.password) {&#13;
+        if (!settings.get('Accounts_AllowPasswordChangeForOAuthUsers')) {&#13;
+            return false;                             // &lt;-- distinguishable signal for OAuth-only users&#13;
+        }&#13;
+    }&#13;
+&#13;
+    try {&#13;
+        Accounts.sendResetPasswordEmail(user._id, email);&#13;
+        return true;&#13;
+    } catch (err) {&#13;
+        SystemLogger.error({ err });&#13;
+    }&#13;
+};&#13;
+&#13;
+Meteor.methods&lt;ServerMethods&gt;({&#13;
+    async sendForgotPasswordEmail(to) {&#13;
+        check(to, String);&#13;
+        return sendForgotPasswordEmail(to);&#13;
+    },&#13;
+});&#13;
+&#13;
+// NB: no DDPRateLimiter.addRule(...) anywhere in this file&#13;
+```&#13;
+&#13;
+Compare `sendConfirmationEmail.ts` (same directory, same purpose-class):&#13;
+&#13;
+```ts&#13;
+// apps/meteor/server/methods/sendConfirmationEmail.ts:29-39&#13;
+DDPRateLimiter.addRule(&#13;
+    { type: 'method', name: 'sendConfirmationEmail', userId() { return true; } },&#13;
+    5,&#13;
+    60000,&#13;
+);&#13;
+```&#13;
+&#13;
+The REST endpoint `POST /api/v1/users.forgotPassword` (`apps/meteor/app/api/server/v1/users.ts:1124`) does not set custom `rateLimiterOptions`, so it falls under the API's default REST rate limiter (`API_Enable_Rate_Limiter_Limit_Calls_Default`). That bounds the REST path. The DDP method has no such floor.&#13;
+&#13;
+## References&#13;
+&#13;
+- `apps/meteor/server/methods/sendForgotPasswordEmail.ts` - affected file&#13;
+- `apps/meteor/server/methods/sendConfirmationEmail.ts:29-39` - correct pattern in sibling method&#13;
+- `apps/meteor/app/api/server/v1/users.ts:1124` - REST entry point (rate-limited via API default)&#13;
+- `apps/meteor/app/api/server/v1/misc.ts:670-720` - `method.callAnon` HTTP-to-DDP bridge&#13;
+</description>
+      <guid isPermaLink="false">GHSA-7c6v-m68v-v73r</guid>
+      <pubDate>Thu, 20 Aug 2026 19:23:56 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] icinga/icinga2 – Large memory allocations on JSON-RPC connections may result in denial of service</title>
       <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-wm63-p2jg-5665</link>
