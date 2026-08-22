@@ -104,9 +104,12 @@ python vulnfeed.py
 python -m pytest tests/ -v
 ```
 
-## Lint and format checks
+## Lint, format and type checks
 
 ```bash
 ruff check .
 ruff format --check .
+mypy
 ```
+
+These run in CI on every push and pull request, alongside the test suite.

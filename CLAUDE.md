@@ -27,8 +27,11 @@ vulnfeed/
 ├── tests/test_integration.py # Local-HTTP end-to-end tests
 ├── requirements.txt         # Python dependencies
 ├── pyproject.toml            # ruff and pytest config
-├── .github/workflows/
-│   └── update-feed.yml      # Scheduled Action (daily 4am UTC)
+├── .github/
+│   ├── dependabot.yml       # Weekly pip and github-actions updates
+│   └── workflows/
+│       ├── update-feed.yml  # Checks, scheduled feed build, Pages deploy
+│       └── codeql.yml       # CodeQL analysis
 ├── public/
 │   ├── feed.xml             # Generated RSS feed (committed by CI, served by GitHub Pages)
 │   └── index.html           # Generated landing page (committed by CI)
@@ -52,6 +55,7 @@ pip install -r requirements.txt
 - `ruff check .` — lint
 - `ruff format --check .` — check formatting
 - `ruff format .` — auto-format
+- `mypy` — type check (vulnfeed.py and sources/)
 
 ---
 

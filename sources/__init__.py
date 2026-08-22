@@ -24,6 +24,7 @@ cvss_severities, cwes, vulnerabilities, withdrawn_at.
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import requests
@@ -57,13 +58,16 @@ class SourceResult:
         self.failed.extend(other.failed)
 
 
-def get_source(name: str | None):
+def get_source(name: str | None) -> Callable[..., SourceResult] | None:
     """Look up a source's entry point by its config `source:` value."""
+    if name is None:
+        return None
+
     # Imported here rather than at module scope: source modules import
     # SourceResult from this module, so a top-level import would be circular.
     from sources import ghsa, github
 
-    registry = {
+    registry: dict[str, Callable[..., SourceResult]] = {
         "github": github.fetch_advisories,
         "ghsa": ghsa.fetch_advisories,
     }
