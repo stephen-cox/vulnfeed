@@ -873,7 +873,7 @@ GLOBAL_RECORD = {
     "description": "Fuller body.",
     "severity": "critical",
     "published_at": "2026-05-01T00:00:00Z",
-    "repo": "composer/vendor/widget",
+    "repo": "composer:vendor/widget",
     "cve_id": "CVE-2026-9999",
     "cvss": {"score": 9.9, "vector_string": "CVSS:3.1/AV:N"},
     "cwes": [{"cwe_id": "CWE-94", "name": "Code Injection"}],
@@ -959,5 +959,5 @@ def test_collect_advisories_merges_both_sources() -> None:
         with patch("sources.ghsa.fetch_package_advisories", return_value=[dict(GLOBAL_RECORD)]):
             result = collect_advisories(config)
 
-    assert result.succeeded == ["owner/repo", "composer/vendor/widget"]
+    assert result.succeeded == ["owner/repo", "composer:vendor/widget"]
     assert len(result.advisories) == 2

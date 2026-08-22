@@ -20,8 +20,11 @@ vulnfeed/
 │   ├── __init__.py          # SourceResult, source registry
 │   ├── http.py              # Shared retry/timeout/pagination plumbing
 │   └── github.py            # Repository security advisories
+├── templates/index.html     # Landing page template (string.Template)
 ├── tests/test_vulnfeed.py   # Unit tests
-├── tests/test_integration.py # Local-HTTP pagination tests
+├── tests/test_ghsa.py       # Advisory database source tests
+├── tests/test_index.py      # Landing page tests
+├── tests/test_integration.py # Local-HTTP end-to-end tests
 ├── requirements.txt         # Python dependencies
 ├── pyproject.toml            # ruff and pytest config
 ├── .github/workflows/

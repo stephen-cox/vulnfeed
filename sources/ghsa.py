@@ -31,10 +31,15 @@ def _headers(token: str | None) -> dict:
 
 
 def package_label(package: dict) -> str:
-    """The origin label shown in the feed item title."""
+    """The origin label shown in the feed item title.
+
+    Separated with a colon rather than a slash because package names in several
+    ecosystems already contain slashes — `composer/composer/composer` is
+    unreadable where `composer:composer/composer` is not.
+    """
     ecosystem = package.get("ecosystem")
     name = package.get("name")
-    return f"{ecosystem}/{name}" if ecosystem else str(name)
+    return f"{ecosystem}:{name}" if ecosystem else str(name)
 
 
 def fetch_package_advisories(package: dict, token: str | None = None) -> list[dict]:

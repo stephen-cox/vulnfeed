@@ -42,7 +42,7 @@ def make_response(payload):
 
 
 def test_package_label_combines_ecosystem_and_name() -> None:
-    assert ghsa.package_label({"ecosystem": "composer", "name": "a/b"}) == "composer/a/b"
+    assert ghsa.package_label({"ecosystem": "composer", "name": "a/b"}) == "composer:a/b"
     assert ghsa.package_label({"name": "bare"}) == "bare"
 
 
@@ -66,9 +66,9 @@ def test_fetch_package_advisories_omits_ecosystem_when_absent() -> None:
 
 
 def test_normalise_sets_the_package_as_the_origin_label() -> None:
-    normalised = ghsa.normalise(GLOBAL_ADVISORY, "composer/vendor/widget")
+    normalised = ghsa.normalise(GLOBAL_ADVISORY, "composer:vendor/widget")
 
-    assert normalised["repo"] == "composer/vendor/widget"
+    assert normalised["repo"] == "composer:vendor/widget"
     assert normalised["ghsa_id"] == GLOBAL_ADVISORY["ghsa_id"]
     assert normalised["html_url"] == GLOBAL_ADVISORY["html_url"]
     # The source payload must not be mutated in place.
@@ -97,9 +97,9 @@ def test_fetch_advisories_normalises_every_package() -> None:
         result = ghsa.fetch_advisories(config, token="fake-token")
 
     assert mock_fetch.call_count == 2
-    assert result.succeeded == ["composer/vendor/widget", "pip/gadget"]
+    assert result.succeeded == ["composer:vendor/widget", "pip:gadget"]
     assert result.failed == []
-    assert [a["repo"] for a in result.advisories] == ["composer/vendor/widget", "pip/gadget"]
+    assert [a["repo"] for a in result.advisories] == ["composer:vendor/widget", "pip:gadget"]
 
 
 def test_fetch_advisories_isolates_a_failing_package() -> None:
@@ -126,9 +126,9 @@ def test_fetch_advisories_warns_when_a_package_matches_nothing(caplog) -> None:
         with caplog.at_level("WARNING", logger="vulnfeed"):
             result = ghsa.fetch_advisories(config)
 
-    assert result.succeeded == ["pip/no-such-packge"]
+    assert result.succeeded == ["pip:no-such-packge"]
     assert "check the package name" in caplog.text
-    assert "pip/no-such-packge" in caplog.text
+    assert "pip:no-such-packge" in caplog.text
 
 
 def test_fetch_advisories_skips_entries_without_a_name(caplog) -> None:
