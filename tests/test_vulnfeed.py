@@ -13,7 +13,9 @@ from vulnfeed import (
     advisory_title,
     aggregate_advisories,
     collect_advisories,
+    deduplicate_advisories,
     describe_advisory,
+    detail_score,
     feed_limits,
     generate_feed,
     load_config,
@@ -851,3 +853,111 @@ def test_get_source_resolves_github_and_rejects_unknown() -> None:
     assert sources.get_source("github") is not None
     assert sources.get_source("nvd") is None
     assert sources.get_source(None) is None
+
+
+REPO_RECORD = {
+    "ghsa_id": "GHSA-from-repo",
+    "html_url": "https://github.com/owner/repo/security/advisories/GHSA-from-repo",
+    "summary": "RCE in widget",
+    "description": "Short body.",
+    "severity": "critical",
+    "published_at": "2026-05-01T00:00:00Z",
+    "repo": "owner/repo",
+    "cve_id": "CVE-2026-9999",
+}
+
+GLOBAL_RECORD = {
+    "ghsa_id": "GHSA-from-database",
+    "html_url": "https://github.com/advisories/GHSA-from-database",
+    "summary": "RCE in widget",
+    "description": "Fuller body.",
+    "severity": "critical",
+    "published_at": "2026-05-01T00:00:00Z",
+    "repo": "composer/vendor/widget",
+    "cve_id": "CVE-2026-9999",
+    "cvss": {"score": 9.9, "vector_string": "CVSS:3.1/AV:N"},
+    "cwes": [{"cwe_id": "CWE-94", "name": "Code Injection"}],
+    "vulnerabilities": [
+        {
+            "package": {"ecosystem": "composer", "name": "vendor/widget"},
+            "vulnerable_version_range": "< 3.0.1",
+            "first_patched_version": "3.0.1",
+        }
+    ],
+}
+
+
+def test_detail_score_ranks_the_richer_record_higher() -> None:
+    assert detail_score(GLOBAL_RECORD) > detail_score(REPO_RECORD)
+
+
+def test_deduplicate_collapses_the_same_cve_from_two_sources() -> None:
+    """One vulnerability, two GHSA IDs — the old GHSA-only dedup published both."""
+    result = deduplicate_advisories([REPO_RECORD, GLOBAL_RECORD])
+
+    assert len(result) == 1
+    assert result[0]["ghsa_id"] == "GHSA-from-database"
+
+
+def test_deduplicate_prefers_the_richer_record_regardless_of_order() -> None:
+    assert deduplicate_advisories([GLOBAL_RECORD, REPO_RECORD])[0]["ghsa_id"] == (
+        "GHSA-from-database"
+    )
+    assert deduplicate_advisories([REPO_RECORD, GLOBAL_RECORD])[0]["ghsa_id"] == (
+        "GHSA-from-database"
+    )
+
+
+def test_deduplicate_keeps_distinct_cves() -> None:
+    other = {**GLOBAL_RECORD, "ghsa_id": "GHSA-other", "cve_id": "CVE-2026-1111"}
+
+    result = deduplicate_advisories([REPO_RECORD, other])
+
+    assert {a["ghsa_id"] for a in result} == {"GHSA-from-repo", "GHSA-other"}
+
+
+def test_deduplicate_keeps_advisories_without_a_cve() -> None:
+    """A null cve_id must not collapse every uncredited advisory into one."""
+    first = {**REPO_RECORD, "ghsa_id": "GHSA-a", "cve_id": None}
+    second = {**REPO_RECORD, "ghsa_id": "GHSA-b", "cve_id": None}
+
+    result = deduplicate_advisories([first, second])
+
+    assert {a["ghsa_id"] for a in result} == {"GHSA-a", "GHSA-b"}
+
+
+def test_deduplicate_collapses_repeated_ghsa_ids() -> None:
+    result = deduplicate_advisories([REPO_RECORD, dict(REPO_RECORD)])
+
+    assert len(result) == 1
+
+
+def test_aggregate_deduplicates_across_sources_end_to_end() -> None:
+    result = aggregate_advisories([REPO_RECORD, GLOBAL_RECORD])
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-from-database"]
+
+
+def test_aggregate_drops_a_withdrawn_duplicate_before_dedup() -> None:
+    """A withdrawn richer record must not win the CVE and then vanish."""
+    withdrawn_global = {**GLOBAL_RECORD, "withdrawn_at": "2026-06-01T00:00:00Z"}
+
+    result = aggregate_advisories([REPO_RECORD, withdrawn_global])
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-from-repo"]
+
+
+def test_collect_advisories_merges_both_sources() -> None:
+    config = {
+        "feeds": [
+            {"source": "github", "repos": ["owner/repo"]},
+            {"source": "ghsa", "packages": [{"ecosystem": "composer", "name": "vendor/widget"}]},
+        ]
+    }
+
+    with patch("sources.github.fetch_repo_advisories", return_value=[dict(REPO_RECORD)]):
+        with patch("sources.ghsa.fetch_package_advisories", return_value=[dict(GLOBAL_RECORD)]):
+            result = collect_advisories(config)
+
+    assert result.succeeded == ["owner/repo", "composer/vendor/widget"]
+    assert len(result.advisories) == 2

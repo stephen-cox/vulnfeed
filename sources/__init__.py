@@ -61,7 +61,10 @@ def get_source(name: str | None):
     """Look up a source's entry point by its config `source:` value."""
     # Imported here rather than at module scope: source modules import
     # SourceResult from this module, so a top-level import would be circular.
-    from sources import github
+    from sources import ghsa, github
 
-    registry = {"github": github.fetch_advisories}
+    registry = {
+        "github": github.fetch_advisories,
+        "ghsa": ghsa.fetch_advisories,
+    }
     return registry.get(name)

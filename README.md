@@ -25,7 +25,31 @@ feeds:
   - source: github
     repos:
       - owner/repo
+
+  - source: ghsa
+    packages:
+      - ecosystem: composer
+        name: vendor/package
 ```
+
+### Sources
+
+`source: github` fetches advisories from each repository's own security tab. This only
+returns advisories the project itself authored there.
+
+`source: ghsa` searches the global GitHub Advisory Database for advisories affecting a
+published package. Use it to catch advisories filed by third-party reporters, ecosystem
+maintainers, or CVE assigners, which never appear in the repository's security tab.
+
+Most projects want both. `ecosystem` accepts the values GitHub's advisory API uses —
+`npm`, `pip`, `composer`, `rubygems`, `go`, `maven`, `nuget`, `rust`, and others — and
+`name` is the package name as published in that ecosystem.
+
+A package name that does not exist returns no results rather than an error, so the run
+logs `No advisories found for <package>; check the package name` to make a typo visible.
+
+Advisories arriving from both sources are deduplicated by GHSA ID and then by CVE ID,
+keeping whichever record carries more detail.
 
 The `feed:` section is optional. Omit it and the defaults apply: `max_items: 100` and no
 age limit. Both limits are applied after advisories are sorted newest-first, so it is

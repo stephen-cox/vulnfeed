@@ -46,6 +46,70 @@ def _published_at(advisory: dict) -> datetime:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
+def detail_score(advisory: dict) -> int:
+    """How much usable detail an advisory record carries.
+
+    Used to pick a winner when the same vulnerability arrives from more than one
+    source: the repository advisory and the global database entry for one CVE
+    are rarely equally complete.
+    """
+    score = 0
+    if advisory.get("cve_id"):
+        score += 1
+    if _cvss_summary(advisory):
+        score += 1
+    score += len(advisory.get("cwes") or [])
+    score += len(_affected_packages(advisory))
+    if advisory.get("description"):
+        score += 1
+    return score
+
+
+def deduplicate_advisories(advisories: list[dict]) -> list[dict]:
+    """Collapse duplicates by GHSA ID, then by CVE ID across sources.
+
+    GHSA ID alone was enough while GitHub repositories were the only source. Now
+    that the same vulnerability can arrive as both a repository advisory and a
+    global-database entry, a CVE-level pass is needed too — the two records
+    carry different GHSA IDs but describe one vulnerability.
+    """
+    by_ghsa: dict[str, dict] = {}
+    for advisory in advisories:
+        ghsa_id = advisory["ghsa_id"]
+        incumbent = by_ghsa.get(ghsa_id)
+        if incumbent is None or detail_score(advisory) > detail_score(incumbent):
+            by_ghsa[ghsa_id] = advisory
+
+    by_cve: dict[str, dict] = {}
+    unique: list[dict] = []
+    for advisory in by_ghsa.values():
+        cve_id = advisory.get("cve_id")
+        if not cve_id:
+            unique.append(advisory)
+            continue
+
+        incumbent = by_cve.get(cve_id)
+        if incumbent is None:
+            by_cve[cve_id] = advisory
+        elif detail_score(advisory) > detail_score(incumbent):
+            log.info(
+                "Preferring %s over %s for %s (more detail)",
+                advisory["ghsa_id"],
+                incumbent["ghsa_id"],
+                cve_id,
+            )
+            by_cve[cve_id] = advisory
+        else:
+            log.info(
+                "Dropping duplicate %s; %s already covers %s",
+                advisory["ghsa_id"],
+                incumbent["ghsa_id"],
+                cve_id,
+            )
+
+    return unique + list(by_cve.values())
+
+
 def aggregate_advisories(
     advisories: list[dict],
     max_items: int | None = None,
@@ -53,18 +117,15 @@ def aggregate_advisories(
     now: datetime | None = None,
 ) -> list[dict]:
     """Deduplicate, drop withdrawn advisories, sort newest first, and trim."""
-    seen: dict[str, dict] = {}
+    live = []
     for advisory in advisories:
         if advisory.get("withdrawn_at"):
             # GitHub retracted it; without this it stayed in the feed forever.
             log.info("Skipping withdrawn advisory %s", advisory.get("ghsa_id"))
             continue
+        live.append(advisory)
 
-        ghsa_id = advisory["ghsa_id"]
-        if ghsa_id not in seen:
-            seen[ghsa_id] = advisory
-
-    ordered = sorted(seen.values(), key=_published_at, reverse=True)
+    ordered = sorted(deduplicate_advisories(live), key=_published_at, reverse=True)
 
     if max_age_days:
         cutoff = (now or datetime.now(UTC)) - timedelta(days=max_age_days)
