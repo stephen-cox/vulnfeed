@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import textwrap
 import time
 
@@ -209,12 +210,53 @@ def generate_index(config: dict) -> str:
         """)
 
 
+def collect_advisories(config: dict, token: str | None = None) -> tuple[list[dict], list, list]:
+    """Fetch advisories from every configured repo, isolating per-repo failures.
+
+    A repo that is renamed, deleted, made private, or transiently unavailable
+    must not stop the others from being fetched — before this was isolated, one
+    bad entry in config.yaml froze the published feed entirely.
+
+    Returns (advisories, succeeded_repos, failed_repos).
+    """
+    advisories: list[dict] = []
+    succeeded: list[str] = []
+    failed: list[str] = []
+
+    for feed in config.get("feeds", []):
+        if feed.get("source") != "github":
+            continue
+
+        for repo in feed.get("repos", []):
+            try:
+                fetched = fetch_github_advisories(repo, token=token)
+            except requests.RequestException as exc:
+                log.error("Failed to fetch advisories for %s: %s", repo, exc)
+                failed.append(repo)
+                continue
+            except Exception:
+                log.exception("Unexpected error fetching advisories for %s", repo)
+                failed.append(repo)
+                continue
+
+            for advisory in fetched:
+                advisory["repo"] = repo
+            advisories.extend(fetched)
+            succeeded.append(repo)
+            log.info("Fetched %d advisories from %s", len(fetched), repo)
+
+    return advisories, succeeded, failed
+
+
 def main(
     config_path: str = "config.yaml",
     output_path: str = "public/feed.xml",
     token: str | None = None,
     index_only: bool = False,
-) -> None:
+) -> int:
+    """Generate the feed and index. Returns a process exit code."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+
     config = load_config(config_path)
     output_dir = os.path.dirname(output_path) or "."
     os.makedirs(output_dir, exist_ok=True)
@@ -224,17 +266,30 @@ def main(
         f.write(generate_index(config))
 
     if index_only:
-        return
+        return 0
 
-    all_advisories = []
-    for feed in config.get("feeds", []):
-        if feed.get("source") != "github":
-            continue
-        for repo in feed.get("repos", []):
-            advisories = fetch_github_advisories(repo, token=token)
-            for advisory in advisories:
-                advisory["repo"] = repo
-                all_advisories.append(advisory)
+    all_advisories, succeeded, failed = collect_advisories(config, token=token)
+
+    log.info(
+        "%d advisories from %d repos (%d succeeded, %d failed)",
+        len(all_advisories),
+        len(succeeded) + len(failed),
+        len(succeeded),
+        len(failed),
+    )
+    if failed:
+        log.warning("Repos that failed: %s", ", ".join(failed))
+
+    if failed and not succeeded:
+        # Every repo failing points at a systemic problem — a bad token, an API
+        # outage, no network. Leave the published feed alone rather than
+        # replacing it with an empty one.
+        log.error("Every configured repo failed; leaving %s unchanged", output_path)
+        return 1
+
+    if not all_advisories:
+        # Legitimate for a config watching quiet repos, so not an error.
+        log.warning("No advisories found across %d repos", len(succeeded))
 
     site_url = config.get("site", {}).get("url", "")
     feed_url = f"{site_url}/feed.xml" if site_url else ""
@@ -245,6 +300,9 @@ def main(
     with open(output_path, "wb") as output_file:
         output_file.write(feed_xml)
 
+    log.info("Wrote %d advisories to %s", len(aggregated), output_path)
+    return 0
+
 
 if __name__ == "__main__":
     import argparse
@@ -254,4 +312,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     github_token = os.getenv("GITHUB_TOKEN")
-    main(token=github_token, index_only=args.index_only)
+    sys.exit(main(token=github_token, index_only=args.index_only))

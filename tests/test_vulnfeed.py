@@ -8,6 +8,7 @@ from vulnfeed import (
     PER_PAGE,
     REQUEST_TIMEOUT,
     aggregate_advisories,
+    collect_advisories,
     fetch_github_advisories,
     generate_feed,
     load_config,
@@ -363,3 +364,157 @@ feeds:
     output_xml = output_file.read_text()
     assert "GHSA-zzzz-yyyy-xxxx" in output_xml
     assert "CRITICAL" in output_xml
+
+
+CONFIG_TWO_REPOS = {
+    "feeds": [{"source": "github", "repos": ["owner/good", "owner/bad"]}],
+}
+
+
+def test_collect_advisories_isolates_a_failing_repo(caplog) -> None:
+    """One repo failing must not stop the others being fetched."""
+
+    def fake_fetch(repo, token=None):
+        if repo == "owner/bad":
+            raise requests.HTTPError("404 Client Error: Not Found for url: ...")
+        return [{"ghsa_id": "GHSA-good"}]
+
+    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
+        with caplog.at_level("ERROR"):
+            advisories, succeeded, failed = collect_advisories(CONFIG_TWO_REPOS)
+
+    assert [a["ghsa_id"] for a in advisories] == ["GHSA-good"]
+    assert advisories[0]["repo"] == "owner/good"
+    assert succeeded == ["owner/good"]
+    assert failed == ["owner/bad"]
+    assert "owner/bad" in caplog.text
+    assert "404" in caplog.text
+
+
+def test_collect_advisories_isolates_unexpected_errors() -> None:
+    """A non-network error is contained too, rather than aborting the run."""
+
+    def fake_fetch(repo, token=None):
+        if repo == "owner/bad":
+            raise KeyError("ghsa_id")
+        return [{"ghsa_id": "GHSA-good"}]
+
+    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
+        advisories, succeeded, failed = collect_advisories(CONFIG_TWO_REPOS)
+
+    assert succeeded == ["owner/good"]
+    assert failed == ["owner/bad"]
+    assert len(advisories) == 1
+
+
+def test_collect_advisories_skips_unknown_sources() -> None:
+    config = {"feeds": [{"source": "nvd", "repos": ["ignored"]}]}
+
+    with patch("vulnfeed.fetch_github_advisories") as mock_fetch:
+        advisories, succeeded, failed = collect_advisories(config)
+
+    mock_fetch.assert_not_called()
+    assert (advisories, succeeded, failed) == ([], [], [])
+
+
+def test_main_exits_non_zero_when_every_repo_fails(tmp_path) -> None:
+    """A systemic failure must not overwrite the published feed with an empty one."""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+feeds:
+  - source: github
+    repos:
+      - owner/one
+      - owner/two
+"""
+    )
+    output_file = tmp_path / "output" / "feed.xml"
+    output_file.parent.mkdir()
+    output_file.write_bytes(b"<rss>previously published</rss>")
+
+    with patch("vulnfeed.fetch_github_advisories", side_effect=requests.ConnectionError("down")):
+        exit_code = main(config_path=str(config_file), output_path=str(output_file))
+
+    assert exit_code == 1
+    assert output_file.read_bytes() == b"<rss>previously published</rss>"
+
+
+def test_main_exits_zero_when_one_repo_succeeds(tmp_path) -> None:
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+feeds:
+  - source: github
+    repos:
+      - owner/good
+      - owner/bad
+"""
+    )
+    output_file = tmp_path / "output" / "feed.xml"
+
+    def fake_fetch(repo, token=None):
+        if repo == "owner/bad":
+            raise requests.HTTPError("500 Server Error")
+        return [
+            {
+                "ghsa_id": "GHSA-survivor",
+                "html_url": "https://example.com/a",
+                "summary": "Still published",
+                "severity": "high",
+                "published_at": "2026-04-01T12:00:00Z",
+                "description": "Body",
+            }
+        ]
+
+    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
+        exit_code = main(config_path=str(config_file), output_path=str(output_file))
+
+    assert exit_code == 0
+    assert b"Still published" in output_file.read_bytes()
+
+
+def test_main_exits_zero_when_repos_have_no_advisories(tmp_path) -> None:
+    """Watching quiet repos is legitimate and must not fail the run."""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+feeds:
+  - source: github
+    repos:
+      - owner/quiet
+"""
+    )
+    output_file = tmp_path / "output" / "feed.xml"
+
+    with patch("vulnfeed.fetch_github_advisories", return_value=[]):
+        exit_code = main(config_path=str(config_file), output_path=str(output_file))
+
+    assert exit_code == 0
+    assert output_file.exists()
+
+
+def test_main_logs_a_run_summary(tmp_path, caplog) -> None:
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+feeds:
+  - source: github
+    repos:
+      - owner/good
+      - owner/bad
+"""
+    )
+    output_file = tmp_path / "output" / "feed.xml"
+
+    def fake_fetch(repo, token=None):
+        if repo == "owner/bad":
+            raise requests.HTTPError("500 Server Error")
+        return []
+
+    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
+        with caplog.at_level("INFO", logger="vulnfeed"):
+            main(config_path=str(config_file), output_path=str(output_file))
+
+    assert "0 advisories from 2 repos (1 succeeded, 1 failed)" in caplog.text
+    assert "Repos that failed: owner/bad" in caplog.text
