@@ -15,8 +15,13 @@ Aggregated security advisory RSS feed from GitHub repositories. Runs daily via G
 ```
 vulnfeed/
 ├── config.yaml              # List of GitHub repos to monitor (edit this to customize)
-├── vulnfeed.py              # Main script — fetch, aggregate, generate RSS
-├── tests/test_vulnfeed.py   # Tests
+├── vulnfeed.py              # Main script — aggregate, generate RSS and index
+├── sources/                 # Pluggable advisory sources
+│   ├── __init__.py          # SourceResult, source registry
+│   ├── http.py              # Shared retry/timeout/pagination plumbing
+│   └── github.py            # Repository security advisories
+├── tests/test_vulnfeed.py   # Unit tests
+├── tests/test_integration.py # Local-HTTP pagination tests
 ├── requirements.txt         # Python dependencies
 ├── pyproject.toml            # ruff and pytest config
 ├── .github/workflows/

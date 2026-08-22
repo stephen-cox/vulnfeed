@@ -2,30 +2,14 @@ import logging
 import os
 import sys
 import textwrap
-import time
 from datetime import UTC, datetime, timedelta
 
-import requests
 import yaml
 from feedgen.feed import FeedGenerator
 
+import sources
+
 log = logging.getLogger("vulnfeed")
-
-GITHUB_API_ROOT = "https://api.github.com"
-
-# (connect, read) seconds. Without this a stalled connection blocks until the
-# Actions six-hour job limit.
-REQUEST_TIMEOUT = (5, 30)
-
-# GitHub's security-advisories endpoint defaults to 30 results per page, which
-# silently truncated the feed for every busy repo before pagination was added.
-PER_PAGE = 100
-
-# Guards against a malformed Link header cycling forever.
-MAX_PAGES = 50
-
-MAX_ATTEMPTS = 4
-RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 # Retention defaults, applied when config.yaml has no `feed:` section so
 # existing forks keep working untouched.
@@ -36,71 +20,6 @@ DEFAULT_MAX_AGE_DAYS: int | None = None
 def load_config(config_path: str = "config.yaml") -> dict:
     with open(config_path) as config_file:
         return yaml.safe_load(config_file)
-
-
-def _backoff_seconds(response: requests.Response | None, attempt: int) -> float:
-    """Seconds to wait before the next attempt, honouring Retry-After when given."""
-    retry_after = response.headers.get("Retry-After") if response is not None else None
-    if retry_after:
-        try:
-            return max(0.0, float(retry_after))
-        except (TypeError, ValueError):
-            log.warning("Ignoring unparseable Retry-After header: %r", retry_after)
-    return float(2**attempt)
-
-
-def _get_with_retries(url: str, headers: dict, params: dict | None = None) -> requests.Response:
-    """GET a URL, retrying transient failures with bounded exponential backoff."""
-    for attempt in range(MAX_ATTEMPTS):
-        is_last = attempt == MAX_ATTEMPTS - 1
-        try:
-            response = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
-        except requests.RequestException as exc:
-            if is_last:
-                raise
-            delay = _backoff_seconds(None, attempt)
-            log.warning("GET %s failed (%s); retrying in %.0fs", url, exc, delay)
-            time.sleep(delay)
-            continue
-
-        if not is_last and response.status_code in RETRY_STATUSES:
-            delay = _backoff_seconds(response, attempt)
-            log.warning("GET %s returned %s; retrying in %.0fs", url, response.status_code, delay)
-            time.sleep(delay)
-            continue
-
-        response.raise_for_status()
-        return response
-
-    raise RuntimeError("retry loop exhausted without returning")  # pragma: no cover
-
-
-def fetch_github_advisories(repo: str, token: str | None = None) -> list[dict]:
-    """Fetch every security advisory published in a repository's security tab."""
-    url = f"{GITHUB_API_ROOT}/repos/{repo}/security-advisories"
-    headers = {"Accept": "application/vnd.github+json"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-
-    advisories: list[dict] = []
-    params: dict | None = {"per_page": PER_PAGE}
-
-    for _ in range(MAX_PAGES):
-        response = _get_with_retries(url, headers=headers, params=params)
-        batch = response.json()
-        if not batch:
-            break
-        advisories.extend(batch)
-
-        next_url = response.links.get("next", {}).get("url")
-        if not next_url:
-            break
-        # The Link header URL already carries per_page and page.
-        url, params = next_url, None
-    else:
-        log.warning("Stopped paginating %s after %d pages", repo, MAX_PAGES)
-
-    return advisories
 
 
 def _published_at(advisory: dict) -> datetime:
@@ -376,42 +295,26 @@ def generate_index(config: dict) -> str:
         """)
 
 
-def collect_advisories(config: dict, token: str | None = None) -> tuple[list[dict], list, list]:
-    """Fetch advisories from every configured repo, isolating per-repo failures.
+def collect_advisories(config: dict, token: str | None = None) -> sources.SourceResult:
+    """Fetch advisories from every configured source.
 
-    A repo that is renamed, deleted, made private, or transiently unavailable
-    must not stop the others from being fetched — before this was isolated, one
-    bad entry in config.yaml froze the published feed entirely.
-
-    Returns (advisories, succeeded_repos, failed_repos).
+    Dispatch is a registry lookup rather than an if/elif chain, so a new source
+    is a new module plus a registry entry. Each source isolates failures across
+    its own targets.
     """
-    advisories: list[dict] = []
-    succeeded: list[str] = []
-    failed: list[str] = []
+    combined = sources.SourceResult()
 
     for feed in config.get("feeds", []):
-        if feed.get("source") != "github":
+        name = feed.get("source")
+        fetch = sources.get_source(name)
+        if fetch is None:
+            # Previously a bare `continue`, which silently ignored typos.
+            log.error("Unsupported source %r in config; skipping this feed entry", name)
             continue
 
-        for repo in feed.get("repos", []):
-            try:
-                fetched = fetch_github_advisories(repo, token=token)
-            except requests.RequestException as exc:
-                log.error("Failed to fetch advisories for %s: %s", repo, exc)
-                failed.append(repo)
-                continue
-            except Exception:
-                log.exception("Unexpected error fetching advisories for %s", repo)
-                failed.append(repo)
-                continue
+        combined.merge(fetch(feed, token=token))
 
-            for advisory in fetched:
-                advisory["repo"] = repo
-            advisories.extend(fetched)
-            succeeded.append(repo)
-            log.info("Fetched %d advisories from %s", len(fetched), repo)
-
-    return advisories, succeeded, failed
+    return combined
 
 
 def main(
@@ -419,53 +322,63 @@ def main(
     output_path: str = "public/feed.xml",
     token: str | None = None,
     index_only: bool = False,
+    dry_run: bool = False,
+    verbose: bool = False,
 ) -> int:
     """Generate the feed and index. Returns a process exit code."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.INFO, format="%(levelname)s %(message)s"
+    )
 
     config = load_config(config_path)
     output_dir = os.path.dirname(output_path) or "."
-    os.makedirs(output_dir, exist_ok=True)
 
-    index_path = os.path.join(output_dir, "index.html")
-    with open(index_path, "w") as f:
-        f.write(generate_index(config))
+    if not dry_run:
+        os.makedirs(output_dir, exist_ok=True)
+        index_path = os.path.join(output_dir, "index.html")
+        with open(index_path, "w") as f:
+            f.write(generate_index(config))
 
     if index_only:
         return 0
 
-    all_advisories, succeeded, failed = collect_advisories(config, token=token)
+    result = collect_advisories(config, token=token)
+    repo_count = len(result.succeeded) + len(result.failed)
 
     log.info(
         "%d advisories from %d repos (%d succeeded, %d failed)",
-        len(all_advisories),
-        len(succeeded) + len(failed),
-        len(succeeded),
-        len(failed),
+        len(result.advisories),
+        repo_count,
+        len(result.succeeded),
+        len(result.failed),
     )
-    if failed:
-        log.warning("Repos that failed: %s", ", ".join(failed))
+    if result.failed:
+        log.warning("Repos that failed: %s", ", ".join(result.failed))
 
-    if failed and not succeeded:
+    if result.failed and not result.succeeded:
         # Every repo failing points at a systemic problem — a bad token, an API
         # outage, no network. Leave the published feed alone rather than
         # replacing it with an empty one.
         log.error("Every configured repo failed; leaving %s unchanged", output_path)
         return 1
 
-    if not all_advisories:
+    if not result.advisories:
         # Legitimate for a config watching quiet repos, so not an error.
-        log.warning("No advisories found across %d repos", len(succeeded))
+        log.warning("No advisories found across %d repos", len(result.succeeded))
 
     site_url = config.get("site", {}).get("url", "")
     feed_url = f"{site_url}/feed.xml" if site_url else ""
 
     max_items, max_age_days = feed_limits(config)
     aggregated = aggregate_advisories(
-        all_advisories, max_items=max_items, max_age_days=max_age_days
+        result.advisories, max_items=max_items, max_age_days=max_age_days
     )
-    feed_xml = generate_feed(aggregated, feed_url=feed_url)
 
+    if dry_run:
+        log.info("Dry run: would write %d advisories to %s", len(aggregated), output_path)
+        return 0
+
+    feed_xml = generate_feed(aggregated, feed_url=feed_url)
     with open(output_path, "wb") as output_file:
         output_file.write(feed_xml)
 
@@ -476,9 +389,25 @@ def main(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--index-only", action="store_true")
+    parser = argparse.ArgumentParser(description="Generate the aggregated security advisory feed.")
+    parser.add_argument("--config", default="config.yaml", help="path to the config file")
+    parser.add_argument("--output", default="public/feed.xml", help="path to write the RSS feed to")
+    parser.add_argument(
+        "--index-only", action="store_true", help="regenerate index.html without fetching"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="fetch and report counts without writing any file"
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="enable debug logging")
     args = parser.parse_args()
 
-    github_token = os.getenv("GITHUB_TOKEN")
-    sys.exit(main(token=github_token, index_only=args.index_only))
+    sys.exit(
+        main(
+            config_path=args.config,
+            output_path=args.output,
+            token=os.getenv("GITHUB_TOKEN"),
+            index_only=args.index_only,
+            dry_run=args.dry_run,
+            verbose=args.verbose,
+        )
+    )

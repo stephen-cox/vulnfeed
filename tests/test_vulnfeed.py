@@ -5,16 +5,16 @@ from unittest.mock import Mock, call, patch
 import pytest
 import requests
 
+import sources
+from sources.github import fetch_repo_advisories
+from sources.http import PER_PAGE, REQUEST_TIMEOUT
 from vulnfeed import (
     DEFAULT_MAX_ITEMS,
-    PER_PAGE,
-    REQUEST_TIMEOUT,
     advisory_title,
     aggregate_advisories,
     collect_advisories,
     describe_advisory,
     feed_limits,
-    fetch_github_advisories,
     generate_feed,
     load_config,
     main,
@@ -56,7 +56,7 @@ feeds:
     assert config["feeds"][0]["repos"] == ["zammad/zammad", "django/django"]
 
 
-def test_fetch_github_advisories() -> None:
+def test_fetch_repo_advisories() -> None:
     mock_response = Mock()
     mock_response.json.return_value = [
         {
@@ -81,8 +81,8 @@ def test_fetch_github_advisories() -> None:
     mock_response.headers = {}
     mock_response.links = {}
 
-    with patch("vulnfeed.requests.get", return_value=mock_response) as mock_get:
-        advisories = fetch_github_advisories("owner/repo", token="fake-token")
+    with patch("sources.http.requests.get", return_value=mock_response) as mock_get:
+        advisories = fetch_repo_advisories("owner/repo", token="fake-token")
 
     mock_get.assert_called_once_with(
         ADVISORY_URL,
@@ -96,7 +96,7 @@ def test_fetch_github_advisories() -> None:
     assert advisories[1]["severity"] == "medium"
 
 
-def test_fetch_github_advisories_follows_pagination() -> None:
+def test_fetch_repo_advisories_follows_pagination() -> None:
     """Every page is fetched and concatenated; the Link URL is used verbatim."""
     page_two_url = f"{ADVISORY_URL}?per_page=100&page=2"
     responses = [
@@ -106,8 +106,8 @@ def test_fetch_github_advisories_follows_pagination() -> None:
         make_response([{"ghsa_id": "GHSA-page2-a"}]),
     ]
 
-    with patch("vulnfeed.requests.get", side_effect=responses) as mock_get:
-        advisories = fetch_github_advisories("owner/repo", token="fake-token")
+    with patch("sources.http.requests.get", side_effect=responses) as mock_get:
+        advisories = fetch_repo_advisories("owner/repo", token="fake-token")
 
     assert [a["ghsa_id"] for a in advisories] == ["GHSA-page1-a", "GHSA-page1-b", "GHSA-page2-a"]
     assert mock_get.call_args_list == [
@@ -121,49 +121,49 @@ def test_fetch_github_advisories_follows_pagination() -> None:
     ]
 
 
-def test_fetch_github_advisories_stops_on_empty_page() -> None:
+def test_fetch_repo_advisories_stops_on_empty_page() -> None:
     """A Link header pointing at an empty page ends pagination rather than looping."""
     responses = [
         make_response([{"ghsa_id": "GHSA-only"}], next_url=f"{ADVISORY_URL}?page=2"),
         make_response([]),
     ]
 
-    with patch("vulnfeed.requests.get", side_effect=responses) as mock_get:
-        advisories = fetch_github_advisories("owner/repo")
+    with patch("sources.http.requests.get", side_effect=responses) as mock_get:
+        advisories = fetch_repo_advisories("owner/repo")
 
     assert [a["ghsa_id"] for a in advisories] == ["GHSA-only"]
     assert mock_get.call_count == 2
 
 
-def test_fetch_github_advisories_caps_pagination() -> None:
+def test_fetch_repo_advisories_caps_pagination() -> None:
     """A Link header that never terminates is bounded by MAX_PAGES."""
     endless = make_response([{"ghsa_id": "GHSA-loop"}], next_url=f"{ADVISORY_URL}?page=next")
 
-    with patch("vulnfeed.requests.get", return_value=endless) as mock_get:
-        with patch("vulnfeed.MAX_PAGES", 3):
-            advisories = fetch_github_advisories("owner/repo")
+    with patch("sources.http.requests.get", return_value=endless) as mock_get:
+        with patch("sources.http.MAX_PAGES", 3):
+            advisories = fetch_repo_advisories("owner/repo")
 
     assert mock_get.call_count == 3
     assert len(advisories) == 3
 
 
-def test_fetch_github_advisories_omits_auth_header_without_token() -> None:
-    with patch("vulnfeed.requests.get", return_value=make_response([])) as mock_get:
-        fetch_github_advisories("owner/repo")
+def test_fetch_repo_advisories_omits_auth_header_without_token() -> None:
+    with patch("sources.http.requests.get", return_value=make_response([])) as mock_get:
+        fetch_repo_advisories("owner/repo")
 
     assert mock_get.call_args.kwargs["headers"] == {"Accept": "application/vnd.github+json"}
 
 
-def test_fetch_github_advisories_retries_transient_status() -> None:
+def test_fetch_repo_advisories_retries_transient_status() -> None:
     """A 502 is retried and the eventual success is returned."""
     responses = [
         make_response([], status_code=502),
         make_response([{"ghsa_id": "GHSA-recovered"}]),
     ]
 
-    with patch("vulnfeed.requests.get", side_effect=responses) as mock_get:
-        with patch("vulnfeed.time.sleep") as mock_sleep:
-            advisories = fetch_github_advisories("owner/repo")
+    with patch("sources.http.requests.get", side_effect=responses) as mock_get:
+        with patch("sources.http.time.sleep") as mock_sleep:
+            advisories = fetch_repo_advisories("owner/repo")
 
     assert [a["ghsa_id"] for a in advisories] == ["GHSA-recovered"]
     assert mock_get.call_count == 2
@@ -171,56 +171,56 @@ def test_fetch_github_advisories_retries_transient_status() -> None:
     responses[0].raise_for_status.assert_not_called()
 
 
-def test_fetch_github_advisories_honours_retry_after() -> None:
+def test_fetch_repo_advisories_honours_retry_after() -> None:
     responses = [
         make_response([], status_code=429, headers={"Retry-After": "7"}),
         make_response([{"ghsa_id": "GHSA-after-wait"}]),
     ]
 
-    with patch("vulnfeed.requests.get", side_effect=responses):
-        with patch("vulnfeed.time.sleep") as mock_sleep:
-            fetch_github_advisories("owner/repo")
+    with patch("sources.http.requests.get", side_effect=responses):
+        with patch("sources.http.time.sleep") as mock_sleep:
+            fetch_repo_advisories("owner/repo")
 
     mock_sleep.assert_called_once_with(7.0)
 
 
-def test_fetch_github_advisories_retries_connection_errors() -> None:
+def test_fetch_repo_advisories_retries_connection_errors() -> None:
     side_effect = [
         requests.ConnectionError("connection reset"),
         make_response([{"ghsa_id": "GHSA-reconnected"}]),
     ]
 
-    with patch("vulnfeed.requests.get", side_effect=side_effect):
-        with patch("vulnfeed.time.sleep") as mock_sleep:
-            advisories = fetch_github_advisories("owner/repo")
+    with patch("sources.http.requests.get", side_effect=side_effect):
+        with patch("sources.http.time.sleep") as mock_sleep:
+            advisories = fetch_repo_advisories("owner/repo")
 
     assert [a["ghsa_id"] for a in advisories] == ["GHSA-reconnected"]
     mock_sleep.assert_called_once_with(1.0)
 
 
-def test_fetch_github_advisories_gives_up_after_max_attempts() -> None:
+def test_fetch_repo_advisories_gives_up_after_max_attempts() -> None:
     """Backoff is bounded: a persistently failing repo raises instead of looping."""
     failing = make_response([], status_code=503)
     failing.raise_for_status.side_effect = requests.HTTPError("503 Server Error")
 
-    with patch("vulnfeed.requests.get", return_value=failing) as mock_get:
-        with patch("vulnfeed.time.sleep") as mock_sleep:
+    with patch("sources.http.requests.get", return_value=failing) as mock_get:
+        with patch("sources.http.time.sleep") as mock_sleep:
             with pytest.raises(requests.HTTPError):
-                fetch_github_advisories("owner/repo")
+                fetch_repo_advisories("owner/repo")
 
     assert mock_get.call_count == 4
     assert [c.args[0] for c in mock_sleep.call_args_list] == [1.0, 2.0, 4.0]
 
 
-def test_fetch_github_advisories_does_not_retry_client_errors() -> None:
+def test_fetch_repo_advisories_does_not_retry_client_errors() -> None:
     """A 404 (renamed or deleted repo) fails immediately rather than backing off."""
     missing = make_response([], status_code=404)
     missing.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
 
-    with patch("vulnfeed.requests.get", return_value=missing) as mock_get:
-        with patch("vulnfeed.time.sleep") as mock_sleep:
+    with patch("sources.http.requests.get", return_value=missing) as mock_get:
+        with patch("sources.http.time.sleep") as mock_sleep:
             with pytest.raises(requests.HTTPError):
-                fetch_github_advisories("owner/repo")
+                fetch_repo_advisories("owner/repo")
 
     assert mock_get.call_count == 1
     mock_sleep.assert_not_called()
@@ -362,7 +362,7 @@ feeds:
         }
     ]
 
-    with patch("vulnfeed.requests.get", return_value=mock_response):
+    with patch("sources.http.requests.get", return_value=mock_response):
         main(config_path=str(config_file), output_path=str(output_file), token="fake-token")
 
     assert output_file.exists()
@@ -384,14 +384,14 @@ def test_collect_advisories_isolates_a_failing_repo(caplog) -> None:
             raise requests.HTTPError("404 Client Error: Not Found for url: ...")
         return [{"ghsa_id": "GHSA-good"}]
 
-    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
+    with patch("sources.github.fetch_repo_advisories", side_effect=fake_fetch):
         with caplog.at_level("ERROR"):
-            advisories, succeeded, failed = collect_advisories(CONFIG_TWO_REPOS)
+            result = collect_advisories(CONFIG_TWO_REPOS)
 
-    assert [a["ghsa_id"] for a in advisories] == ["GHSA-good"]
-    assert advisories[0]["repo"] == "owner/good"
-    assert succeeded == ["owner/good"]
-    assert failed == ["owner/bad"]
+    assert [a["ghsa_id"] for a in result.advisories] == ["GHSA-good"]
+    assert result.advisories[0]["repo"] == "owner/good"
+    assert result.succeeded == ["owner/good"]
+    assert result.failed == ["owner/bad"]
     assert "owner/bad" in caplog.text
     assert "404" in caplog.text
 
@@ -404,22 +404,25 @@ def test_collect_advisories_isolates_unexpected_errors() -> None:
             raise KeyError("ghsa_id")
         return [{"ghsa_id": "GHSA-good"}]
 
-    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
-        advisories, succeeded, failed = collect_advisories(CONFIG_TWO_REPOS)
+    with patch("sources.github.fetch_repo_advisories", side_effect=fake_fetch):
+        result = collect_advisories(CONFIG_TWO_REPOS)
 
-    assert succeeded == ["owner/good"]
-    assert failed == ["owner/bad"]
-    assert len(advisories) == 1
+    assert result.succeeded == ["owner/good"]
+    assert result.failed == ["owner/bad"]
+    assert len(result.advisories) == 1
 
 
-def test_collect_advisories_skips_unknown_sources() -> None:
+def test_collect_advisories_skips_unknown_sources(caplog) -> None:
+    """An unsupported source must be reported, not silently ignored."""
     config = {"feeds": [{"source": "nvd", "repos": ["ignored"]}]}
 
-    with patch("vulnfeed.fetch_github_advisories") as mock_fetch:
-        advisories, succeeded, failed = collect_advisories(config)
+    with patch("sources.github.fetch_repo_advisories") as mock_fetch:
+        with caplog.at_level("ERROR", logger="vulnfeed"):
+            result = collect_advisories(config)
 
     mock_fetch.assert_not_called()
-    assert (advisories, succeeded, failed) == ([], [], [])
+    assert (result.advisories, result.succeeded, result.failed) == ([], [], [])
+    assert "nvd" in caplog.text
 
 
 def test_main_exits_non_zero_when_every_repo_fails(tmp_path) -> None:
@@ -438,7 +441,9 @@ feeds:
     output_file.parent.mkdir()
     output_file.write_bytes(b"<rss>previously published</rss>")
 
-    with patch("vulnfeed.fetch_github_advisories", side_effect=requests.ConnectionError("down")):
+    with patch(
+        "sources.github.fetch_repo_advisories", side_effect=requests.ConnectionError("down")
+    ):
         exit_code = main(config_path=str(config_file), output_path=str(output_file))
 
     assert exit_code == 1
@@ -472,7 +477,7 @@ feeds:
             }
         ]
 
-    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
+    with patch("sources.github.fetch_repo_advisories", side_effect=fake_fetch):
         exit_code = main(config_path=str(config_file), output_path=str(output_file))
 
     assert exit_code == 0
@@ -492,7 +497,7 @@ feeds:
     )
     output_file = tmp_path / "output" / "feed.xml"
 
-    with patch("vulnfeed.fetch_github_advisories", return_value=[]):
+    with patch("sources.github.fetch_repo_advisories", return_value=[]):
         exit_code = main(config_path=str(config_file), output_path=str(output_file))
 
     assert exit_code == 0
@@ -517,7 +522,7 @@ feeds:
             raise requests.HTTPError("500 Server Error")
         return []
 
-    with patch("vulnfeed.fetch_github_advisories", side_effect=fake_fetch):
+    with patch("sources.github.fetch_repo_advisories", side_effect=fake_fetch):
         with caplog.at_level("INFO", logger="vulnfeed"):
             main(config_path=str(config_file), output_path=str(output_file))
 
@@ -655,7 +660,7 @@ feeds:
         advisory("GHSA-c", "2026-06-01T00:00:00Z"),
     ]
 
-    with patch("vulnfeed.fetch_github_advisories", return_value=fetched):
+    with patch("sources.github.fetch_repo_advisories", return_value=fetched):
         main(config_path=str(config_file), output_path=str(output_file))
 
     root = ET.fromstring(output_file.read_bytes())
@@ -781,3 +786,68 @@ def test_generate_feed_with_minimal_advisory_is_valid_rss() -> None:
     item = root.find("channel").find("item")
     assert item.find("description").text == "Body only."
     assert item.find("guid").text == "GHSA-min-0000-0000"
+
+
+def test_main_dry_run_writes_nothing(tmp_path) -> None:
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+feeds:
+  - source: github
+    repos:
+      - owner/repo
+"""
+    )
+    output_file = tmp_path / "output" / "feed.xml"
+
+    with patch("sources.github.fetch_repo_advisories", return_value=[advisory("GHSA-a")]):
+        exit_code = main(config_path=str(config_file), output_path=str(output_file), dry_run=True)
+
+    assert exit_code == 0
+    assert not output_file.exists()
+    assert not output_file.parent.exists()
+
+
+def test_main_dry_run_reports_the_count(tmp_path, caplog) -> None:
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("feeds:\n  - source: github\n    repos: [owner/repo]\n")
+    fetched = [advisory("GHSA-a"), advisory("GHSA-b")]
+
+    with patch("sources.github.fetch_repo_advisories", return_value=fetched):
+        with caplog.at_level("INFO", logger="vulnfeed"):
+            main(
+                config_path=str(config_file),
+                output_path=str(tmp_path / "out" / "feed.xml"),
+                dry_run=True,
+            )
+
+    assert "Dry run: would write 2 advisories" in caplog.text
+
+
+def test_main_honours_custom_output_path(tmp_path) -> None:
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("feeds:\n  - source: github\n    repos: [owner/repo]\n")
+    output_file = tmp_path / "custom" / "somewhere" / "rss.xml"
+
+    with patch("sources.github.fetch_repo_advisories", return_value=[advisory("GHSA-a")]):
+        main(config_path=str(config_file), output_path=str(output_file))
+
+    assert output_file.exists()
+    assert (output_file.parent / "index.html").exists()
+
+
+def test_source_result_merge_combines_targets() -> None:
+    first = sources.SourceResult(advisories=[{"ghsa_id": "A"}], succeeded=["one"], failed=[])
+    second = sources.SourceResult(advisories=[{"ghsa_id": "B"}], succeeded=[], failed=["two"])
+
+    first.merge(second)
+
+    assert [a["ghsa_id"] for a in first.advisories] == ["A", "B"]
+    assert first.succeeded == ["one"]
+    assert first.failed == ["two"]
+
+
+def test_get_source_resolves_github_and_rejects_unknown() -> None:
+    assert sources.get_source("github") is not None
+    assert sources.get_source("nvd") is None
+    assert sources.get_source(None) is None

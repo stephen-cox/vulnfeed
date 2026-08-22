@@ -55,6 +55,16 @@ pip install -r requirements.txt
 python vulnfeed.py
 ```
 
+### Command-line options
+
+```
+--config CONFIG   path to the config file (default: config.yaml)
+--output OUTPUT   path to write the RSS feed to (default: public/feed.xml)
+--index-only      regenerate index.html without fetching
+--dry-run         fetch and report counts without writing any file
+-v, --verbose     enable debug logging
+```
+
 ### GitHub API authentication
 
 For higher API limits and authenticated advisory access, set `GITHUB_TOKEN` before running:

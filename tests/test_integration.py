@@ -13,7 +13,8 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-import vulnfeed
+import sources.github
+from sources.http import PER_PAGE
 
 TOTAL_ADVISORIES = 250
 
@@ -67,7 +68,7 @@ def advisory_api(monkeypatch):
     thread.start()
 
     host, port = server.server_address
-    monkeypatch.setattr(vulnfeed, "GITHUB_API_ROOT", f"http://{host}:{port}")
+    monkeypatch.setattr(sources.github, "GITHUB_API_ROOT", f"http://{host}:{port}")
     try:
         yield server
     finally:
@@ -78,7 +79,7 @@ def advisory_api(monkeypatch):
 
 def test_pagination_against_real_http_server(advisory_api) -> None:
     """All pages are retrieved via real Link headers, well past the old 30 cap."""
-    advisories = vulnfeed.fetch_github_advisories("owner/repo")
+    advisories = sources.github.fetch_repo_advisories("owner/repo")
 
     assert len(advisories) == TOTAL_ADVISORIES
     assert advisories[0]["ghsa_id"] == "GHSA-0000"
@@ -88,14 +89,14 @@ def test_pagination_against_real_http_server(advisory_api) -> None:
     pages = [page for _, _, page in advisory_api.requests]
     per_pages = {per_page for _, per_page, _ in advisory_api.requests}
     assert pages == [1, 2, 3]
-    assert per_pages == {vulnfeed.PER_PAGE}
+    assert per_pages == {PER_PAGE}
 
 
 def test_single_request_would_have_truncated(advisory_api) -> None:
     """Documents the bug: one default-paged request returns only 30 of 250."""
     import requests
 
-    url = f"{vulnfeed.GITHUB_API_ROOT}/repos/owner/repo/security-advisories"
+    url = f"{sources.github.GITHUB_API_ROOT}/repos/owner/repo/security-advisories"
     response = requests.get(url, timeout=(5, 30))
 
     assert len(response.json()) == 30
