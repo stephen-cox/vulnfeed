@@ -3,6 +3,7 @@ import os
 import sys
 import textwrap
 import time
+from datetime import UTC, datetime, timedelta
 
 import requests
 import yaml
@@ -25,6 +26,11 @@ MAX_PAGES = 50
 
 MAX_ATTEMPTS = 4
 RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
+
+# Retention defaults, applied when config.yaml has no `feed:` section so
+# existing forks keep working untouched.
+DEFAULT_MAX_ITEMS = 100
+DEFAULT_MAX_AGE_DAYS: int | None = None
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
@@ -97,14 +103,74 @@ def fetch_github_advisories(repo: str, token: str | None = None) -> list[dict]:
     return advisories
 
 
-def aggregate_advisories(advisories: list[dict]) -> list[dict]:
+def _published_at(advisory: dict) -> datetime:
+    """Parse an advisory's publication time, treating unusable values as oldest.
+
+    Draft and unpublished advisories can carry a null `published_at`, which used
+    to raise TypeError while sorting and take the whole run down with it.
+    """
+    raw = advisory.get("published_at")
+    if not raw:
+        log.warning("Advisory %s has no published_at; sorting it last", advisory.get("ghsa_id"))
+        return datetime.min.replace(tzinfo=UTC)
+
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (AttributeError, ValueError):
+        log.warning(
+            "Advisory %s has an unparseable published_at (%r); sorting it last",
+            advisory.get("ghsa_id"),
+            raw,
+        )
+        return datetime.min.replace(tzinfo=UTC)
+
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def aggregate_advisories(
+    advisories: list[dict],
+    max_items: int | None = None,
+    max_age_days: int | None = None,
+    now: datetime | None = None,
+) -> list[dict]:
+    """Deduplicate, drop withdrawn advisories, sort newest first, and trim."""
     seen: dict[str, dict] = {}
     for advisory in advisories:
+        if advisory.get("withdrawn_at"):
+            # GitHub retracted it; without this it stayed in the feed forever.
+            log.info("Skipping withdrawn advisory %s", advisory.get("ghsa_id"))
+            continue
+
         ghsa_id = advisory["ghsa_id"]
         if ghsa_id not in seen:
             seen[ghsa_id] = advisory
 
-    return sorted(seen.values(), key=lambda advisory: advisory["published_at"], reverse=True)
+    ordered = sorted(seen.values(), key=_published_at, reverse=True)
+
+    if max_age_days:
+        cutoff = (now or datetime.now(UTC)) - timedelta(days=max_age_days)
+        kept = [advisory for advisory in ordered if _published_at(advisory) >= cutoff]
+        if len(kept) < len(ordered):
+            log.info(
+                "Dropped %d advisories older than %d days", len(ordered) - len(kept), max_age_days
+            )
+        ordered = kept
+
+    # Applied after sorting, so the newest advisories are the ones retained.
+    if max_items is not None and len(ordered) > max_items:
+        log.info("Trimming feed from %d to %d items", len(ordered), max_items)
+        ordered = ordered[:max_items]
+
+    return ordered
+
+
+def feed_limits(config: dict) -> tuple[int | None, int | None]:
+    """Read retention limits from the optional `feed:` config section."""
+    feed_config = config.get("feed") or {}
+    return (
+        feed_config.get("max_items", DEFAULT_MAX_ITEMS),
+        feed_config.get("max_age_days", DEFAULT_MAX_AGE_DAYS),
+    )
 
 
 def generate_feed(advisories: list[dict], feed_url: str = "") -> bytes:
@@ -294,7 +360,10 @@ def main(
     site_url = config.get("site", {}).get("url", "")
     feed_url = f"{site_url}/feed.xml" if site_url else ""
 
-    aggregated = aggregate_advisories(all_advisories)
+    max_items, max_age_days = feed_limits(config)
+    aggregated = aggregate_advisories(
+        all_advisories, max_items=max_items, max_age_days=max_age_days
+    )
     feed_xml = generate_feed(aggregated, feed_url=feed_url)
 
     with open(output_path, "wb") as output_file:

@@ -1,14 +1,17 @@
 import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
 from unittest.mock import Mock, call, patch
 
 import pytest
 import requests
 
 from vulnfeed import (
+    DEFAULT_MAX_ITEMS,
     PER_PAGE,
     REQUEST_TIMEOUT,
     aggregate_advisories,
     collect_advisories,
+    feed_limits,
     fetch_github_advisories,
     generate_feed,
     load_config,
@@ -518,3 +521,141 @@ feeds:
 
     assert "0 advisories from 2 repos (1 succeeded, 1 failed)" in caplog.text
     assert "Repos that failed: owner/bad" in caplog.text
+
+
+def advisory(ghsa_id: str, published_at: str = "2026-04-01T12:00:00Z", **extra) -> dict:
+    base = {
+        "ghsa_id": ghsa_id,
+        "html_url": f"https://example.com/{ghsa_id}",
+        "summary": f"Summary for {ghsa_id}",
+        "severity": "high",
+        "published_at": published_at,
+        "description": f"Description for {ghsa_id}",
+        "repo": "owner/repo",
+    }
+    base.update(extra)
+    return base
+
+
+def test_aggregate_advisories_drops_withdrawn() -> None:
+    """A retracted advisory used to stay in the feed forever."""
+    advisories = [
+        advisory("GHSA-live"),
+        advisory("GHSA-retracted", withdrawn_at="2026-05-01T00:00:00Z"),
+    ]
+
+    result = aggregate_advisories(advisories)
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-live"]
+
+
+def test_aggregate_advisories_keeps_null_withdrawn_at() -> None:
+    """The API sends withdrawn_at: null on live advisories — that is not withdrawn."""
+    result = aggregate_advisories([advisory("GHSA-live", withdrawn_at=None)])
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-live"]
+
+
+def test_aggregate_advisories_applies_max_items_after_sorting() -> None:
+    """The cap keeps the newest, not the first seen."""
+    advisories = [
+        advisory("GHSA-old", "2020-01-01T00:00:00Z"),
+        advisory("GHSA-newest", "2026-08-01T00:00:00Z"),
+        advisory("GHSA-middle", "2024-01-01T00:00:00Z"),
+    ]
+
+    result = aggregate_advisories(advisories, max_items=2)
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-newest", "GHSA-middle"]
+
+
+def test_aggregate_advisories_max_items_none_keeps_everything() -> None:
+    advisories = [advisory(f"GHSA-{i}") for i in range(150)]
+
+    assert len(aggregate_advisories(advisories, max_items=None)) == 150
+
+
+def test_aggregate_advisories_applies_max_age_days() -> None:
+    now = datetime(2026, 8, 22, tzinfo=UTC)
+    advisories = [
+        advisory("GHSA-recent", "2026-08-01T00:00:00Z"),
+        advisory("GHSA-ancient", "2019-12-20T23:12:22Z"),
+    ]
+
+    result = aggregate_advisories(advisories, max_age_days=365, now=now)
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-recent"]
+
+
+def test_aggregate_advisories_handles_null_published_at() -> None:
+    """A null published_at used to raise TypeError and take down the whole run."""
+    advisories = [
+        advisory("GHSA-dated", "2026-04-01T12:00:00Z"),
+        advisory("GHSA-undated", published_at=None),
+    ]
+
+    result = aggregate_advisories(advisories)
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-dated", "GHSA-undated"]
+
+
+def test_aggregate_advisories_handles_unparseable_published_at(caplog) -> None:
+    advisories = [advisory("GHSA-dated"), advisory("GHSA-garbled", published_at="not a date")]
+
+    with caplog.at_level("WARNING", logger="vulnfeed"):
+        result = aggregate_advisories(advisories)
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-dated", "GHSA-garbled"]
+    assert "GHSA-garbled" in caplog.text
+
+
+def test_aggregate_advisories_missing_published_at_does_not_break_max_age() -> None:
+    now = datetime(2026, 8, 22, tzinfo=UTC)
+    advisories = [advisory("GHSA-recent", "2026-08-01T00:00:00Z"), advisory("GHSA-undated", None)]
+
+    result = aggregate_advisories(advisories, max_age_days=30, now=now)
+
+    assert [a["ghsa_id"] for a in result] == ["GHSA-recent"]
+
+
+def test_feed_limits_defaults_when_section_absent() -> None:
+    """An unmodified fork config must keep working."""
+    assert feed_limits({"feeds": []}) == (DEFAULT_MAX_ITEMS, None)
+
+
+def test_feed_limits_reads_configured_values() -> None:
+    config = {"feed": {"max_items": 25, "max_age_days": 90}}
+
+    assert feed_limits(config) == (25, 90)
+
+
+def test_feed_limits_allows_disabling_the_cap() -> None:
+    assert feed_limits({"feed": {"max_items": None}}) == (None, None)
+
+
+def test_main_applies_configured_feed_limits(tmp_path) -> None:
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        """
+feed:
+  max_items: 2
+
+feeds:
+  - source: github
+    repos:
+      - owner/repo
+"""
+    )
+    output_file = tmp_path / "output" / "feed.xml"
+    fetched = [
+        advisory("GHSA-a", "2026-08-01T00:00:00Z"),
+        advisory("GHSA-b", "2026-07-01T00:00:00Z"),
+        advisory("GHSA-c", "2026-06-01T00:00:00Z"),
+    ]
+
+    with patch("vulnfeed.fetch_github_advisories", return_value=fetched):
+        main(config_path=str(config_file), output_path=str(output_file))
+
+    root = ET.fromstring(output_file.read_bytes())
+    guids = [item.find("guid").text for item in root.find("channel").findall("item")]
+    assert guids == ["GHSA-a", "GHSA-b"]

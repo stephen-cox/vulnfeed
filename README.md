@@ -8,6 +8,31 @@ Aggregated security advisory RSS feed from GitHub repositories.
 2. For each configured repo, it fetches GitHub Security Advisories from the GitHub API.
 3. It deduplicates/sorts advisories and generates an RSS feed at `public/feed.xml`.
 
+## Configuration
+
+`config.yaml` controls which repositories are monitored and how much history the feed keeps.
+
+```yaml
+site:
+  url: https://<username>.github.io/vulnfeed
+  github: https://github.com/<username>/vulnfeed
+
+feed:
+  max_items: 100        # most recent advisories to publish
+  # max_age_days: 365   # optional: also drop anything older than this
+
+feeds:
+  - source: github
+    repos:
+      - owner/repo
+```
+
+The `feed:` section is optional. Omit it and the defaults apply: `max_items: 100` and no
+age limit. Both limits are applied after advisories are sorted newest-first, so it is
+always the most recent ones that are kept.
+
+Advisories that GitHub has withdrawn are excluded automatically.
+
 ## Subscribe
 
 After GitHub Pages is enabled for your fork, your feed URL will follow this pattern:

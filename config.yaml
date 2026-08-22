@@ -2,6 +2,13 @@ site:
   url: https://stephen-cox.github.io/vulnfeed
   github: https://github.com/stephen-cox/vulnfeed
 
+feed:
+  # Most recent advisories to publish. Subscribers re-download the whole
+  # feed on every poll, so this bounds it.
+  max_items: 100
+  # Optional: also drop anything published longer ago than this.
+  # max_age_days: 365
+
 feeds:
   - source: github
     repos:
