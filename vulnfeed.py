@@ -35,7 +35,7 @@ def aggregate_advisories(advisories: list[dict]) -> list[dict]:
 def generate_feed(advisories: list[dict], feed_url: str = "") -> bytes:
     fg = FeedGenerator()
     fg.id(feed_url or "https://github.com/vulnfeed")
-    fg.title("VulnFeed – Security Advisories")
+    fg.title("VulnFeed — Security Advisories")
     fg.link(href=feed_url or "https://vulnfeed", rel="self")
     fg.description("Aggregated security advisories from GitHub repositories")
 
@@ -45,7 +45,7 @@ def generate_feed(advisories: list[dict], feed_url: str = "") -> bytes:
 
         entry = fg.add_entry(order="append")
         entry.id(advisory["ghsa_id"])
-        entry.title(f"[{severity}] {repo} – {advisory['summary']}")
+        entry.title(f"[{severity}] {repo} — {advisory['summary']}")
         entry.link(href=advisory["html_url"])
         entry.description(advisory["description"])
         entry.published(advisory["published_at"])
