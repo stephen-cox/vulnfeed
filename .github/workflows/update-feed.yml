@@ -6,15 +6,20 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+  pull_request:
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
+
+# Serialise runs so a manual dispatch overlapping the nightly schedule cannot
+# race it to push, which would fail the second one on a non-fast-forward.
+# Scheduled runs must not be cancelled by a manual one.
+concurrency:
+  group: update-feed
+  cancel-in-progress: false
 
 jobs:
-  build-index:
-    if: github.event_name == 'push'
+  checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -28,12 +33,37 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Run lint checks
-        run: |
-          ruff check .
-          ruff format --check .
+      - name: Lint
+        run: ruff check .
 
-      - name: Generate index
+      - name: Format check
+        run: ruff format --check .
+
+      - name: Type check
+        run: mypy
+
+      - name: Tests
+        run: python -m pytest tests/ -v
+
+  build-index:
+    needs: [checks]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Regenerate index from the published feed
         run: python vulnfeed.py --index-only
 
       - name: Commit index if changed
@@ -49,9 +79,17 @@ jobs:
           git commit -m "chore: regenerate index.html"
           git push
 
+      - name: Upload site for deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
   update-feed:
+    needs: [checks]
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,11 +101,6 @@ jobs:
 
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
-
-      - name: Run lint checks
-        run: |
-          ruff check .
-          ruff format --check .
 
       - name: Generate feed and index
         env:
@@ -87,32 +120,26 @@ jobs:
           git commit -m "chore: update generated security feed"
           git push
 
+      - name: Upload site for deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
   deploy:
     needs: [build-index, update-feed]
     if: |
       always() && !cancelled() &&
       (needs.build-index.result == 'success' || needs.update-feed.result == 'success')
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Pull latest main
-        run: git pull origin main
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
-
+      # Deploys the artifact uploaded by whichever job ran. Previously this
+      # checked out main and pulled, racing the commit it was meant to publish.
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

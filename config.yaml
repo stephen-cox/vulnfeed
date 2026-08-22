@@ -2,6 +2,13 @@ site:
   url: https://stephen-cox.github.io/vulnfeed
   github: https://github.com/stephen-cox/vulnfeed
 
+feed:
+  # Most recent advisories to publish. Subscribers re-download the whole
+  # feed on every poll, so this bounds it.
+  max_items: 100
+  # Optional: also drop anything published longer ago than this.
+  # max_age_days: 365
+
 feeds:
   - source: github
     repos:
@@ -17,3 +24,21 @@ feeds:
       - taigaio/taiga-front
       - WordPress/wordpress-develop
       - zammad/zammad
+
+  # Advisories filed against these projects' published packages, which the
+  # repository endpoint above does not return. Package names could not be
+  # confirmed against the live API when this was added — the run logs
+  # "No advisories found for <package>; check the package name" for any that
+  # are wrong, so check the first run's output and correct or remove them.
+  - source: ghsa
+    packages:
+      - ecosystem: composer
+        name: composer/composer
+      - ecosystem: composer
+        name: espocrm/espocrm
+      - ecosystem: composer
+        name: mautic/core
+      - ecosystem: pip
+        name: open-webui
+      - ecosystem: go
+        name: github.com/argoproj/argo-cd/v2
