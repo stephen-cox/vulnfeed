@@ -1,9 +1,29 @@
+import logging
 import os
 import textwrap
+import time
 
 import requests
 import yaml
 from feedgen.feed import FeedGenerator
+
+log = logging.getLogger("vulnfeed")
+
+GITHUB_API_ROOT = "https://api.github.com"
+
+# (connect, read) seconds. Without this a stalled connection blocks until the
+# Actions six-hour job limit.
+REQUEST_TIMEOUT = (5, 30)
+
+# GitHub's security-advisories endpoint defaults to 30 results per page, which
+# silently truncated the feed for every busy repo before pagination was added.
+PER_PAGE = 100
+
+# Guards against a malformed Link header cycling forever.
+MAX_PAGES = 50
+
+MAX_ATTEMPTS = 4
+RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
@@ -11,15 +31,69 @@ def load_config(config_path: str = "config.yaml") -> dict:
         return yaml.safe_load(config_file)
 
 
+def _backoff_seconds(response: requests.Response | None, attempt: int) -> float:
+    """Seconds to wait before the next attempt, honouring Retry-After when given."""
+    retry_after = response.headers.get("Retry-After") if response is not None else None
+    if retry_after:
+        try:
+            return max(0.0, float(retry_after))
+        except (TypeError, ValueError):
+            log.warning("Ignoring unparseable Retry-After header: %r", retry_after)
+    return float(2**attempt)
+
+
+def _get_with_retries(url: str, headers: dict, params: dict | None = None) -> requests.Response:
+    """GET a URL, retrying transient failures with bounded exponential backoff."""
+    for attempt in range(MAX_ATTEMPTS):
+        is_last = attempt == MAX_ATTEMPTS - 1
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
+        except requests.RequestException as exc:
+            if is_last:
+                raise
+            delay = _backoff_seconds(None, attempt)
+            log.warning("GET %s failed (%s); retrying in %.0fs", url, exc, delay)
+            time.sleep(delay)
+            continue
+
+        if not is_last and response.status_code in RETRY_STATUSES:
+            delay = _backoff_seconds(response, attempt)
+            log.warning("GET %s returned %s; retrying in %.0fs", url, response.status_code, delay)
+            time.sleep(delay)
+            continue
+
+        response.raise_for_status()
+        return response
+
+    raise RuntimeError("retry loop exhausted without returning")  # pragma: no cover
+
+
 def fetch_github_advisories(repo: str, token: str | None = None) -> list[dict]:
-    url = f"https://api.github.com/repos/{repo}/security-advisories"
+    """Fetch every security advisory published in a repository's security tab."""
+    url = f"{GITHUB_API_ROOT}/repos/{repo}/security-advisories"
     headers = {"Accept": "application/vnd.github+json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    advisories: list[dict] = []
+    params: dict | None = {"per_page": PER_PAGE}
+
+    for _ in range(MAX_PAGES):
+        response = _get_with_retries(url, headers=headers, params=params)
+        batch = response.json()
+        if not batch:
+            break
+        advisories.extend(batch)
+
+        next_url = response.links.get("next", {}).get("url")
+        if not next_url:
+            break
+        # The Link header URL already carries per_page and page.
+        url, params = next_url, None
+    else:
+        log.warning("Stopped paginating %s after %d pages", repo, MAX_PAGES)
+
+    return advisories
 
 
 def aggregate_advisories(advisories: list[dict]) -> list[dict]:
