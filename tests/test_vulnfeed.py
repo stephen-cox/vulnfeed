@@ -9,8 +9,10 @@ from vulnfeed import (
     DEFAULT_MAX_ITEMS,
     PER_PAGE,
     REQUEST_TIMEOUT,
+    advisory_title,
     aggregate_advisories,
     collect_advisories,
+    describe_advisory,
     feed_limits,
     fetch_github_advisories,
     generate_feed,
@@ -659,3 +661,123 @@ feeds:
     root = ET.fromstring(output_file.read_bytes())
     guids = [item.find("guid").text for item in root.find("channel").findall("item")]
     assert guids == ["GHSA-a", "GHSA-b"]
+
+
+FULL_ADVISORY = {
+    "ghsa_id": "GHSA-full-0000-0000",
+    "html_url": "https://github.com/owner/repo/security/advisories/GHSA-full-0000-0000",
+    "summary": "SQL injection in ticket search",
+    "severity": "critical",
+    "published_at": "2026-04-01T12:00:00Z",
+    "description": "## Summary\nA SQL injection vulnerability.",
+    "repo": "owner/repo",
+    "cve_id": "CVE-2026-1234",
+    "cvss": {"score": 9.8, "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+    "cwes": [{"cwe_id": "CWE-89", "name": "SQL Injection"}, {"cwe_id": "CWE-20", "name": "Input"}],
+    "vulnerabilities": [
+        {
+            "package": {"ecosystem": "rubygems", "name": "zammad"},
+            "vulnerable_version_range": "< 6.4.1",
+            "patched_versions": "6.4.1",
+        }
+    ],
+}
+
+MINIMAL_ADVISORY = {
+    "ghsa_id": "GHSA-min-0000-0000",
+    "html_url": "https://example.com/min",
+    "summary": "Bare advisory",
+    "severity": None,
+    "published_at": "2026-03-01T00:00:00Z",
+    "description": "Body only.",
+    "repo": "owner/repo",
+    "cve_id": None,
+    "cvss": {"score": None, "vector_string": None},
+    "cwes": [],
+    "vulnerabilities": [],
+}
+
+
+def test_describe_advisory_includes_all_metadata() -> None:
+    described = describe_advisory(FULL_ADVISORY)
+
+    assert "CVE-2026-1234" in described
+    assert "CVSS 9.8 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H)" in described
+    assert "CWE-89, CWE-20" in described
+    assert "- rubygems/zammad < 6.4.1 (patched: 6.4.1)" in described
+    assert described.endswith("## Summary\nA SQL injection vulnerability.")
+
+
+def test_describe_advisory_omits_absent_metadata() -> None:
+    """Every enriched field is optional; absent ones must not leave empty lines."""
+    described = describe_advisory(MINIMAL_ADVISORY)
+
+    assert described == "Body only."
+
+
+def test_describe_advisory_survives_missing_keys_entirely() -> None:
+    described = describe_advisory({"summary": "No body", "ghsa_id": "GHSA-x"})
+
+    assert described == "No body"
+
+
+def test_describe_advisory_reads_cvss_severities_fallback() -> None:
+    advisory_with_v4 = {
+        **MINIMAL_ADVISORY,
+        "cvss_severities": {"cvss_v4": {"score": 8.7, "vector_string": "CVSS:4.0/AV:N"}},
+    }
+
+    assert "CVSS 8.7 (CVSS:4.0/AV:N)" in describe_advisory(advisory_with_v4)
+
+
+def test_describe_advisory_handles_score_without_vector() -> None:
+    assert "CVSS 7.5" in describe_advisory({**MINIMAL_ADVISORY, "cvss": {"score": 7.5}})
+
+
+def test_describe_advisory_handles_first_patched_version_object() -> None:
+    """The global advisory database nests the patched version in an object."""
+    advisory_ghsa_shape = {
+        **MINIMAL_ADVISORY,
+        "vulnerabilities": [
+            {
+                "package": {"ecosystem": "npm", "name": "widget"},
+                "vulnerable_version_range": ">= 2.0, < 2.1.4",
+                "first_patched_version": {"identifier": "2.1.4"},
+            }
+        ],
+    }
+
+    assert "- npm/widget >= 2.0, < 2.1.4 (patched: 2.1.4)" in describe_advisory(advisory_ghsa_shape)
+
+
+def test_describe_advisory_skips_packages_without_a_name() -> None:
+    advisory_no_name = {**MINIMAL_ADVISORY, "vulnerabilities": [{"package": {"ecosystem": "npm"}}]}
+
+    assert describe_advisory(advisory_no_name) == "Body only."
+
+
+def test_advisory_title_appends_cve_when_present() -> None:
+    assert advisory_title(FULL_ADVISORY) == (
+        "[CRITICAL] owner/repo — SQL injection in ticket search (CVE-2026-1234)"
+    )
+
+
+def test_advisory_title_without_cve_is_unchanged() -> None:
+    assert advisory_title(MINIMAL_ADVISORY) == "[UNKNOWN] owner/repo — Bare advisory"
+
+
+def test_generate_feed_adds_severity_and_repo_categories() -> None:
+    root = ET.fromstring(generate_feed([FULL_ADVISORY]))
+    item = root.find("channel").find("item")
+
+    assert [c.text for c in item.findall("category")] == ["CRITICAL", "owner/repo"]
+
+
+def test_generate_feed_with_minimal_advisory_is_valid_rss() -> None:
+    root = ET.fromstring(generate_feed([MINIMAL_ADVISORY]))
+
+    assert root.tag == "rss"
+    assert root.get("version") == "2.0"
+    item = root.find("channel").find("item")
+    assert item.find("description").text == "Body only."
+    assert item.find("guid").text == "GHSA-min-0000-0000"

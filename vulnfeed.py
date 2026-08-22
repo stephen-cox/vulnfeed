@@ -173,6 +173,101 @@ def feed_limits(config: dict) -> tuple[int | None, int | None]:
     )
 
 
+def _cvss_summary(advisory: dict) -> str | None:
+    """Human-readable CVSS score and vector, from either shape the API uses."""
+    cvss = advisory.get("cvss") or {}
+    score = cvss.get("score")
+    vector = cvss.get("vector_string")
+
+    if score is None and not vector:
+        severities = advisory.get("cvss_severities") or {}
+        for key in ("cvss_v4", "cvss_v3"):
+            candidate = severities.get(key) or {}
+            if candidate.get("score") is not None or candidate.get("vector_string"):
+                score, vector = candidate.get("score"), candidate.get("vector_string")
+                break
+
+    if score is not None and vector:
+        return f"CVSS {score} ({vector})"
+    if score is not None:
+        return f"CVSS {score}"
+    if vector:
+        return f"CVSS {vector}"
+    return None
+
+
+def _affected_packages(advisory: dict) -> list[str]:
+    """One line per affected package: ecosystem/name, range, and patched version."""
+    lines = []
+    for vulnerability in advisory.get("vulnerabilities") or []:
+        package = vulnerability.get("package") or {}
+        name = package.get("name")
+        if not name:
+            continue
+
+        ecosystem = package.get("ecosystem")
+        line = f"{ecosystem}/{name}" if ecosystem else name
+
+        version_range = vulnerability.get("vulnerable_version_range")
+        if version_range:
+            line = f"{line} {version_range}"
+
+        # Repository advisories use patched_versions (a string); the global
+        # advisory database uses first_patched_version (sometimes an object).
+        patched = vulnerability.get("patched_versions") or vulnerability.get(
+            "first_patched_version"
+        )
+        if isinstance(patched, dict):
+            patched = patched.get("identifier")
+        if patched:
+            line = f"{line} (patched: {patched})"
+
+        lines.append(line)
+    return lines
+
+
+def describe_advisory(advisory: dict) -> str:
+    """Advisory body prefixed with a metadata block.
+
+    Kept as plain text/markdown rather than HTML: the body GitHub returns is
+    already markdown, and converting it would mean a new dependency and a risk
+    of mangling it. Every field here is optional and absent ones are omitted.
+    """
+    facts = []
+    if advisory.get("cve_id"):
+        facts.append(advisory["cve_id"])
+
+    cvss = _cvss_summary(advisory)
+    if cvss:
+        facts.append(cvss)
+
+    cwes = [cwe.get("cwe_id") for cwe in advisory.get("cwes") or [] if cwe.get("cwe_id")]
+    if cwes:
+        facts.append(", ".join(cwes))
+
+    blocks = []
+    if facts:
+        blocks.append(" · ".join(facts))
+
+    affected = _affected_packages(advisory)
+    if affected:
+        blocks.append("Affected:\n" + "\n".join(f"- {line}" for line in affected))
+
+    body = advisory.get("description") or advisory.get("summary") or ""
+    if not blocks:
+        return body
+    return "\n\n".join(blocks) + "\n\n---\n\n" + body
+
+
+def advisory_title(advisory: dict) -> str:
+    severity = (advisory.get("severity") or "unknown").upper()
+    repo = advisory.get("repo", "")
+    title = f"[{severity}] {repo} — {advisory['summary']}"
+    if advisory.get("cve_id"):
+        title = f"{title} ({advisory['cve_id']})"
+    return title
+
+
 def generate_feed(advisories: list[dict], feed_url: str = "") -> bytes:
     fg = FeedGenerator()
     fg.id(feed_url or "https://github.com/vulnfeed")
@@ -186,11 +281,16 @@ def generate_feed(advisories: list[dict], feed_url: str = "") -> bytes:
 
         entry = fg.add_entry(order="append")
         entry.id(advisory["ghsa_id"])
-        entry.title(f"[{severity}] {repo} — {advisory['summary']}")
+        entry.title(advisory_title(advisory))
         entry.link(href=advisory["html_url"])
-        entry.description(advisory["description"])
+        entry.description(describe_advisory(advisory))
         entry.published(advisory["published_at"])
         entry.guid(advisory["ghsa_id"], permalink=False)
+
+        categories = [{"term": severity}]
+        if repo:
+            categories.append({"term": repo})
+        entry.category(categories)
 
     return fg.rss_str(pretty=True)
 
