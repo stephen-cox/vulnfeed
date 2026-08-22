@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 21 Aug 2026 04:33:30 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 22 Aug 2026 04:28:09 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] RocketChat/Rocket.Chat – Arbitrary notify-user event injection via stream-notify-room-users forward (incomplete fix of GHSA-27jx)</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-r3v3-v742-55j5</link>
