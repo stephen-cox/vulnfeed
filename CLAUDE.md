@@ -30,7 +30,8 @@ vulnfeed/
 ├── .github/workflows/
 │   └── update-feed.yml      # Scheduled Action (daily 4am UTC)
 ├── public/
-│   └── feed.xml             # Generated RSS feed (gitignored, served by GitHub Pages)
+│   ├── feed.xml             # Generated RSS feed (committed by CI, served by GitHub Pages)
+│   └── index.html           # Generated landing page (committed by CI)
 └── docs/                    # Specs and plans (not published)
 ```
 
@@ -45,6 +46,8 @@ pip install -r requirements.txt
 ## Commands
 
 - `python vulnfeed.py` — run the feed generator (set GITHUB_TOKEN env var for API access)
+- `python vulnfeed.py --dry-run` — fetch and report counts without writing anything
+- `python vulnfeed.py --index-only` — rebuild the landing page from the published feed
 - `python -m pytest tests/ -v` — run tests
 - `ruff check .` — lint
 - `ruff format --check .` — check formatting
