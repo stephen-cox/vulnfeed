@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VulnFeed</title>
+  <link rel="alternate" type="application/rss+xml" title="VulnFeed — Security Advisories" href="$feed_href">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #5c5c5c;
+      --border: #e2e2e2;
+      --card: #fafafa;
+      --accent: #d94f00;
+      --accent-fg: #ffffff;
+      --critical-bg: #b3001b;
+      --high-bg: #c2410c;
+      --medium-bg: #a16207;
+      --low-bg: #4d7c0f;
+      --unknown-bg: #52525b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181d;
+        --fg: #e8e8e8;
+        --muted: #9aa0a6;
+        --border: #2c2f36;
+        --card: #1d2027;
+        --accent: #ff7a33;
+        --accent-fg: #16181d;
+        --critical-bg: #e02040;
+        --high-bg: #ea6a2a;
+        --medium-bg: #c9971b;
+        --low-bg: #74a824;
+        --unknown-bg: #7a808a;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 3rem 1.25rem 4rem;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+
+    h1 { margin: 0 0 0.25rem; font-size: 2rem; }
+    h2 { margin: 2.5rem 0 0.75rem; font-size: 1.15rem; }
+    .subtitle { color: var(--muted); margin: 0 0 1.5rem; }
+
+    .feed-link {
+      display: inline-block;
+      padding: 0.55rem 1.1rem;
+      background: var(--accent);
+      color: var(--accent-fg);
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+    .feed-link:hover { filter: brightness(1.1); }
+
+    .meta { color: var(--muted); font-size: 0.875rem; margin: 0.75rem 0 0; }
+
+    code {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+      font-size: 0.875em;
+      word-break: break-all;
+    }
+
+    ul.advisories { list-style: none; padding: 0; margin: 0; }
+
+    .advisory {
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .advisory-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: baseline;
+      margin-bottom: 0.3rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #fff;
+      background: var(--unknown-bg);
+      white-space: nowrap;
+    }
+    .badge.critical { background: var(--critical-bg); }
+    .badge.high { background: var(--high-bg); }
+    .badge.medium { background: var(--medium-bg); }
+    .badge.low { background: var(--low-bg); }
+
+    .origin { color: var(--muted); font-size: 0.85rem; word-break: break-all; }
+
+    .advisory a.summary {
+      color: var(--fg);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .advisory a.summary:hover { text-decoration: underline; color: var(--accent); }
+
+    .advisory-meta {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .empty {
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      padding: 1.25rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    ul.targets { padding-left: 1.2rem; color: var(--muted); }
+    ul.targets li { word-break: break-all; }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+
+    @media (max-width: 32rem) {
+      body { padding: 2rem 1rem 3rem; }
+      h1 { font-size: 1.6rem; }
+      .advisory-head { gap: 0.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>VulnFeed</h1>
+  <p class="subtitle">Aggregated security advisories from GitHub repositories</p>
+
+  <a class="feed-link" href="$feed_href">Subscribe to RSS Feed</a>
+  <p class="meta">Feed URL: <code>$feed_url</code></p>
+  <p class="meta">$status_line</p>
+
+  <h2>$advisories_heading</h2>
+$advisory_items
+
+  <h2>What is monitored</h2>
+$target_items
+
+  <footer>
+    <a href="$github_url">View source on GitHub</a>
+  </footer>
+</body>
+</html>

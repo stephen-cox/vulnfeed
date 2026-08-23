@@ -15,14 +15,26 @@ Aggregated security advisory RSS feed from GitHub repositories. Runs daily via G
 ```
 vulnfeed/
 ├── config.yaml              # List of GitHub repos to monitor (edit this to customize)
-├── vulnfeed.py              # Main script — fetch, aggregate, generate RSS
-├── tests/test_vulnfeed.py   # Tests
+├── vulnfeed.py              # Main script — aggregate, generate RSS and index
+├── sources/                 # Pluggable advisory sources
+│   ├── __init__.py          # SourceResult, source registry
+│   ├── http.py              # Shared retry/timeout/pagination plumbing
+│   └── github.py            # Repository security advisories
+├── templates/index.html     # Landing page template (string.Template)
+├── tests/test_vulnfeed.py   # Unit tests
+├── tests/test_ghsa.py       # Advisory database source tests
+├── tests/test_index.py      # Landing page tests
+├── tests/test_integration.py # Local-HTTP end-to-end tests
 ├── requirements.txt         # Python dependencies
 ├── pyproject.toml            # ruff and pytest config
-├── .github/workflows/
-│   └── update-feed.yml      # Scheduled Action (daily 4am UTC)
+├── .github/
+│   ├── dependabot.yml       # Weekly pip and github-actions updates
+│   └── workflows/
+│       ├── update-feed.yml  # Checks, scheduled feed build, Pages deploy
+│       └── codeql.yml       # CodeQL analysis
 ├── public/
-│   └── feed.xml             # Generated RSS feed (gitignored, served by GitHub Pages)
+│   ├── feed.xml             # Generated RSS feed (committed by CI, served by GitHub Pages)
+│   └── index.html           # Generated landing page (committed by CI)
 └── docs/                    # Specs and plans (not published)
 ```
 
@@ -37,10 +49,13 @@ pip install -r requirements.txt
 ## Commands
 
 - `python vulnfeed.py` — run the feed generator (set GITHUB_TOKEN env var for API access)
+- `python vulnfeed.py --dry-run` — fetch and report counts without writing anything
+- `python vulnfeed.py --index-only` — rebuild the landing page from the published feed
 - `python -m pytest tests/ -v` — run tests
 - `ruff check .` — lint
 - `ruff format --check .` — check formatting
 - `ruff format .` — auto-format
+- `mypy` — type check (vulnfeed.py and sources/)
 
 ---
 
