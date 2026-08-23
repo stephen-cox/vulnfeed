@@ -1,75 +1,2063 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>VulnFeed</title>
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          max-width: 640px;
-          margin: 4rem auto;
-          padding: 0 1.5rem;
-          color: #1a1a1a;
-          line-height: 1.6;
-        }
-        h1 { margin-bottom: 0.25rem; }
-        .subtitle { color: #555; margin-top: 0; }
-        .feed-link {
-          display: inline-block;
-          margin: 1.5rem 0;
-          padding: 0.6rem 1.2rem;
-          background: #f60;
-          color: #fff;
-          text-decoration: none;
-          border-radius: 4px;
-          font-weight: 600;
-        }
-        .feed-link:hover { background: #d55; }
-        code {
-          background: #f4f4f4;
-          padding: 0.15em 0.4em;
-          border-radius: 3px;
-          font-size: 0.9em;
-        }
-        ul { padding-left: 1.2rem; }
-        footer { margin-top: 3rem; font-size: 0.85rem; color: #888; }
-        footer a { color: #888; }
-      </style>
-    </head>
-    <body>
-      <h1>VulnFeed</h1>
-      <p class="subtitle">Aggregated security advisories from GitHub repositories</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VulnFeed</title>
+  <link rel="alternate" type="application/rss+xml" title="VulnFeed — Security Advisories" href="https://stephen-cox.github.io/vulnfeed/feed.xml">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #5c5c5c;
+      --border: #e2e2e2;
+      --card: #fafafa;
+      --accent: #d94f00;
+      --accent-fg: #ffffff;
+      --critical-bg: #b3001b;
+      --high-bg: #c2410c;
+      --medium-bg: #a16207;
+      --low-bg: #4d7c0f;
+      --unknown-bg: #52525b;
+    }
 
-      <a class="feed-link" href="feed.xml">Subscribe to RSS Feed</a>
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181d;
+        --fg: #e8e8e8;
+        --muted: #9aa0a6;
+        --border: #2c2f36;
+        --card: #1d2027;
+        --accent: #ff7a33;
+        --accent-fg: #16181d;
+        --critical-bg: #e02040;
+        --high-bg: #ea6a2a;
+        --medium-bg: #c9971b;
+        --low-bg: #74a824;
+        --unknown-bg: #7a808a;
+      }
+    }
 
-      <p>
-        VulnFeed polls GitHub's security advisory API for a curated list of open-source
-        projects and publishes a single consolidated RSS feed, updated daily.
-      </p>
+    * { box-sizing: border-box; }
 
-      <h2>Usage</h2>
-      <p>Add the feed URL to your RSS reader:</p>
-      <p><code>https://stephen-cox.github.io/vulnfeed/feed.xml</code></p>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 3rem 1.25rem 4rem;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
 
-      <h2>Monitored repositories</h2>
-      <ul>
-        <li>argoproj/argo-cd</li>
-<li>composer/composer</li>
-<li>espocrm/espocrm</li>
-<li>icinga/icinga2</li>
-<li>mautic/mautic</li>
-<li>open-webui/open-webui</li>
-<li>RocketChat/Rocket.Chat</li>
-<li>taigaio/taiga-back</li>
-<li>taigaio/taiga-events</li>
-<li>taigaio/taiga-front</li>
-<li>WordPress/wordpress-develop</li>
-<li>zammad/zammad</li>
-      </ul>
+    h1 { margin: 0 0 0.25rem; font-size: 2rem; }
+    h2 { margin: 2.5rem 0 0.75rem; font-size: 1.15rem; }
+    .subtitle { color: var(--muted); margin: 0 0 1.5rem; }
 
-      <footer>
-        <a href="https://github.com/stephen-cox/vulnfeed">View source on GitHub</a>
-      </footer>
-    </body>
-    </html>
+    .feed-link {
+      display: inline-block;
+      padding: 0.55rem 1.1rem;
+      background: var(--accent);
+      color: var(--accent-fg);
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+    .feed-link:hover { filter: brightness(1.1); }
+
+    .meta { color: var(--muted); font-size: 0.875rem; margin: 0.75rem 0 0; }
+
+    code {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+      font-size: 0.875em;
+      word-break: break-all;
+    }
+
+    ul.advisories { list-style: none; padding: 0; margin: 0; }
+
+    .advisory {
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .advisory-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: baseline;
+      margin-bottom: 0.3rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #fff;
+      background: var(--unknown-bg);
+      white-space: nowrap;
+    }
+    .badge.critical { background: var(--critical-bg); }
+    .badge.high { background: var(--high-bg); }
+    .badge.medium { background: var(--medium-bg); }
+    .badge.low { background: var(--low-bg); }
+
+    .origin { color: var(--muted); font-size: 0.85rem; word-break: break-all; }
+
+    .advisory a.summary {
+      color: var(--fg);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .advisory a.summary:hover { text-decoration: underline; color: var(--accent); }
+
+    .advisory-meta {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .empty {
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      padding: 1.25rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    ul.targets { padding-left: 1.2rem; color: var(--muted); }
+    ul.targets li { word-break: break-all; }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+
+    @media (max-width: 32rem) {
+      body { padding: 2rem 1rem 3rem; }
+      h1 { font-size: 1.6rem; }
+      .advisory-head { gap: 0.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>VulnFeed</h1>
+  <p class="subtitle">Aggregated security advisories from GitHub repositories</p>
+
+  <a class="feed-link" href="https://stephen-cox.github.io/vulnfeed/feed.xml">Subscribe to RSS Feed</a>
+  <p class="meta">Feed URL: <code>https://stephen-cox.github.io/vulnfeed/feed.xml</code></p>
+  <p class="meta">233 advisories, last updated 23 Aug 2026 at 05:05 UTC.</p>
+
+  <h2>Latest advisories (233)</h2>
+  <ul class="advisories">
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-r3v3-v742-55j5">[MEDIUM] RocketChat/Rocket.Chat – Arbitrary notify-user event injection via stream-notify-room-users forward (incomplete fix of GHSA-27jx)</a>
+      <div class="advisory-meta"><span>20 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-6x96-99rg-wg67">[MEDIUM] RocketChat/Rocket.Chat – Blind Server-Side Request Forgery (SSRF) In The downloadPublicImportFile Endpoint</a>
+      <div class="advisory-meta"><span>20 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-7c6v-m68v-v73r">[LOW] RocketChat/Rocket.Chat – sendForgotPasswordEmail Meteor Method Lacks DDP Rate Limit</a>
+      <div class="advisory-meta"><span>20 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-wm63-p2jg-5665">[MEDIUM] icinga/icinga2 – Large memory allocations on JSON-RPC connections may result in denial of service</a>
+      <div class="advisory-meta"><span>18 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-v265-w3gm-99vg">[MEDIUM] icinga/icinga2 – /v1/events filter expressions allow unrestricted access to config objects, ignoring user-specific restrictions</a>
+      <div class="advisory-meta"><span>18 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-xwmh-j8hf-cfqw">[LOW] espocrm/espocrm – SSRF via IPv6 transition address bypass of internal-host validation</a>
+      <div class="advisory-meta"><span>13 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-28w2-h88g-6vgv">[MEDIUM] espocrm/espocrm – Email template renderer leaks restricted record fields in mass email and group email auto-reply</a>
+      <div class="advisory-meta"><span>13 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-24pg-2q7q-m5p6">[MEDIUM] espocrm/espocrm – Access control bypass in Mass Update letting regular user with Mass Update permission read any attachment with known ID</a>
+      <div class="advisory-meta"><span>13 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-8vr3-7mxf-gx8w">[HIGH] WordPress/wordpress-develop – Remote code execution vulnerability via malicious file upload by an Author level user or higher</a>
+      <div class="advisory-meta"><span>12 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-52p2-r8wf-jcrf">[HIGH] WordPress/wordpress-develop – Pre-auth reflected XSS on login screen with potential to lead to PHP code execution</a>
+      <div class="advisory-meta"><span>6 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-4x3x-65c5-8hx4">[MEDIUM] zammad/zammad – Stored XSS in ticket article rendering in the new Vue-based interface</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-m9ff-hjr3-93h4">[HIGH] zammad/zammad – S/MIME signature verification allows forged sender impersonation</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-cxjg-4gmf-5xqc">[MEDIUM] zammad/zammad – Stored HTML injection in Knowledge Base video widget enables forced session switching via unescaped iframe attribute</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-6vgm-xxp4-p6jv">[MEDIUM] zammad/zammad – Missing Authorization in TagsController#list Allows Cross-Object Tag Enumeration</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-jvm2-cr58-4qxp">[HIGH] zammad/zammad – IDOR in External Data Source rendering exposes ticket, user, group, and organization data</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-gp3x-9xm8-rcj6">[HIGH] zammad/zammad – AI Agent template sanitizer bypass leads to remote code execution</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-6vh5-pfp2-5rmh">[MEDIUM] zammad/zammad – Missing rate limiting allows password brute-forcing during two-factor login</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-x4f3-367g-m93g">[LOW] zammad/zammad – Pending upload deletion bypass via legacy attachment endpoint</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-86cc-3ggh-mf2m">[CRITICAL] zammad/zammad – Account takeover via unverified email matching during SSO auto-link</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-75j9-hpg4-j9f8">[LOW] zammad/zammad – Authenticated agents can read AI summary error messages from inaccessible tickets</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-pp8r-x7pp-5qj5">[MEDIUM] zammad/zammad – Channel admins can read unauthorized attachments via signature rich-text body</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-qh8m-g5vr-7272">[MEDIUM] zammad/zammad – Microsoft Graph error logs expose partially masked OAuth access tokens</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-fpwp-w2p4-hqg7">[MEDIUM] zammad/zammad – Remote image tracking bypass via shortened URL scheme</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-33p2-cm7w-62g3">[MEDIUM] zammad/zammad – HTML sanitizer API path allowlist bypass via interior path traversal in img src/srcset</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-r95m-ghj7-646x">[MEDIUM] zammad/zammad – Stored XSS via unescaped option labels in the object attribute options context UI</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-32gv-72x5-3983">[HIGH] zammad/zammad – Missing article authorization in ticket attachment clone endpoint</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-r957-vp26-563q">[MEDIUM] zammad/zammad – Invalid PGP Detached Signatures Reported as Good Signature on Inbound Mail</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-48h2-wv8r-fgp9">[MEDIUM] zammad/zammad – Sensitive Information Exposure in Integration Administration API</a>
+      <div class="advisory-meta"><span>4 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-8x5v-cpv7-8jjp">[HIGH] open-webui/open-webui – Any authenticated user can reach internal services and cloud metadata via NAT64-encoded URLs</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-3vf6-64vr-3g56">[LOW] open-webui/open-webui – Any authenticated user can cancel another user&#x27;s chat generation via the chat delete endpoint</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-pwxh-7358-jq2x">[HIGH] open-webui/open-webui – Stored XSS via unescaped KaTeX render-error fallback in rendered messages</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-6xhv-rxhv-pwm4">[MEDIUM] open-webui/open-webui – Cross-user file content disclosure via request-scoped direct model knowledge metadata</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-jxc9-xmc4-gr23">[MEDIUM] open-webui/open-webui – Deletion of directories and file embeddings in other knowledge bases via sync cleanup</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-5gpj-vj23-vhhv">[MEDIUM] open-webui/open-webui – Unapproved accounts can open terminal sessions via a WebSocket auth path missing the role check</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-g423-grf7-98rv">[MEDIUM] open-webui/open-webui – Users denied the image-generation permission can still generate images via chat completions</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-rffm-9q57-q649">[MEDIUM] open-webui/open-webui – Client-side SSRF via unrestricted external resource loading in Vega/Vega-Lite chart rendering</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-3r7g-q6cg-q2vx">[MEDIUM] open-webui/open-webui – Tool source code disclosed to read-only users via the tool list and get endpoints</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-3xpf-xq7r-v8c5">[HIGH] open-webui/open-webui – Same-origin XSS to account takeover via terminal file-preview iframe hardcoding allow-same-origin</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-2f54-p244-32q6">[MEDIUM] open-webui/open-webui – Any authenticated user can stall a worker via a knowledge-search pattern that backtracks catastrophically</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-73cq-mcgh-379c">[MEDIUM] open-webui/open-webui – Instance-wide stall via automation recurrence rules that force multi-second parsing</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-mj5r-jf49-m3w7">[MEDIUM] open-webui/open-webui – Any member with write access to a standard channel can edit or delete other members&#x27; messages</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-w2rx-84hp-gg95">[HIGH] open-webui/open-webui – SSRF into internal services via unvalidated sub-resource requests in the Playwright web loader</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-3cg5-48j3-v4gv">[HIGH] open-webui/open-webui – A folder write-collaborator can permanently delete the owner&#x27;s chats by deleting a shared subfolder</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-rq84-p6rr-vf89">[HIGH] open-webui/open-webui – Account takeover via OAuth token exchange accepting tokens issued to any client</a>
+      <div class="advisory-meta"><span>2 Aug 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-jr5q-25fw-27f8">[MEDIUM] espocrm/espocrm – Admin path traversal in Label Manager allowing arbitrary JSON file read, write and delete</a>
+      <div class="advisory-meta"><span>28 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-fpp7-x2x2-2mjf">[MEDIUM] WordPress/wordpress-develop – Facilitated SQL injection vulnerability in the `author__not_in` parameter of `WP_Query`</a>
+      <div class="advisory-meta"><span>17 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-ff9f-jf42-662q">[CRITICAL] WordPress/wordpress-develop – REST API batch-route confusion and SQL injection issue leading to Remote Code Execution</a>
+      <div class="advisory-meta"><span>17 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-x5p5-8mxj-9wv6">[LOW] espocrm/espocrm – Stored XSS in wysiwyg template fields if CSP is disabled</a>
+      <div class="advisory-meta"><span>14 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-xrwp-2gph-985x">[LOW] espocrm/espocrm – CSV/Formula Injection (CWE-1236) sanitizer bypass via leading whitespace/control characters in export</a>
+      <div class="advisory-meta"><span>14 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-f34h-xxmv-j9xp">[LOW] espocrm/espocrm – Persistent XSS via CSP nonce injection in applicationName setting by admin user</a>
+      <div class="advisory-meta"><span>14 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-3rh4-9hcq-g79m">[MEDIUM] espocrm/espocrm – Pre-authentication stored HTML injection in stream notification emails about email received</a>
+      <div class="advisory-meta"><span>14 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-qgm7-fc9g-fj75">[HIGH] espocrm/espocrm – Authenticated blind SQL injection via streamAttachments where-clause complex expression</a>
+      <div class="advisory-meta"><span>13 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-27jx-236m-3f5j">[MEDIUM] RocketChat/Rocket.Chat – Insecure implementation of websocket notifications</a>
+      <div class="advisory-meta"><span>11 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-4mvx-9h2h-hmg3">[MEDIUM] RocketChat/Rocket.Chat – Broken Access Control in channels.convertToTeam Allows Unauthorized Conversion of Public Channels into Teams</a>
+      <div class="advisory-meta"><span>11 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-frvj-c5qp-xj4w">[HIGH] open-webui/open-webui – open-webui terminal proxy path traversal guard bypass via 9x encoded traversal</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-m3qf-58wf-w979">[MEDIUM] open-webui/open-webui – Arena task endpoints can bypass underlying model access controls</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-2xwm-4h2q-ggfx">[MEDIUM] open-webui/open-webui – Model meta.knowledge read-only file access can be upgraded to file write/delete</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-73x5-h92w-xc2j">[LOW] open-webui/open-webui – Private channel messages can be disclosed through cross-channel thread parent_id binding</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-3wp3-xxj9-5jqq">[LOW] open-webui/open-webui – Cross-user model-list exposure via static cache key in get_all_models (aiocache key= vs key_builder= misuse)</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-7r7x-gjvr-448g">[MEDIUM] open-webui/open-webui – Upload `metadata.knowledge_id` bypasses the knowledge-base write-access check (read-only users can add files to KB)</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-74h3-cxq7-vc5q">[HIGH] open-webui/open-webui – Cross-user code-interpreter and tool execution via unvalidated Socket.IO event-caller session_id</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-855v-hq7w-jmjw">[HIGH] open-webui/open-webui – Realtime endpoints accept Redis-revoked JWTs after signout/backchannel logout</a>
+      <div class="advisory-meta"><span>2 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-gjfg-22fp-rrxx">[MEDIUM] composer/composer – Path traversal in package bin field lets dependencies chmod arbitrary host files</a>
+      <div class="advisory-meta"><span>1 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-g6xq-892h-64w3">[MEDIUM] composer/composer –  URL-embedded HTTP-Basic username leaks to verbose logs (GitHub PAT exposure)</a>
+      <div class="advisory-meta"><span>1 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-499r-g7pc-vmp9">[HIGH] composer/composer – Arbitrary file write outside vendor via malicious transitive package name</a>
+      <div class="advisory-meta"><span>1 Jul 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-rqj7-6wrp-6g2g">[MEDIUM] open-webui/open-webui – POST /api/v1/images/edit bypasses the global image-edit switch and the per-user image-generation permission</a>
+      <div class="advisory-meta"><span>29 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-ffpj-xv5c-p3gw">[MEDIUM] open-webui/open-webui – ReDoS in skill-mention regexes causes whole-instance DoS on default config</a>
+      <div class="advisory-meta"><span>29 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-mvx4-532p-xfm9">[LOW] open-webui/open-webui – Scheduled automations continue after pending-user deactivation and stored model ACL revocation</a>
+      <div class="advisory-meta"><span>29 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-jgqj-x5j9-vgcm">[HIGH] icinga/icinga2 – Icinga 2 DSL Injection via Unescaped Import Template Name</a>
+      <div class="advisory-meta"><span>29 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-wh38-wg57-5w7g">[HIGH] icinga/icinga2 – Stack overflow via deeply nested JSON objects</a>
+      <div class="advisory-meta"><span>29 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-vj39-ww8j-vvx5">[CRITICAL] icinga/icinga2 – Improper access control for JSON-RPC update certificate messages</a>
+      <div class="advisory-meta"><span>29 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-xp9w-hhf3-vfxx">[HIGH] zammad/zammad – Arbitrary File Deletion via Unvalidated Session Identifier in Long Polling Controller</a>
+      <div class="advisory-meta"><span>25 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-7q78-jjr9-mqcg">[CRITICAL] espocrm/espocrm – Authenticated admin RCE via object deserialization in MassAction/Export params</a>
+      <div class="advisory-meta"><span>18 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-mqp6-23xq-7q3r">[MEDIUM] espocrm/espocrm – Target list Opt-Out actions allow opting out record without edit access to Target List</a>
+      <div class="advisory-meta"><span>18 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-cg9f-34hj-p238">[MEDIUM] espocrm/espocrm – Portal user ACL bypass exposing internal stream notes with known ID</a>
+      <div class="advisory-meta"><span>18 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-rrcj-rhc2-ch5q">[MEDIUM] espocrm/espocrm – IDOR in Import exportErrors endpoint leaks CSV data of imports with known ID made by other users</a>
+      <div class="advisory-meta"><span>18 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-374g-4f73-g7m7">[HIGH] zammad/zammad – Missing authorization on ticket attachment download</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-pv3q-74g5-w7fv">[HIGH] zammad/zammad – Incorrect implementation of permission checks in the knowledge base module</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-45cx-9mrq-mmcj">[HIGH] zammad/zammad – Denial of Service via OTRS Import Controller</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-56jc-34c8-2xq4">[HIGH] zammad/zammad – PGP signature spoofing via unvalidated verification return</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-96hh-fmj3-h4hp">[MEDIUM] zammad/zammad – Missing authorization check in GitHub + GitLab integration allows cross-ticket data leak</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-6rmm-28j9-q99q">[MEDIUM] zammad/zammad – Malicious input in Ticket Body Enables Session Termination</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-pf47-8964-pp23">[LOW] zammad/zammad – Missing authorization in GraphQL mutation for suggesting knowledge base answers</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-jvcg-5539-vvc3">[MEDIUM] zammad/zammad – Cross-User Taskbar Item Access Control Vulnerability</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-4m54-p3mr-22g2">[LOW] zammad/zammad – Titles of knowledge base answers will be shown across all categories via the global search</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-p9xp-gx8r-4397">[HIGH] zammad/zammad – Cross-Site Scripting in Ticket Notifications</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-q3cr-3wq3-29hx">[MEDIUM] zammad/zammad – Avatar Image URL Server-Side Request Forwarding</a>
+      <div class="advisory-meta"><span>17 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-wx3c-76rf-wpwf">[CRITICAL] RocketChat/Rocket.Chat – Email Parameter Fallback Leads To Account Takeover Within Apple OAuth</a>
+      <div class="advisory-meta"><span>16 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-c75c-5hc7-j4vp">[HIGH] RocketChat/Rocket.Chat – Apple Sign-In skips JWT claims validation, allowing expired and cross-audience token replay</a>
+      <div class="advisory-meta"><span>16 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-8hhc-j325-rxqp">[HIGH] RocketChat/Rocket.Chat – Any Authenticated User Can Permanently Deregister Workspace from Rocket.Chat Cloud via Unprotected `/api/v1/fingerprint` Endpoint</a>
+      <div class="advisory-meta"><span>15 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-cx9v-4qj2-jrw6">[MEDIUM] open-webui/open-webui – Open WebUI BOLA: `search_knowledge_files` Allows Unauthorized Knowledge Base File Enumeration</a>
+      <div class="advisory-meta"><span>11 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-4r4w-2wgp-w7cj">[MEDIUM] open-webui/open-webui – Prompt history IDOR: unbound history_id allows cross-prompt read and deletion</a>
+      <div class="advisory-meta"><span>11 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-j2c8-v969-8r5c">[MEDIUM] open-webui/open-webui – Sibling-Prefix Path Traversal via /cache/{path} in open-webui/open-webui</a>
+      <div class="advisory-meta"><span>11 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-vvrf-fq54-q4pr">[LOW] RocketChat/Rocket.Chat – Missing URL protocol sanitization in ImageElement allows javascript: URLs in markdown images</a>
+      <div class="advisory-meta"><span>11 Jun 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-5hvg-w58j-545m">[MEDIUM] mautic/mautic – Stored Cross-Site Scripting (XSS) in Project Option Selector</a>
+      <div class="advisory-meta"><span>29 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-7h65-whp7-rgqf">[HIGH] mautic/mautic – Stored Cross-Site Scripting (XSS) in Projects Component</a>
+      <div class="advisory-meta"><span>29 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-2jrw-c95w-h43g">[HIGH] mautic/mautic – Authorization Bypass in API v2 Endpoints</a>
+      <div class="advisory-meta"><span>29 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-6r9h-4h75-7q4x">[CRITICAL] mautic/mautic – Path Traversal via Campaign Import</a>
+      <div class="advisory-meta"><span>29 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-9fx4-7cmj-47vg">[CRITICAL] mautic/mautic – Server-Side Template Injection (SSTI) in Theme Templates</a>
+      <div class="advisory-meta"><span>29 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-jmv8-8j9j-rcpc">[MEDIUM] mautic/mautic – SSRF in the Mautic Focus component</a>
+      <div class="advisory-meta"><span>29 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-fcmw-wx57-9p75">[HIGH] mautic/mautic – SQL Injection in API Contact Filtering</a>
+      <div class="advisory-meta"><span>29 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-cqj7-h8cj-jmf2">[MEDIUM] RocketChat/Rocket.Chat – Livechat Visitor Profile Disclosure Leaks Bearer Token and Enables Visitor Impersonation</a>
+      <div class="advisory-meta"><span>25 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-39hg-492f-3c4f">[MEDIUM] RocketChat/Rocket.Chat – OAuth access and refresh tokens remain valid after account deactivation</a>
+      <div class="advisory-meta"><span>25 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-6g3w-vg5p-w892">[LOW] RocketChat/Rocket.Chat – users.deactivateIdle deactivates accounts without revoking existing login tokens</a>
+      <div class="advisory-meta"><span>25 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-c3rm-m24p-255p">[MEDIUM] espocrm/espocrm – Broken Access Control / IDOR in Note Pinning API allows unauthorized modification of notes</a>
+      <div class="advisory-meta"><span>15 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-rgg7-qvp9-wvx7">[HIGH] RocketChat/Rocket.Chat – SAML signature validation skipped when IdP certificate field is empty</a>
+      <div class="advisory-meta"><span>14 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-fhc2-x8cp-c5ch">[HIGH] RocketChat/Rocket.Chat – Authenticated Arbitrary Data Export Theft via Mass Assignment in sendFileMessage</a>
+      <div class="advisory-meta"><span>14 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-rr54-jf4h-6cj9">[CRITICAL] RocketChat/Rocket.Chat – Pre-Auth NoSQL Injection in CAS Login Handler leading to Arbitrary CAS/SAML User Session Hijack</a>
+      <div class="advisory-meta"><span>14 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-8p25-fm45-pjrw">[CRITICAL] RocketChat/Rocket.Chat – Pre-Auth NoSQL Injection in OAuth2 Token Endpoint leading to Arbitrary User ATO</a>
+      <div class="advisory-meta"><span>14 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-pw6f-q8ww-vqfq">[HIGH] RocketChat/Rocket.Chat – Lack of SAML Signature Check During Logout Could Lead To DoS</a>
+      <div class="advisory-meta"><span>14 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-h98r-wv3h-fr38">[HIGH] argoproj/argo-cd – Stored XSS in application link annotations enables developer-to-admin privilege escalation</a>
+      <div class="advisory-meta"><span>13 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-rg3g-4rw9-gqrp">[MEDIUM] argoproj/argo-cd – Kubernetes Secret Extraction via ArgoCD ServerSideDiff via sensitive annotations</a>
+      <div class="advisory-meta"><span>13 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-f9f8-rm49-7jv2">[HIGH] composer/composer – Github Actions issued GITHUB_TOKEN disclosure in GitHub Actions logs</a>
+      <div class="advisory-meta"><span>13 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-vvmh-mf4h-96hw">[MEDIUM] espocrm/espocrm – IDOR in EmailTemplate Prepare Endpoint Leaks Entity Data via Email Address Lookup</a>
+      <div class="advisory-meta"><span>8 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-5wh5-ccv2-m3pv">[MEDIUM] espocrm/espocrm – Stored SVG attachment can execute same-origin uploaded JavaScript when opened via image or attachment entry points</a>
+      <div class="advisory-meta"><span>8 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-3v3m-wc6v-x4x3">[CRITICAL] argoproj/argo-cd – Kubernetes Secret Extraction via ArgoCD ServerSideDiff</a>
+      <div class="advisory-meta"><span>1 May 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/taigaio/taiga-front/security/advisories/GHSA-fpm6-3pvx-3c46">[MEDIUM] taigaio/taiga-front – XSS in taiga-front</a>
+      <div class="advisory-meta"><span>24 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-44c3-xjfp-3jrh">[HIGH] espocrm/espocrm – Admin TemplateManager path traversal allows arbitrary file read write and delete</a>
+      <div class="advisory-meta"><span>22 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-7922-x7cf-j54x">[CRITICAL] espocrm/espocrm – Authenticated RCE via Formula with path traversal in attachment `sourceId`, exploitable by admin user</a>
+      <div class="advisory-meta"><span>22 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-wg36-wvj6-r67p">[HIGH] composer/composer – Command injection via malicious Perforce repository definition</a>
+      <div class="advisory-meta"><span>14 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-gqw4-4w2p-838q">[HIGH] composer/composer – Command injection via malicious Perforce source reference/url</a>
+      <div class="advisory-meta"><span>14 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-wr7j-hxf8-hc4w">[MEDIUM] espocrm/espocrm – Email importEml can import and delete another user&#x27;s attachment by raw fileId</a>
+      <div class="advisory-meta"><span>13 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-8prm-r5j9-j574">[MEDIUM] espocrm/espocrm – Stored HTML injection in email notifications about stream notes via Markdown allowing HTML markup</a>
+      <div class="advisory-meta"><span>13 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-6m4j-fwrx-crh7">[LOW] espocrm/espocrm – SSRF via DNS Rebinding in Attachment fromImageUrl Endpoint Allows Internal Network Access</a>
+      <div class="advisory-meta"><span>13 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-h7gx-8gwv-7g73">[MEDIUM] espocrm/espocrm – Authenticated SSRF via internal-host validation bypass using alternative IPv4 notation</a>
+      <div class="advisory-meta"><span>13 Apr 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-hgq6-9jg2-wf3f">[HIGH] RocketChat/Rocket.Chat – NoSQL injection in the EE ddp-streamer-service</a>
+      <div class="advisory-meta"><span>5 Mar 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-7qr6-q62g-hm63">[HIGH] RocketChat/Rocket.Chat – 2FA bypass and login of deactivated users via EE ddp-streamer</a>
+      <div class="advisory-meta"><span>5 Mar 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-w6vw-mrgv-69vf">[CRITICAL] RocketChat/Rocket.Chat – Users can login with any password via the EE ddp-streamer-service</a>
+      <div class="advisory-meta"><span>5 Mar 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-r5j5-q42h-fc93">[HIGH] mautic/mautic – SQL Injection in Contact Activity API Sorting</a>
+      <div class="advisory-meta"><span>24 Feb 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-vfjg-6fpv-4mmr">[MEDIUM] icinga/icinga2 – Insecure permission of %ProgramData%\icinga2\var on Windows</a>
+      <div class="advisory-meta"><span>29 Jan 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-g4wm-fg3c-g4p2">[HIGH] RocketChat/Rocket.Chat – Unauthorized Access to OAuth App Details (Versions ≤ 6.12.0)</a>
+      <div class="advisory-meta"><span>14 Jan 2026</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-59pp-r3rg-353g">[LOW] composer/composer – ANSI sequence injection</a>
+      <div class="advisory-meta"><span>30 Dec 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-5xw2-57jx-pgjp">[HIGH] mautic/mautic – GrapesJsBuilder File Upload allows all file uploads</a>
+      <div class="advisory-meta"><span>2 Dec 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-3fq7-c5m8-g86x">[CRITICAL] mautic/mautic – Mautic user without privileged access to the Marketplace can install and uninstall composer packages</a>
+      <div class="advisory-meta"><span>2 Dec 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/taigaio/taiga-back/security/advisories/GHSA-cpcf-9276-fwc5">[CRITICAL] taigaio/taiga-back – Authenticated Remote Code Execution</a>
+      <div class="advisory-meta"><span>28 Oct 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/taigaio/taiga-back/security/advisories/GHSA-chm9-9wwq-xffj">[MEDIUM] taigaio/taiga-back – Blind SQL Injection Time Based</a>
+      <div class="advisory-meta"><span>28 Oct 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-pg6g-g99v-mw46">[MEDIUM] icinga/icinga2 – Signals sent as root to processes based on PID file written by the Icinga 2 daemon user</a>
+      <div class="advisory-meta"><span>16 Oct 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-v9jg-xqhj-f43g">[HIGH] icinga/icinga2 – Denial of Service (DoS) By Dereferencing Invalid Reference</a>
+      <div class="advisory-meta"><span>16 Oct 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-gg32-w9rm-vp2v">[HIGH] icinga/icinga2 – API users could access restricted values in filter expressions</a>
+      <div class="advisory-meta"><span>16 Oct 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-c26c-wvhr-fr6r">[MEDIUM] espocrm/espocrm – Stored SVG &lt;a&gt; Injection Enabling CSRF-Based Arbitrary User Creation</a>
+      <div class="advisory-meta"><span>14 Oct 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-g88p-r42r-ppp9">[MEDIUM] argoproj/argo-cd – DoS via credentials updates triggering a race condition  that crashes the Argo CD server</a>
+      <div class="advisory-meta"><span>30 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-wp4p-9pxh-cgx2">[HIGH] argoproj/argo-cd – Unauthenticated DoS via malformed Gogs webhook payload</a>
+      <div class="advisory-meta"><span>30 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-gpx4-37g2-c8pv">[HIGH] argoproj/argo-cd – Unauthenticated Remote DoS in Argo CD via malformed Azure DevOps git.push webhook</a>
+      <div class="advisory-meta"><span>30 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-f9gq-prrc-hrhc">[HIGH] argoproj/argo-cd – Unauthenticated argocd-server panic via a malicious Bitbucket-Server webhook payload</a>
+      <div class="advisory-meta"><span>30 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-786q-9hcg-v9ff">[CRITICAL] argoproj/argo-cd – Project API Token Exposes Repository Credentials</a>
+      <div class="advisory-meta"><span>4 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-9v8p-m85m-f7mm">[MEDIUM] mautic/mautic – Reflected XSS in lead:addLeadTags - Quick Add</a>
+      <div class="advisory-meta"><span>3 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-3ggv-qwcp-j6xg">[MEDIUM] mautic/mautic – User Enumeration via Response Timing</a>
+      <div class="advisory-meta"><span>3 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-438m-6mhw-hq5w">[MEDIUM] mautic/mautic – Secret data extraction via elfinder</a>
+      <div class="advisory-meta"><span>3 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-hj6f-7hp7-xg69">[LOW] mautic/mautic – SSRF via webhook function</a>
+      <div class="advisory-meta"><span>3 Sep 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-26x2-6wch-j8pf">[MEDIUM] espocrm/espocrm – Double slash in URI corrupting router cache leading to access denial</a>
+      <div class="advisory-meta"><span>4 Aug 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-rjm8-77fr-4f3v">[MEDIUM] espocrm/espocrm – Improper neutralization of special elements used in an LDAP query (&#x27;LDAP Injection&#x27;)</a>
+      <div class="advisory-meta"><span>21 Jul 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-2hj5-g64g-fp6p">[CRITICAL] argoproj/argo-cd – Cross-site scripting on repositories page</a>
+      <div class="advisory-meta"><span>28 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-6vx9-9r2g-8373">[MEDIUM] mautic/mautic – Open Redirect vulnerability on user unlock path.</a>
+      <div class="advisory-meta"><span>28 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-vph5-ghq3-q782">[MEDIUM] mautic/mautic – Segment cloning doesn&#x27;t have a proper permission check</a>
+      <div class="advisory-meta"><span>28 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-424x-cxvh-wq9p">[MEDIUM] mautic/mautic – User name enumeration possible due to response time difference on password reset form</a>
+      <div class="advisory-meta"><span>28 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-h2wg-v8wg-jhxh">[MEDIUM] mautic/mautic – Mautic does not shield .env files from web traffic</a>
+      <div class="advisory-meta"><span>28 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-cqx4-9vqf-q3m8">[MEDIUM] mautic/mautic – Predictable Page Indexing Might Lead to Sensitive Data Exposure</a>
+      <div class="advisory-meta"><span>28 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-7vcf-f5v9-3wr6">[CRITICAL] icinga/icinga2 – Certificate renewal might incorrectly renew an invalid certificate</a>
+      <div class="advisory-meta"><span>27 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-qrwp-v8v3-hqp2">[MEDIUM] espocrm/espocrm – HTML Injection into phishing leads to account takeover</a>
+      <div class="advisory-meta"><span>12 May 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-3ph3-jcfx-fq53">[LOW] espocrm/espocrm – Potential disclosure of sensitive information in the user sorting function</a>
+      <div class="advisory-meta"><span>16 Apr 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-2rf2-mj98-2fr8">[MEDIUM] espocrm/espocrm – Unrestricted Embedding in Iframe dashlet</a>
+      <div class="advisory-meta"><span>15 Apr 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-8xv7-g2q3-fqgc">[HIGH] mautic/mautic – Improper Authorization in Reporting API</a>
+      <div class="advisory-meta"><span>25 Feb 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-4w2w-36vm-c8hf">[MEDIUM] mautic/mautic – Relative Path Traversal in assets file upload</a>
+      <div class="advisory-meta"><span>25 Feb 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-73gx-x7r9-77x2">[CRITICAL] mautic/mautic – Remote Code Execution &amp; File Deletion in Asset Uploads</a>
+      <div class="advisory-meta"><span>25 Feb 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-47g2-qmh2-749v">[MEDIUM] argoproj/argo-cd – Secret values are not scrubbed from patch errors</a>
+      <div class="advisory-meta"><span>30 Jan 2025</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-j7wq-r9mg-9wpv">[CRITICAL] icinga/icinga2 – TLS Certificate Validation Bypass for JSON-RPC and HTTP API Connections</a>
+      <div class="advisory-meta"><span>12 Nov 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-73gr-32wg-qhh7">[HIGH] mautic/mautic – XSS in contact/company tracking (no authentication)</a>
+      <div class="advisory-meta"><span>18 Sep 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-8vff-35qm-qjvv">[MEDIUM] mautic/mautic – Users enumeration - weak password login</a>
+      <div class="advisory-meta"><span>18 Sep 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-xpc5-rr39-v8v2">[HIGH] mautic/mautic – XSS in contact tracking and page hits report</a>
+      <div class="advisory-meta"><span>18 Sep 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-xv68-rrmw-9xwf">[LOW] mautic/mautic – Cross-site Scripting (XSS) - stored (edit form HTML field)</a>
+      <div class="advisory-meta"><span>18 Sep 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-v8wx-v5jq-qhhw">[MEDIUM] argoproj/argo-cd – The Argo CD web terminal session does not handle the revocation of user permissions properly.</a>
+      <div class="advisory-meta"><span>24 Jul 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-jmvp-698c-4x3w">[HIGH] argoproj/argo-cd – Unauthenticated Denial of Service (DoS) Vulnerability via /api/webhook Endpoint in Argo CD</a>
+      <div class="advisory-meta"><span>22 Jul 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-v9qv-c7wm-wgmf">[HIGH] composer/composer – Multiple command injections via malicious git/hg branch names</a>
+      <div class="advisory-meta"><span>10 Jun 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-47f6-5gq3-vx9c">[HIGH] composer/composer – Command injection via malicious git branch name</a>
+      <div class="advisory-meta"><span>10 Jun 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-87p9-x75h-p4j2">[MEDIUM] argoproj/argo-cd – Unauthenticated Access to sensitive settings in Argo CD</a>
+      <div class="advisory-meta"><span>6 Jun 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-3cqf-953p-h5cp">[MEDIUM] argoproj/argo-cd – Authenticated users can enumerate clusters by name</a>
+      <div class="advisory-meta"><span>6 Jun 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-9766-5277-j5hr">[CRITICAL] argoproj/argo-cd – Use of Risky or Missing Cryptographic Algorithms in Redis Cache</a>
+      <div class="advisory-meta"><span>21 May 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-9m6p-x4h2-6frq">[MEDIUM] argoproj/argo-cd – Denial of Service via malicious jqPathExpressions in ignoreDifferences</a>
+      <div class="advisory-meta"><span>26 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-2gvw-w6fj-7m3c">[MEDIUM] argoproj/argo-cd – API server does not enforce project sourceNamespaces</a>
+      <div class="advisory-meta"><span>15 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-mgv8-w49f-822w">[MEDIUM] mautic/mautic – Server-Side Request Forgery in Asset section</a>
+      <div class="advisory-meta"><span>11 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-qjx3-2g35-6hv8">[HIGH] mautic/mautic – Sensitive Data Exposure due to inadequate user permission settings</a>
+      <div class="advisory-meta"><span>11 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-fhcx-f7jg-jx3f">[MEDIUM] mautic/mautic – XSS in Notifications via saving Dashboards</a>
+      <div class="advisory-meta"><span>11 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-2rc5-2755-v422">[HIGH] mautic/mautic – XSS Cross-site Scripting Stored (XSS) - Description field</a>
+      <div class="advisory-meta"><span>11 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-m257-q4m5-j653">[MEDIUM] WordPress/wordpress-develop – Remote Code Execution in `WP_HTML_Token`</a>
+      <div class="advisory-meta"><span>3 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-x79f-xrjv-jx5r">[HIGH] WordPress/wordpress-develop – PHP file upload bypass via Plugin installer</a>
+      <div class="advisory-meta"><span>3 Apr 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-jhwx-mhww-rgc3">[MEDIUM] argoproj/argo-cd – Uncontrolled Resource Consumption vulnerability in ArgoCD&#x27;s repo server</a>
+      <div class="advisory-meta"><span>28 Mar 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-6v85-wr92-q4p7">[HIGH] argoproj/argo-cd – Denial of Service (DoS) Vulnerability Due to Unsafe Array Modification in Multi-threaded Environment</a>
+      <div class="advisory-meta"><span>18 Mar 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-2vgg-9h6w-m454">[MEDIUM] argoproj/argo-cd – Bypassing Rate Limit and Brute Force Protection Using Cache Overflow</a>
+      <div class="advisory-meta"><span>18 Mar 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-x32m-mvfj-52xv">[MEDIUM] argoproj/argo-cd – Bypassing Brute Force Protection via Application Crash and In-Memory Data Loss</a>
+      <div class="advisory-meta"><span>18 Mar 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-jwv5-8mqv-g387">[CRITICAL] argoproj/argo-cd – Cross-site scripting on application summary component</a>
+      <div class="advisory-meta"><span>13 Mar 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-g623-jcgg-mhmm">[MEDIUM] argoproj/argo-cd – Users with `create` but not `override` privileges can perform local sync</a>
+      <div class="advisory-meta"><span>13 Mar 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-8gv6-8r33-fm7j">[MEDIUM] espocrm/espocrm – Weakness in &quot;Forgot password&quot;</a>
+      <div class="advisory-meta"><span>29 Feb 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-7c6p-848j-wh5h">[HIGH] composer/composer – Code execution and possible privilege escalation via compromised InstalledVersions.php or installed.php</a>
+      <div class="advisory-meta"><span>8 Feb 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-92mw-q256-5vwg">[HIGH] argoproj/argo-cd – Cross-Site Request Forgery (CSRF) in github.com/argoproj/argo-cd</a>
+      <div class="advisory-meta"><span>18 Jan 2024</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-g955-rwxx-jvf6">[MEDIUM] espocrm/espocrm – SSRF via /Attachment/fromImageUrl endpoint</a>
+      <div class="advisory-meta"><span>5 Dec 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-jm6m-4632-36hf">[LOW] composer/composer – Remote Code Execution via web-accessible composer.phar</a>
+      <div class="advisory-meta"><span>29 Sep 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-g687-f2gx-6wm8">[MEDIUM] argoproj/argo-cd – Denial of Service to Argo CD repo-server</a>
+      <div class="advisory-meta"><span>7 Sep 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-fwr2-64vr-xv9m">[CRITICAL] argoproj/argo-cd – Cluster secret might leak in cluster details page</a>
+      <div class="advisory-meta"><span>7 Sep 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-c8xw-vjgf-94hr">[MEDIUM] argoproj/argo-cd – Web terminal session doesn&#x27;t expire</a>
+      <div class="advisory-meta"><span>23 Aug 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-3jfq-742w-xg8j">[CRITICAL] argoproj/argo-cd – Users with any cluster secret update access may update out-of-bounds cluster secrets</a>
+      <div class="advisory-meta"><span>16 Feb 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-mv6w-j4xc-qpfw">[MEDIUM] argoproj/argo-cd – Argo CD leaks repository credentials in user-facing error messages and in logs</a>
+      <div class="advisory-meta"><span>8 Feb 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-6p4m-hw2h-6gmw">[HIGH] argoproj/argo-cd – Controller reconciles apps outside configured namespaces when sharding is enabled</a>
+      <div class="advisory-meta"><span>25 Jan 2023</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-x7cr-6qr6-2hh6">[MEDIUM] composer/composer – Missing input validation can lead to command execution via VcsDriver::getFileContent()</a>
+      <div class="advisory-meta"><span>13 Apr 2022</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-6676-cqfm-gw84">[HIGH] WordPress/wordpress-develop – WordPress: SQL Injection through WP_Query</a>
+      <div class="advisory-meta"><span>6 Jan 2022</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-699q-3hj9-889w">[MEDIUM] WordPress/wordpress-develop – WordPress: Stored XSS through authenticated users</a>
+      <div class="advisory-meta"><span>6 Jan 2022</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-jmmq-m8p8-332h">[LOW] WordPress/wordpress-develop – WordPress: Authenticated Object Injection in Multisites</a>
+      <div class="advisory-meta"><span>6 Jan 2022</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-jp3p-gw8h-6x86">[MEDIUM] WordPress/wordpress-develop – WordPress: SQL injection due to improper sanitization in WP_Meta_Query</a>
+      <div class="advisory-meta"><span>6 Jan 2022</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-frqg-7g38-6gcf">[MEDIUM] composer/composer – Improper escaping of command arguments on Windows leading to command injection</a>
+      <div class="advisory-meta"><span>5 Oct 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-wh69-25hr-h94v">[MEDIUM] WordPress/wordpress-develop – Authenticated cross-site scripting (XSS) in WordPress editor</a>
+      <div class="advisory-meta"><span>9 Sep 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-qxvw-qxm9-qvg6">[MEDIUM] WordPress/wordpress-develop – WordPress 5.8 beta: Private data disclosure/privilege escalation through the block editor</a>
+      <div class="advisory-meta"><span>9 Sep 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-m9hc-7v5q-x8q5">[MEDIUM] WordPress/wordpress-develop – WordPress: Information Disclosure in wp_die() via JSONP, leading to CSRF</a>
+      <div class="advisory-meta"><span>9 Sep 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-fr6h-3855-j297">[LOW] WordPress/wordpress-develop – WordPress 5.8 beta: Stored Cross-Site Scripting (XSS) vulnerability in widget editor</a>
+      <div class="advisory-meta"><span>9 Sep 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-cxfm-8j5v-5qr2">[LOW] icinga/icinga2 – Missing TLS server certificate validation in ElasticsearchWriter, GelfWriter, InfluxdbWriter and Influxdb2Writer</a>
+      <div class="advisory-meta"><span>19 Aug 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-98wp-jc6q-x5q5">[HIGH] icinga/icinga2 – Results of queries for ApiListener objects include the ticket salt which allows in turn to steal (more privileged) identities</a>
+      <div class="advisory-meta"><span>15 Jul 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-wrpw-pmr8-qgj7">[MEDIUM] icinga/icinga2 – Passwords used to access external services inadvertently exposed through API</a>
+      <div class="advisory-meta"><span>15 Jul 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/composer/composer/security/advisories/GHSA-h5h8-pc6h-jvvx">[HIGH] composer/composer – Missing argument delimiter can lead to command execution via VCS repository URLs or source download URLs on systems with Mercurial</a>
+      <div class="advisory-meta"><span>27 Apr 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-rv47-pc52-qrhh">[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated XXE attack when installation is running PHP 8</a>
+      <div class="advisory-meta"><span>15 Apr 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-pmmh-2f36-wvhq">[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated disclosure of password-protected posts and pages</a>
+      <div class="advisory-meta"><span>15 Apr 2021</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/Icinga/icinga2/security/advisories/GHSA-pcmr-2p2f-r7j6">[LOW] icinga/icinga2 – Revoked certificates due for renewal will automatically be renewed ignoring the CRL</a>
+      <div class="advisory-meta"><span>15 Dec 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-rpwf-hrh2-39jf">[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated XSS through embed block</a>
+      <div class="advisory-meta"><span>12 Jun 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-8q2w-5m27-wm27">[MEDIUM] WordPress/wordpress-develop – WordPress: Authenticated XSS via media attachment page</a>
+      <div class="advisory-meta"><span>12 Jun 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-q6pw-gvf4-5fj5">[LOW] WordPress/wordpress-develop – WordPress: Open redirect in wp_validate_redirect()</a>
+      <div class="advisory-meta"><span>12 Jun 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-87h4-phjv-rm6p">[LOW] WordPress/wordpress-develop – WordPress: Authenticated self-XSS via theme uploads</a>
+      <div class="advisory-meta"><span>12 Jun 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-4vpv-fgg2-gcqc">[MEDIUM] WordPress/wordpress-develop – WordPress: &#x27;set-screen-option&#x27; filter misuse by plugins leading to privilege escalation</a>
+      <div class="advisory-meta"><span>12 Jun 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-4mhg-j6fx-5g3c">[LOW] WordPress/wordpress-develop – Authenticated cross-site scripting (XSS) in WordPress Customizer</a>
+      <div class="advisory-meta"><span>30 Apr 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-3gw2-4656-pfr2">[MEDIUM] WordPress/wordpress-develop – Specially crafted filenames in WordPress leading to XSS</a>
+      <div class="advisory-meta"><span>30 Apr 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-ww7v-jg8c-q6jw">[MEDIUM] WordPress/wordpress-develop – Password reset links invalidation issue in WordPress</a>
+      <div class="advisory-meta"><span>30 Apr 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-xhx9-759f-6p2w">[LOW] WordPress/wordpress-develop – WordPress: Unauthenticated disclosure of certain private posts</a>
+      <div class="advisory-meta"><span>30 Apr 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-568w-8m88-8g2c">[MEDIUM] WordPress/wordpress-develop – WordPress: Cross-site scripting in stats method (object cache)</a>
+      <div class="advisory-meta"><span>30 Apr 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-vccm-6gmc-qhjh">[LOW] WordPress/wordpress-develop – Cross-site scripting (XSS) in Search block - WordPress</a>
+      <div class="advisory-meta"><span>30 Apr 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-xvg2-m2f4-83m7">[HIGH] WordPress/wordpress-develop – Stored cross-site scripting (XSS) through &#x27;wp_targeted_link_rel&#x27;</a>
+      <div class="advisory-meta"><span>8 Jan 2020</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-pg4x-64rh-3c9v">[MEDIUM] WordPress/wordpress-develop – Authenticated cross-site scripting (XSS) in WordPress block editor (within dashboard)</a>
+      <div class="advisory-meta"><span>20 Dec 2019</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge unknown">UNKNOWN</span>
+        <span class="origin"></span>
+      </div>
+      <a class="summary" href="https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-x3wp-h3qx-9w94">[MEDIUM] WordPress/wordpress-develop – Stored cross-site scripting (XSS) in WordPress block editor</a>
+      <div class="advisory-meta"><span>20 Dec 2019</span></div>
+    </li>
+  </ul>
+
+  <h2>What is monitored</h2>
+  <p>Repository security advisories</p>
+  <ul class="targets">
+    <li>argoproj/argo-cd</li>
+    <li>composer/composer</li>
+    <li>espocrm/espocrm</li>
+    <li>icinga/icinga2</li>
+    <li>mautic/mautic</li>
+    <li>open-webui/open-webui</li>
+    <li>RocketChat/Rocket.Chat</li>
+    <li>taigaio/taiga-back</li>
+    <li>taigaio/taiga-events</li>
+    <li>taigaio/taiga-front</li>
+    <li>WordPress/wordpress-develop</li>
+    <li>zammad/zammad</li>
+  </ul>
+  <p>Advisory database, by package</p>
+  <ul class="targets">
+    <li>composer:composer/composer</li>
+    <li>composer:espocrm/espocrm</li>
+    <li>composer:mautic/core</li>
+    <li>pip:open-webui</li>
+    <li>go:github.com/argoproj/argo-cd/v2</li>
+  </ul>
+
+  <footer>
+    <a href="https://github.com/stephen-cox/vulnfeed">View source on GitHub</a>
+  </footer>
+</body>
+</html>
