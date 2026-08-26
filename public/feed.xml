@@ -7,7 +7,139 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 25 Aug 2026 04:34:50 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 26 Aug 2026 04:35:34 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] zammad/zammad — Cross-tenant attachment disclosure via inline images in notification emails</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-49h2-vrqp-wwwf</link>
+      <description>CVSS 8.2 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639, CWE-862
+
+Affected:
+- Zammad &lt;= 7.1.2 (patched: 7.1.3)
+
+---
+
+Zammad could attach files belonging to unrelated tickets or knowledge base articles to outgoing notification emails.&#13;
+&#13;
+If a trigger or scheduler is configured to send a notification email that quotes the incoming message in HTML, anyone able to send an email to the system could craft a message that causes an arbitrary stored file from the instance to be included as an attachment in the reply they receive. No account or login is required.&#13;
+&#13;
+As a result, attachments from other customers' tickets or from internal knowledge base articles could be disclosed to an outside party.</description>
+      <guid isPermaLink="false">GHSA-49h2-vrqp-wwwf</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 25 Aug 2026 05:41:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Disclosure of group-restricted text modules to unauthorized agents</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-36hv-g4ch-ch33</link>
+      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-862
+
+Affected:
+- Zammad &lt;= 7.1.2 (patched: 7.1.3)
+
+---
+
+Text modules (canned responses) can be limited to specific groups, or deactivated so they are no longer offered. Due to a missing permission check, any logged-in agent was able to retrieve a single text module directly and see its full content, even if it belonged to a group they have no access to.&#13;
+&#13;
+As a result, internal reply templates could become visible to agents who were not meant to see&#13;
+them. No ticket or customer data was affected, and the text modules could not be changed this way.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-36hv-g4ch-ch33</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 25 Aug 2026 05:41:13 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Improper access control allows agents to read and modify other users' overview ordering preferences</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-r4qw-cv8j-3wf6</link>
+      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-639, CWE-862
+
+Affected:
+- Zammad &lt;= 7.1.2 (patched: 7.1.3)
+
+---
+
+Zammad did not check record ownership when handling requests to the personal overview ordering endpoints.&#13;
+&#13;
+Because of this, any logged-in agent was able to read, change or delete the overview ordering preferences of any other user, and to create such preferences on another user's behalf.&#13;
+&#13;
+The impact is limited to the order and sorting in which ticket overviews are presented to the affected users; no ticket content or other personal data was exposed through this.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-r4qw-cv8j-3wf6</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 25 Aug 2026 05:40:45 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Disclosure of external data source credentials to non-admin users via object attribute metadata</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-g3cf-rfq7-j5cr</link>
+      <description>CVSS 8.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:H/SI:N/SA:N) · CWE-200, CWE-522
+
+Affected:
+- Zammad &lt;= 7.1.2 (patched: 7.1.3)
+
+---
+
+Object attributes that look up their values from an external data source store the access data for that external system (user name, password or access token, and the request URL) as part of their configuration. This configuration was sent to every logged-in user, including agents and customers, instead of being kept on the server and restricted to administrators.&#13;
+&#13;
+As a result, any logged-in user of an affected instance could read the stored access data and use it to access the connected external system directly, outside of Zammad. Only instances that have configured an external data source attribute with access data are affected.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-g3cf-rfq7-j5cr</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 25 Aug 2026 05:40:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Arbitrary object disclosure via Core Workflow perform endpoint</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-3ww3-89pm-g9x8</link>
+      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639, CWE-862
+
+Affected:
+- Zammad &lt;= 7.1.2 (patched: 7.1.3)
+
+---
+
+A logged-in user with only agent or customer permissions could ask Zammad for the details of almost any single record in the system - for example configuration settings, other users' unsaved drafts, or their device and login information - simply by naming the record in a request. Zammad returned that data without checking whether the user was allowed to see it.&#13;
+&#13;
+Among the data that could be read were confidential configuration values such as the application secret, the monitoring access token, and third-party login credentials. Ticket data remained protected, and stored passwords were not exposed.</description>
+      <guid isPermaLink="false">GHSA-3ww3-89pm-g9x8</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 25 Aug 2026 05:40:23 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad — AI error messages can be turned into clickable links due to incorrect escaping order</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-cq4j-rx79-345g</link>
+      <description>CVSS 2.0 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:A/VC:N/VI:N/VA:N/SC:L/SI:L/SA:N) · CWE-79, CWE-83, CWE-116
+
+Affected:
+- Zammad &lt;= 7.1.2 (patched: 7.1.3)
+
+---
+
+When a Zammad AI feature (writing assistant or ticket summary) fails, the resulting error message is shown to the agent in the interface. Because of a flaw in how that message is escaped before display, an error message containing link-style text could be rendered as an actual clickable link in the agent's browser instead of being shown as harmless plain text. In unfavorable conditions this could be used to present misleading links or, depending on the browser and its security settings, inject unwanted content into the page.&#13;
+&#13;
+Exploitation requires an authenticated agent with AI features enabled and depends on an attacker being able to influence the AI error text, so real-world impact is limited.</description>
+      <guid isPermaLink="false">GHSA-cq4j-rx79-345g</guid>
+      <category>LOW</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 25 Aug 2026 05:40:13 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — SSRF protection bypass via DNS rebinding in hostname safety check</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pfh2-5g93-2rg6</link>
+      <description>CVSS 5.9 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:A/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-350, CWE-367, CWE-918
+
+Affected:
+- Zammad &lt;= 7.1.2 (patched: 7.1.3)
+
+---
+
+Zammad validates a URL's resolved IP before fetching it, to prevent the server from being tricked into reaching internal-only addresses (SSRF) such as loopback or cloud-metadata endpoints. The validation and the actual request resolve the hostname separately, without pinning the checked IP. An attacker controlling DNS for a domain can return a safe address during validation and an internal one for the request, bypassing the protection. This affects all features using the check - calendar (iCal) subscriptions, webhooks, avatar fetching, and external data sources. Exploitation requires an admin to configure the attacker-supplied URL and depends on a DNS-timing race, but needs no attacker privileges on the instance.</description>
+      <guid isPermaLink="false">GHSA-pfh2-5g93-2rg6</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 25 Aug 2026 05:39:57 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] RocketChat/Rocket.Chat — Arbitrary notify-user event injection via stream-notify-room-users forward (incomplete fix of GHSA-27jx)</title>
       <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-r3v3-v742-55j5</link>
@@ -4512,140 +4644,6 @@ A customer who can view a ticket cannot see internal ticket articles through the
       <category>HIGH</category>
       <category>zammad/zammad</category>
       <pubDate>Wed, 17 Jun 2026 06:49:24 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Incorrect implementation of permission checks in the knowledge base module (CVE-2026-56724)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pv3q-74g5-w7fv</link>
-      <description>CVE-2026-56724 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639, CWE-862
-
-Affected:
-- Zammad &lt;= 7.0.1 (patched: &gt;= 7.0.2)
-
----
-
-### Summary&#13;
-An issue with permission checks in the knowledge base management area has been identified. Under certain conditions, data validation for linked items was not fully enforced. This could have allowed users with limited read permissions to interact with items outside their assigned access scope. Data access has been strengthened in the current version through additional validation routines.</description>
-      <guid isPermaLink="false">GHSA-pv3q-74g5-w7fv</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:21 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Denial of Service via OTRS Import Controller (CVE-2026-56725)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-45cx-9mrq-mmcj</link>
-      <description>CVE-2026-56725 · CVSS 8.7 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N) · CWE-306, CWE-400
-
-Affected:
-- Zammad &lt;= 7.0.1 (patched: &gt;= 7.0.2)
-
----
-
-### Summary&#13;
-An unauthenticated request to POST `/api/v1/import/otrs/import_check` blocks a Zammad request worker for roughly two minutes. The `import_check` and `import_status` actions are missing the `setup_done_response` guard that other actions in the same controller carry, so they execute on fully set-up production instances. The action enters a retry loop against a blank OTRS endpoint, sleeping for 30 s + 45 s between attempts.&#13;
-&#13;
-### Impact&#13;
-&#13;
-An unauthenticated remote attacker denies service to a production Zammad instance. Each request costs almost nothing and forces ~115 seconds of server-side blocking. A few requests per second saturate the Puma worker pool. The condition persists as long as the traffic continues.&#13;
-&#13;
-No account, valid import configuration, or target knowledge beyond the hostname is needed. CSRF token is trivially obtained from any prior GET response.</description>
-      <guid isPermaLink="false">GHSA-45cx-9mrq-mmcj</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:18 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — PGP signature spoofing via unvalidated verification return (CVE-2026-56727)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-56jc-34c8-2xq4</link>
-      <description>CVE-2026-56727 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-287, CWE-347, CWE-391
-
-Affected:
-- Zammad &lt;= 7.0.1 (patched: &gt;= 7.0.2)
-
----
-
-### Summary&#13;
-&#13;
-In Zammad's inbound PGP email processing, the return value of the gpg verification call was silently discarded. Regardless of whether gpg reported a valid, invalid, or missing signature, the handler unconditionally wrote `sign: { success: true, comment: "Good signature" }` to the article's security preferences.&#13;
-&#13;
-### Impact&#13;
-&#13;
-Any sender could tamper with the body of a `multipart/signed` PGP email - or craft a message with an entirely fabricated or mismatched signature - and Zammad would display it to the recipient as cryptographically verified with a "Good signature" label. Users and agents relying on Zammad's signature indicator to confirm message authenticity and integrity would be misled into trusting modified or forged content. The vulnerability affects all inbound PGP-signed emails processed while the PGP integration is enabled.</description>
-      <guid isPermaLink="false">GHSA-56jc-34c8-2xq4</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:14 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Missing authorization check in GitHub + GitLab integration allows cross-ticket data leak (CVE-2026-56726)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-96hh-fmj3-h4hp</link>
-      <description>CVE-2026-56726 · CVSS 5.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-862
-
-Affected:
-- Zammad &lt;= 7.0.0 (patched: &gt;= 7.0.1)
-
----
-
-This vulnerability breaks normal ticket isolation boundaries between agents.&#13;
-&#13;
-Any authenticated agent - even one with no active tickets assigned to them - can view the titles, status, labels, and URL links of GitHub/GitLab issues attached to any ticket in the system.&#13;
-&#13;
-This allows an internal user to systematically view GitHub/GitLab issue data linked by other agents or administrators across the organization by simply querying random or sequential ticket IDs.</description>
-      <guid isPermaLink="false">GHSA-96hh-fmj3-h4hp</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:10 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Malicious input in Ticket Body Enables Session Termination (CVE-2026-56732)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-6rmm-28j9-q99q</link>
-      <description>CVE-2026-56732 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N) · CWE-20, CWE-352
-
-Affected:
-- Zammad &lt;= 7.0.0 (patched: &gt;= 7.0.1)
-
----
-
-A vulnerability in Zammad's HTML sanitization allows injection of specific HTML elements into ticket bodies. When another user views the crafted ticket, the injected element can trigger a logout request, terminating the viewer's session.</description>
-      <guid isPermaLink="false">GHSA-6rmm-28j9-q99q</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] zammad/zammad — Missing authorization in GraphQL mutation for suggesting knowledge base answers (CVE-2026-56730)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pf47-8964-pp23</link>
-      <description>CVE-2026-56730 · CVSS 2.1 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:P/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-862
-
-Affected:
-- Zammad &lt;= 7.0.0 (patched: &gt;= 7.0.1)
-
----
-
-An authorization bypass vulnerability was found that allows an authenticated agent to read knowledge base answer content they should not be able to access.&#13;
-&#13;
-The vulnerable GraphQL mutation is meant to transform a knowledge base answer suggestion so it can be inserted into the ticket editor, but it only checks if the user has the `ticket.agent` permission. Checking the authorization to the knowledge base answer itself is missing.</description>
-      <guid isPermaLink="false">GHSA-pf47-8964-pp23</guid>
-      <category>LOW</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:04 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Cross-User Taskbar Item Access Control Vulnerability (CVE-2026-56728)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-jvcg-5539-vvc3</link>
-      <description>CVE-2026-56728 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639
-
-Affected:
-- Zammad &lt;= 7.0.0 (patched: &gt;= 7.0.1)
-
----
-
-A broken access control vulnerability exists in Zammad's GraphQL API. An authenticated user can access taskbar item data belonging to another user by crafting a request with the target user's taskbar identifier. The taskbar feature stores transient state for active user sessions, including auto-saved ticket drafts. Under certain conditions, the authorization check for taskbar item access is not enforced, allowing a user to read another user's taskbar item data.&#13;
-&#13;
-</description>
-      <guid isPermaLink="false">GHSA-jvcg-5539-vvc3</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:01 +0000</pubDate>
     </item>
   </channel>
 </rss>
