@@ -7,7 +7,90 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 26 Aug 2026 04:35:34 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 27 Aug 2026 14:57:54 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] composer/composer — Composer arbitrary command execution via a malicious package's Perforce source URL</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-rvx4-ffvw-m9q3</link>
+      <description>CVSS 7.7 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-78
+
+Affected:
+- composer/composer/composer &gt;= 2.3.0, &lt; 2.10.3 (patched: 2.10.3)
+- composer/composer/composer &gt;= 1.0, &lt; 2.2.30 (patched: 2.2.30)
+
+---
+
+## Summary&#13;
+&#13;
+If the `p4` Perforce CLI client is installed, a malicious dependency package from a package repository allowing arbitrary perforce source URLs (packagist.org is safe) could execute arbitrary commands when running `composer install` or `composer update`. Composer passed a package's Perforce source address to the `p4` CLI client without validating it. The `p4` CLI client accepts addresses that mean "run this local command" instead of "connect to this server". This is remote code execution with the privileges of the user or CI account running Composer.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You are only affected if all of the following are true:&#13;
+&#13;
+- The Perforce `p4` command line client is installed and on the `PATH` of the machine running Composer.&#13;
+- An attacker can control a package metadata's `source` section with a perforce type. Packagist.org does not allow perforce source metadata, so you are only exploitable if you rely on another Composer repository (any custom `composer`-type repository, or an inline `package` repository entry), or a `composer.lock` file you obtained from somewhere you do not trust.&#13;
+- The package gets installed from source, either because it has no dist artifact or because source installs are selected (for example `--prefer-source`).&#13;
+&#13;
+Plainly not affected: anyone without the `p4` client installed, which is the large majority of Composer users. Perforce is an optional VCS integration. Also not affected: projects that only consume packages from Packagist.org, which does not allow Perforce source repositories and therefore cannot serve a package with a Perforce source address.&#13;
+&#13;
+Most realistic way to get hit: a developer workstation or CI image that has Perforce tooling installed, pulling packages from a private or third party Composer repository that an attacker has compromised.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Composer now validates Perforce source addresses before handing them to the `p4` client, and accepts only real network endpoints (an optional `tcp`/`ssl` transport with a host and port). Addresses that make the client spawn a local process are rejected, and the package fails validation on both update and install, before any `p4` command runs. Fixed in Composer **2.10.3** and **2.2.30**.&#13;
+&#13;
+Note: If you legitimately use Perforce with an unusual `P4PORT` value that is not a plain host and port, Composer will now reject it.&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+Upgrading is the only complete fix.&#13;
+&#13;
+Risk reduction short of upgrading:&#13;
+&#13;
+- Remove the `p4` client from the `PATH` of machines that run Composer but do not use Perforce. This fully blocks this specific attack, since the vulnerability depends on that client being present.&#13;
+- Restrict configured repositories to sources you control or trust, and treat lock files from untrusted sources as untrusted input.</description>
+      <guid isPermaLink="false">GHSA-rvx4-ffvw-m9q3</guid>
+      <category>HIGH</category>
+      <category>composer/composer</category>
+      <pubDate>Thu, 27 Aug 2026 11:41:24 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] composer/composer — Package bin path can escape the package directory, bypassing the GHSA-gjfg-22fp-rrxx fix (CVE-2026-59944)</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-96h3-5x6v-m776</link>
+      <description>CVE-2026-59944 · CVSS 6.1 (CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:L/A:N) · CWE-22, CWE-59, CWE-732
+
+Affected:
+- composer/composer/composer &gt;= 2.3.0, &lt; 2.10.3 (patched: 2.10.3)
+- composer/composer/composer &gt;= 1.0, &lt; 2.2.30 (patched: 2.2.30)
+
+---
+
+## Summary&#13;
+&#13;
+A malicious or compromised Composer package could, when installed as a dependency, cause Composer to change the permissions of a file outside that package's own directory and to register a runnable `vendor/bin` command that points at that outside file. This is a path traversal and link following issue. It is not remote code execution, the attacker gains no ability to read or receive your data directly. The risk is that a file which was readable only by its owner, but modifiable by Composer, can be made world readable and executable, which is enough to expose its contents on a shared or multi tenant host. The earlier hardening from GHSA-gjfg-22fp-rrxx can be bypassed, since it only rejected literal `..` path segments in a package's declared binaries, and was only applied in a single place during dependency resolution.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You can be affected if a malicious or compromised package, including a transitive dependency, is installed in your project, and either of the following is true:&#13;
+&#13;
+- The dependency package ships one of its declared binaries as a symbolic link that resolves to a location outside the package's own directory. Nothing beyond a normal install or update is required.&#13;
+- Or, the recorded metadata of your installed dependencies (`vendor/composer/installed.json`) declares a binary path that escapes the package's directory. Composer regenerates missing binaries from that recorded metadata at the end of an install, and uses this metadata for reinstalls of the same package. In both of these cases the validation applied during dependency resolution is skipped. This situation is only reachable when your `vendor` directory is not populated from the same install run, which performs validation. For example a vendor directory restored from a shared or untrusted CI cache, copied in from an earlier container build stage, carried over from a Composer older than 2.10.2 or 2.2.29, or writable by a lower trust build step, could contain such malicious data.&#13;
+&#13;
+The most realistic way to get hit is a `composer install` in a build or deploy step that reuses a `vendor` directory produced elsewhere, since the permission change is applied silently and with the privileges of the user running Composer.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Composer now verifies that each declared binary resolves to a path inside the installing package's own directory before it touches the file, and skips any binary that resolves outside it with a warning. Update to the patched releases (2.10.3 and 2.2.30).&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+Upgrading is the only complete fix. &#13;
+</description>
+      <guid isPermaLink="false">GHSA-96h3-5x6v-m776</guid>
+      <category>MEDIUM</category>
+      <category>composer/composer</category>
+      <pubDate>Thu, 27 Aug 2026 11:41:22 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] zammad/zammad — Cross-tenant attachment disclosure via inline images in notification emails</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-49h2-vrqp-wwwf</link>
@@ -4443,207 +4526,6 @@ from every model's `urls`, the same check also blocks routing to disabled backen
       <category>MEDIUM</category>
       <category>pip:open-webui</category>
       <pubDate>Wed, 17 Jun 2026 18:01:50 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] pip:open-webui — Open WebUI BOLA: `search_knowledge_files` Allows Unauthorized Knowledge Base File Enumeration (CVE-2026-54016)</title>
-      <link>https://github.com/advisories/GHSA-cx9v-4qj2-jrw6</link>
-      <description>CVE-2026-54016 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-862
-
-Affected:
-- pip/open-webui &lt;= 0.9.5 (patched: 0.9.6)
-
----
-
-## Summary
-
-Open WebUI has a Broken Object Level Authorization (BOLA) vulnerability in the builtin `search_knowledge_files` tool.
-
-When native function calling is enabled and the selected model has no attached knowledge bases, an authenticated user can call `search_knowledge_files` with an arbitrary `knowledge_id`. The function then returns file metadata from that knowledge base without checking whether the user has read access.
-
-This allows unauthorized enumeration of private or restricted knowledge base files.
-
-## Details
-
-The vulnerable code is in:
-
-`backend/open_webui/tools/builtin.py`
-
-Affected function:
-
-```python
-async def search_knowledge_files(
-    query: str,
-    knowledge_id: Optional[str] = None,
-    count: int = 5,
-    skip: int = 0,
-    __request__: Request = None,
-    __user__: dict = None,
-    __model_knowledge__: Optional[list[dict]] = None,
-) -&gt; str:
-```
-
-In the "No attached knowledge" branch, when `knowledge_id` is provided, the function directly calls:
-
-```python
-result = await Knowledges.search_files_by_id(
-    knowledge_id=knowledge_id,
-    user_id=user_id,
-    filter={"query": query},
-    skip=skip,
-    limit=count,
-)
-```
-
-This code path does not verify that the current user is authorized to access the specified knowledge base.
-
-The missing check is inconsistent with other nearby code paths. For example, the attached-knowledge branch in the same function checks whether the user is an admin, the owner of the knowledge base, or has explicit read access through `AccessGrants`:
-
-```python
-if not (
-    user_role == "admin"
-    or knowledge.user_id == user_id
-    or await AccessGrants.has_access(
-        user_id=user_id,
-        resource_type="knowledge",
-        resource_id=knowledge.id,
-        permission="read",
-        user_group_ids=set(user_group_ids),
-    )
-):
-    continue
-```
-
-The sibling function `query_knowledge_files` also performs the same authorization check before using user-supplied knowledge base IDs.
-
-The underlying method `Knowledges.search_files_by_id()` receives `user_id`, but it does not enforce authorization for the provided `knowledge_id`. As a result, this builtin tool path can access a knowledge base by ID without verifying the caller's permissions.
-
-## PoC
-
-### Prerequisites
-
-- The attacker has a valid authenticated Open WebUI account.
-- The victim owns a private or restricted knowledge base.
-- The attacker does not own the target knowledge base.
-- The attacker does not have `read` permission for the target knowledge base in `AccessGrants`.
-- The attacker knows the target `knowledge_id`.
-- The selected model has no attached knowledge bases.
-- Builtin tools are enabled.
-- The knowledge builtin tool category is enabled.
-- Native function calling is enabled.
-
-### Reproduction Steps
-
-1. Create a private or restricted knowledge base as the victim user.
-
-2. Upload one or more files to that knowledge base.
-
-3. Confirm that the attacker user does not have access to the knowledge base.
-
-4. As the attacker user, send a chat completion request with native function calling enabled:
-
-```json
-{
-  "stream": true,
-  "model": "gpt-4o-mini",
-  "params": {
-    "function_calling": "native"
-  },
-  "messages": [
-    {
-      "role": "user",
-      "content": "Please use the search_knowledge_files tool with knowledge_id \"c0c84752-2e9d-42bf-bc3c-c0f272aa61c1\" to search all files"
-    }
-  ]
-}
-```
-
-Replace `c0c84752-2e9d-42bf-bc3c-c0f272aa61c1` with the victim's private knowledge base ID.
-
-### Expected Result
-
-The request should be denied because the attacker does not have access to the target knowledge base.
-
-### Actual Result
-
-`search_knowledge_files` returns metadata for files inside the target knowledge base, including:
-
-- file ID;
-- filename;
-- knowledge base ID;
-- knowledge base name;
-- update timestamp.
-
-## Impact
-
-This is a Broken Object Level Authorization / Broken Access Control vulnerability.
-
-An authenticated attacker who knows a valid `knowledge_id` can enumerate files from private or restricted knowledge bases without authorization.
-
-The leaked metadata may expose sensitive information through filenames, such as:
-
-- financial reports;
-- employee documents;
-- customer contracts;
-- internal roadmap files;
-- confidential project documents.
-
-The exposed file IDs may also help attackers chain this issue with other knowledge-file access paths, such as `view_knowledge_file`, to attempt further content extraction.
-
-This vulnerability bypasses the intended `AccessGrants` permission model and may also allow post-revocation metadata access if a user remembers a previously accessible `knowledge_id`.
-
-## Suggested Fix
-
-Add the same authorization check used in `query_knowledge_files` before calling `Knowledges.search_files_by_id()`:
-
-```python
-if knowledge_id:
-    knowledge = await Knowledges.get_knowledge_by_id(knowledge_id)
-
-    if not knowledge or not (
-        user_role == "admin"
-        or knowledge.user_id == user_id
-        or await AccessGrants.has_access(
-            user_id=user_id,
-            resource_type="knowledge",
-            resource_id=knowledge.id,
-            permission="read",
-            user_group_ids=set(user_group_ids),
-        )
-    ):
-        return json.dumps({"error": f"Access denied to knowledge base {knowledge_id}"})
-
-    result = await Knowledges.search_files_by_id(
-        knowledge_id=knowledge_id,
-        user_id=user_id,
-        filter={"query": query},
-        skip=skip,
-        limit=count,
-    )
-```
-
-As defense in depth, authorization should also be enforced or safely wrapped around `Knowledges.search_files_by_id()` so that future callers cannot accidentally bypass access control.</description>
-      <guid isPermaLink="false">GHSA-cx9v-4qj2-jrw6</guid>
-      <category>MEDIUM</category>
-      <category>pip:open-webui</category>
-      <pubDate>Wed, 17 Jun 2026 14:31:16 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Missing authorization on ticket attachment download (CVE-2026-56723)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-374g-4f73-g7m7</link>
-      <description>CVE-2026-56723 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-863
-
-Affected:
-- Zammad &lt;= 7.0.1 (patched: &gt;= 7.0.2)
-
----
-
-A customer who can view a ticket cannot see internal ticket articles through the article listing API. However, the same customer can directly request an attachment belonging to an internal article via the attachment download endpoint, bypassing article-level authorization. &#13;
-&#13;
-**This results in an inconsistency:** The article listing hides internal articles from customers. The attachment download only checks the parent ticket, not the article - so the same customer can download the attachment directly.</description>
-      <guid isPermaLink="false">GHSA-374g-4f73-g7m7</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Wed, 17 Jun 2026 06:49:24 +0000</pubDate>
     </item>
   </channel>
 </rss>
