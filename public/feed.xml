@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 28 Aug 2026 15:53:04 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 29 Aug 2026 10:43:36 +0000</lastBuildDate>
     <item>
       <title>[HIGH] composer/composer — Composer arbitrary command execution via a malicious package's Perforce source URL</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-rvx4-ffvw-m9q3</link>
