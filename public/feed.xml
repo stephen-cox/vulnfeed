@@ -7,7 +7,189 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Sun, 30 Aug 2026 09:42:21 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 31 Aug 2026 10:27:24 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can inject chats into another user's folder via chat completions</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3pf7-q2g3-wj28</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
+
+Affected:
+- pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Any authenticated user can inject chats into another user's folder via chat completions&#13;
+&#13;
+## Summary&#13;
+The chat-completions endpoint reads a folder id out of the request body and saves the newly created chat into that folder without checking that the caller is allowed to write there. Any authenticated user who knows a folder's id can put a chat of their own into another user's folder, including a shared folder where they hold read-only access and a folder they have no access to at all. The chat then shows up in that folder for everyone who can read it, under a title and with content the attacker controls. The dedicated chat-creation and chat-move endpoints already enforced this check, the chat-completions path did not.&#13;
+&#13;
+## Preconditions&#13;
+- An authenticated account of any role. No elevated permission, no admin involvement.&#13;
+- Folders enabled, which is the default (`ENABLE_FOLDERS=true`, `USER_PERMISSIONS_FEATURES_FOLDERS=true`).&#13;
+- The attacker needs the target folder's id. A member of a shared folder gets it from the shared-folder listing. Sharing a folder with named users is available to ordinary users by default; only wildcard public sharing is gated. A folder that was never shared has an id the attacker cannot obtain through any endpoint available to them, so those folders are not practically reachable.&#13;
+- Releases before 0.10.0 contain the same missing check but have no read path that lists a folder's chats across owners, so the injected row was never visible to anyone.&#13;
+&#13;
+## Impact&#13;
+The integrity of folder contents. An attacker who cannot write to a folder can place chats into it, and every member with read access, the owner included, sees the entry with the attacker's display name and a title the attacker can change to arbitrary text at any time. Members can also open the injected chat and read its messages. In a workspace where a shared folder is treated as trusted, that is a usable surface for planting misleading or phishing content under another team's nose.&#13;
+&#13;
+Nothing is disclosed to the attacker and nothing existing is altered. Writing into a folder grants no read access to it, so the attacker still cannot list or open the folder's other chats, and no data belonging to other users can be modified or deleted through this path. Availability is unaffected.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28366. Chat creation, chat moves and the chat-completions creation path now share a single folder write-access check, so a folder id the caller cannot write to is rejected everywhere a chat's folder can be set. Upgrading to 0.11.1 resolves it completely, with no configuration change required.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the chat-completions handler in `backend/open_webui/main.py`, reached through `POST /api/chat/completions` and `POST /api/v1/chat/completions`. Affected setup: every deployment on 0.10.0 through 0.11.0 with folders enabled.&#13;
+&#13;
+The completions handler gained its own chat-creation branch, which copied the client-supplied folder id into the chat it saved. The ownership and shared-write check lived as duplicated inline code inside the two chat routers rather than in one shared helper, so a third place that learned to set a folder id inherited none of it. Separately, folder listings had been changed to return a folder's chats across all owners so that shared folders work at all, which turned a write that used to be invisible to everyone into one the whole folder can see.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced on a running instance at 0.11.0 with three accounts: one administrator and two ordinary users, one acting as victim and one as attacker.&#13;
+&#13;
+1. The victim creates a folder. The attacker is given no access to it: reading the folder returns 404 and listing its chats returns 403.&#13;
+2. The attacker sends `POST /api/v1/chats/new` with the victim's folder id. Rejected with 404, which is the pre-existing guard working.&#13;
+3. The attacker sends `POST /api/chat/completions` with `parent_id: null`, no chat id, and the victim's folder id in the body. Accepted.&#13;
+4. The victim lists their own folder and sees a chat owned by "Attacker". The victim can open it and read its messages. The attacker then renames their own chat and the new title appears verbatim in the victim's folder listing.&#13;
+&#13;
+Repeating step 3 with the attacker granted read-only access to a shared folder also succeeds on 0.11.0. On 0.11.1 both variants are rejected with 404 and the folder stays empty, while a member holding write access can still create chats there as intended.&#13;
+&#13;
+The three accounts and the folder were created through the normal API. Nothing was written directly to the database.&#13;
+&#13;
+## Credits&#13;
+whyiug, for reporting the missing folder write-access check on the chat-completions creation path.</description>
+      <guid isPermaLink="false">GHSA-3pf7-q2g3-wj28</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 30 Aug 2026 17:00:13 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Non-admin users can delete admin-owned external knowledge connections via knowledge base deletion</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2724-6cpj-gf3v</link>
+      <description>CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L) · CWE-269, CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Non-admin users can delete admin-owned external knowledge connections via knowledge base deletion&#13;
+&#13;
+## Summary&#13;
+External knowledge connections are created and owned by administrators, and are shared by every external knowledge base bound to them. Deleting an external knowledge base also removed that connection from the instance configuration, with no check on the caller's role and no check for other knowledge bases still using it. Any authenticated user holding a write grant on a single external knowledge base could therefore wipe a shared connection that other knowledge bases depend on, and the dedicated administrator route for deleting a connection explicitly refuses that same operation while the connection is still in use.&#13;
+&#13;
+## Preconditions&#13;
+The deployment uses external knowledge bases, backed by the qdrant, milvus or pgvector external providers. Instances with only local knowledge bases are not affected.&#13;
+&#13;
+An administrator created at least one external connection and at least one external knowledge base bound to it. Both of those actions are admin-only.&#13;
+&#13;
+The attacker is an ordinary authenticated user holding a write grant on one of those external knowledge bases. A read grant is not enough, and an unrelated user cannot reach the route at all.&#13;
+&#13;
+The damage scales with sharing. It is worst when one connection backs several knowledge bases, because deleting a single knowledge base destroys the connection for all of them.&#13;
+&#13;
+## Impact&#13;
+An ordinary user removes instance-wide configuration that only administrators can create or manage. Every other external knowledge base bound to the deleted connection keeps its stored connection id and stops working: retrieval against it fails with "External knowledge connection not found", so those knowledge bases return nothing in chat until an administrator recreates the connection by hand. The stored credential goes with it, and connection API responses strip credentials, so an administrator who did not keep the key elsewhere cannot restore the connection without obtaining it again.&#13;
+&#13;
+Nothing is disclosed to the attacker and the external vector store itself is untouched. What is lost is Open WebUI's own connection configuration, and the availability of the knowledge bases that depend on it.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28113. Deleting an external knowledge base now clears its connection only when the caller is an administrator and the knowledge base being deleted is the last one referencing that connection, matching the dedicated connection delete route. Upgrading resolves the issue with no configuration change required.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the knowledge base delete handler in backend/open_webui/routers/knowledge.py, reached through DELETE /api/v1/knowledge/{id}/delete.&#13;
+&#13;
+Affected setup: every release from 0.10.0, where external knowledge connections were introduced, up to and including 0.11.0.&#13;
+&#13;
+The handler authorized the caller against the knowledge base, which a write grant satisfies, and then performed a second, unrelated operation against global configuration in the same request. That second step carried no authorization of its own. It neither required the administrator role that creating a connection requires, nor counted the other knowledge bases still bound to the connection. The dedicated route DELETE /api/v1/knowledge/external/connections/{id} already performed both checks, so an outcome an administrator was blocked from was reachable by a non-administrator through the knowledge base route.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced against a local instance on 0.11.0 with default settings, and against 0.11.1 for comparison.&#13;
+&#13;
+An administrator created one external connection and two external knowledge bases bound to it, then granted a plain user write access on the first knowledge base. As that user:&#13;
+&#13;
+```&#13;
+DELETE /api/v1/knowledge/{KB_A}/delete&#13;
+Authorization: Bearer &lt;user token&gt;&#13;
+```&#13;
+&#13;
+On 0.11.0 the request returns 200 true. The administrator connection list then returns zero connections, the second knowledge base still carries the deleted connection id, and retrieving from it raises "External knowledge connection not found".&#13;
+&#13;
+On 0.11.1 the same request deletes the knowledge base, the connection list still returns the connection, and the second knowledge base is unaffected. An administrator deleting the last remaining knowledge base on that connection still clears it, so the intended cleanup is preserved.&#13;
+&#13;
+## Credits&#13;
+@Bellingham-max, for reporting the missing authorization on the shared connection teardown.</description>
+      <guid isPermaLink="false">GHSA-2724-6cpj-gf3v</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 30 Aug 2026 16:54:04 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Any authenticated user can reach the Azure platform channel via server-side web fetch</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-34r3-9m95-vq73</link>
+      <description>CVSS 7.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N) · CWE-918
+
+Affected:
+- pip/open-webui &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Any authenticated user can reach the Azure platform channel via server-side web fetch&#13;
+&#13;
+## Summary&#13;
+&#13;
+Open WebUI fetches user-supplied URLs on the server for RAG URL ingestion and web search, and screens the resolved addresses so internal destinations cannot be reached. That screen decided whether a destination was external by asking Python's standard library whether the address is globally routable. Several addresses reserved for internal use answer yes to that question, including 168.63.129.16, the Azure platform channel every Azure virtual machine can reach. Any authenticated user could therefore make the server issue requests to those addresses and read the responses back through the API.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+- The affected paths are the server-side URL fetches: RAG URL ingestion and web search. Both require an authenticated, verified account. No administrator role and no special workspace permission are needed.&#13;
+- `ENABLE_LOCAL_WEB_FETCH` must be at its default of `false`. Setting it to `true` disables the address screen by design, and internal destinations are reachable on purpose.&#13;
+- `WEB_FETCH_FILTER_LIST` is empty by default in affected versions, so no operator-supplied block entry covered these addresses unless one was added by hand.&#13;
+- For the Azure platform channel specifically, the Open WebUI host must run on Azure (virtual machine, AKS, Container Apps or equivalent). That address is reachable from every Azure virtual machine regardless of network security group rules. On a host that is not on Azure the address routes nowhere and nothing is reachable through it.&#13;
+&#13;
+## Impact&#13;
+&#13;
+An authenticated user could direct the server to issue GET requests at addresses reserved for internal use and receive the response body back in the API response, which also lands in the RAG context. On Azure that includes the platform channel, an endpoint the operator never intended to expose to application users. The same gap applied to the IPv4-translated range and to deprecated IPv6 site-local space, which on a host that routes them would reach internal services the same way.&#13;
+&#13;
+What was observed is the reachability and the read-back. No specific credential or secret was retrieved from the Azure platform channel during this investigation, and this advisory does not claim one. Deployments not hosted on Azure are unaffected for the platform-channel address, and deployments running with local web fetch enabled were never protected by this screen in any version.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in https://github.com/open-webui/open-webui/pull/27823. Address screening no longer rests on the library's notion of a globally routable address alone: a default block list of reserved and internal-purpose ranges is applied to every resolved address, at URL validation and again at connection time on both HTTP transports, so it also covers redirect hops and DNS rebinding. Operators can extend the list through `WEB_FETCH_FILTER_LIST`, which is merged with the defaults and cannot remove them.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+- `backend/open_webui/retrieval/web/utils.py`: the shared address screen used by every server-side fetch.&#13;
+- `POST /api/v1/retrieval/process/web`: RAG URL ingestion, returns the fetched body to the caller.&#13;
+- `POST /api/v1/retrieval/process/web/search`: web search, fetches each result.&#13;
+&#13;
+The code ships in every build, so no optional component or feature flag limits which installations carry it.&#13;
+&#13;
+The screen answered one question, whether an address is globally routable, and treated that answer as a proxy for whether the destination is external. Those are two different questions. The library classifies by IANA special-purpose registry membership, and the Azure platform channel is allocated out of ordinary public IPv4 space, so the library correctly reports it as global while in practice it is an internal endpoint of the host's own platform. Earlier hardening (GHSA-8x5v-cpv7-8jjp) extended the screen to unwrap IPv6 addresses that carry an IPv4 address inside them. That closed the encoded-address bypasses and left the underlying test unchanged, so an address that is public by registry and internal by convention still passed.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+As any verified user:&#13;
+&#13;
+```&#13;
+POST /api/v1/retrieval/process/web&#13;
+{"url": "http://168.63.129.16/?comp=versions"}&#13;
+```&#13;
+&#13;
+On an affected version the address passes validation, the request is issued, and the response body is returned in the `content` field of the API response.&#13;
+&#13;
+The screening code of each released version was exercised directly:&#13;
+&#13;
+- 0.11.0: `168.63.129.16`, `::ffff:0:169.254.169.254` and `fec0::1` all pass validation.&#13;
+- 0.11.1: all three are rejected, along with every alternative spelling of the same address (IPv4-mapped, IPv4-compatible, IPv4-translated, 6to4 and both NAT64 prefixes) and the obfuscated decimal, octal and hexadecimal forms. Ordinary public addresses continue to pass.&#13;
+&#13;
+No request was issued to a live Azure platform channel. The read-back property was confirmed from the ingestion endpoint, which returns the fetched body to the caller in its response.&#13;
+&#13;
+## Credits&#13;
+&#13;
+@NaorYaa reported that the Azure platform channel remained reachable after the previous hardening, and demonstrated the same gap for the IPv4-translated and IPv6 site-local ranges.</description>
+      <guid isPermaLink="false">GHSA-34r3-9m95-vq73</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 30 Aug 2026 16:48:07 +0000</pubDate>
+    </item>
     <item>
       <title>[LOW] espocrm/espocrm — Field-level security bypass for email address field via meeting's attendees endpoint</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-hpgx-8qg3-5w7v</link>
@@ -4153,85 +4335,6 @@ There is no workaround within Icinga 2 for this. Restricting access on the netwo
       <category>HIGH</category>
       <category>icinga/icinga2</category>
       <pubDate>Mon, 29 Jun 2026 12:45:28 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] icinga/icinga2 — Improper access control for JSON-RPC update certificate messages (CVE-2026-61550)</title>
-      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-vj39-ww8j-vvx5</link>
-      <description>CVE-2026-61550 · CVSS 9.8 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H)
-
-Affected:
-- Icinga 2 &gt;=2.8, &lt;2.16.2 (patched: 2.16.2, 2.15.4, 2.14.9)
-
----
-
-### Impact&#13;
-&#13;
-The code handling certificate update JSON-RPC messages was flawed and did not properly validate the sender of the message, allowing an unauthenticated attacker that can connect to Icinga 2 to update both the own certificate as well as the trusted CA certificate. Updating the trusted CA allows an attacker to impersonate a trusted node, allowing them to take control over the node.&#13;
-&#13;
-**Any Icinga 2 instance that is accessible to an attacker over the network is affected.**&#13;
-&#13;
-### Patches&#13;
-&#13;
-The following versions of Icinga 2 include fixes for this vulnerability: v2.16.2, v2.15.4, and v2.14.9.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-* Restricting access on the network level so that only trusted users can access Icinga 2 (TCP port 5665) can be done as a mitigation.&#13;
-* It is also possible to intentionally break the message handler for certificate updates by removing write access from the certificate directory using `chmod a-w /var/lib/icinga2/certs`. However, **this will also break legitimate certificate renewal, so the remaining certificate validity needs to be monitored and renewals need to be done manually**, also don't forget to add the write permissions (using mode `u+w`) after updating to a fixed version.&#13;
-&#13;
-### References&#13;
-&#13;
-* [Release Announcement](https://icinga.com/blog/icinga2-security-release-v2-16-2/)&#13;
-* [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10907)</description>
-      <guid isPermaLink="false">GHSA-vj39-ww8j-vvx5</guid>
-      <category>CRITICAL</category>
-      <category>icinga/icinga2</category>
-      <pubDate>Mon, 29 Jun 2026 12:45:03 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Arbitrary File Deletion via Unvalidated Session Identifier in Long Polling Controller (CVE-2026-61525)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-xp9w-hhf3-vfxx</link>
-      <description>CVE-2026-61525 · CVSS 8.8 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-22
-
-Affected:
-- Zammad 7.0.2, 7.1.0 (patched: 7.0.3, 7.1.1)
-
----
-
-Zammad's session management for websocket and long-polling connections is susceptible to a path traversal attack. Session identifiers supplied by the client are insufficiently validated before being used to construct internal file paths. When the file-based session store is active (the default configuration), an authenticated attacker can manipulate the session identifier to reference locations outside the intended storage directory, leading to the deletion of arbitrary files and directories on the server.&#13;
-&#13;
-Exploitation requires only a low-privilege authenticated session and a single crafted request. Instances configured to use the Redis-based session store are not affected.</description>
-      <guid isPermaLink="false">GHSA-xp9w-hhf3-vfxx</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Thu, 25 Jun 2026 10:16:57 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] espocrm/espocrm — Authenticated admin RCE via object deserialization in MassAction/Export params  (CVE-2026-47168)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-7q78-jjr9-mqcg</link>
-      <description>CVE-2026-47168 · CVSS 9.1 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H) · CWE-502
-
-Affected:
-- composer/espocrm/espocrm &lt;= 9.3.6 (patched: 9.3.7)
-
----
-
-## From vendor&#13;
-&#13;
-Exploitable by an admin user.&#13;
-&#13;
-## Summary&#13;
-&#13;
-EspoCRM contains an insecure deserialization vulnerability in the processing of stored data associated with background operations. Serialized PHP objects may be deserialized without restricting allowed classes, which can allow an authenticated administrator to trigger arbitrary code execution on the server by supplying specially crafted data that is later processed by the application.&#13;
-&#13;
-## Credit&#13;
-&#13;
-PhuongNA - MiSoft CyberX Team&#13;
-</description>
-      <guid isPermaLink="false">GHSA-7q78-jjr9-mqcg</guid>
-      <category>CRITICAL</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Thu, 18 Jun 2026 06:57:41 +0000</pubDate>
     </item>
   </channel>
 </rss>
