@@ -7,7 +7,236 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 31 Aug 2026 10:27:24 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 01 Sep 2026 09:07:56 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-pcvc-8vrv-8q6w</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.7.0, &lt;= 0.11.0 (patched: 0.11.1)
+
+---
+
+# Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends&#13;
+&#13;
+## Summary&#13;
+The built-in knowledge search tool returns knowledge bases the calling user has no access to. The tool works out which knowledge bases the caller may read and hands that set to the vector store as a search filter, and that filter is the only access control on the path. Most of the shipped vector backends accept the filter argument on their search method and never apply it, so the search returns matches from every knowledge base in the shared collection. The sibling query method on those same backends does apply a filter, which is why the omission is invisible from the calling code.&#13;
+&#13;
+## Preconditions&#13;
+- The deployment must use one of the affected vector backends, selected with `VECTOR_DB`, which defaults to `chroma`. Chroma applies the filter, so a default deployment is not affected.&#13;
+- Eleven of the fifteen shipped backends ignore the filter: both Qdrant clients, Elasticsearch, OpenSearch, both Milvus clients, openGauss, Oracle 23ai, Pinecone, S3 Vectors and Weaviate. Chroma, pgvector, MariaDB and Valkey apply it and were never affected.&#13;
+- The caller needs a model that can call tools, with the knowledge built-in tools left enabled, which is the default, and with no knowledge attached to the model itself. No elevated role or permission is required.&#13;
+- At least one knowledge base must exist that the caller cannot otherwise read.&#13;
+&#13;
+## Impact&#13;
+A user receives the identifier, name and description of knowledge bases that were never shared with them, and chooses how many results to ask for, so the set can be enumerated by varying the query. The affected collection stores one entry per knowledge base whose text is its name and description, so where those values are themselves sensitive, for example when they name a customer, a project or an investigation, that disclosure is the loss.&#13;
+&#13;
+The exposure is confined to that metadata. Document text lives in separate per-knowledge-base collections reached by a different call that is scoped by collection rather than by this filter, so stored documents are not returned by this path, and no write access is gained. Because the default backend is unaffected, the population at risk is operators who deliberately moved to an external vector store, which in practice means larger deployments.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by 1d6d4e6e6. Every affected backend now applies the caller-supplied filter in its search method, combined with the collection or tenant scoping that method already performed. Where a backend's filter builder could express only single-value equality it was extended to express set membership, since that is the form the knowledge tool sends, and a filter using any other operator is now rejected rather than dropped. Upgrading is sufficient and no configuration change is required. Deployments on Chroma, pgvector, MariaDB or Valkey were never affected and need no action.&#13;
+&#13;
+## Root cause&#13;
+- The search method of each affected vector client, which declares a filter parameter and never references it.&#13;
+- The built-in knowledge search tool, which relies on that filter as its only access check.&#13;
+- Present from 0.7.0, the release that introduced the tool, through 0.11.0.&#13;
+&#13;
+Each client exposes a search method and a query method that appear interchangeable from the calling side and differ in whether the caller's filter survives. Search built its request with collection or tenant scoping only, so it was correctly scoped to the collection and entirely unscoped within it. The knowledge tool resolves the caller's readable knowledge bases correctly and passes them down, then reads the results without rechecking them, on the reasonable assumption that a filter handed to a vector store is applied. Because the access decision was delegated wholly to a parameter that most implementations discarded, the caller had no way to observe that it received more than it asked for.&#13;
+&#13;
+That the same omission repeated across most backends points at the shared interface rather than at any one client: the base class defines the parameter without obliging an implementation to honour it, and each backend was written against the interface independently.&#13;
+&#13;
+## Proof of concept&#13;
+Run against the shipped client classes taken from the 0.11.0 and 0.11.3 release tags, with a real Qdrant engine behind them. Two entries were inserted into the shared knowledge base collection, one readable and one not, mirroring the payload the application writes. The entries were inserted directly rather than created through the application.&#13;
+&#13;
+On 0.11.0, search given a filter naming only the readable knowledge base returned both, and the same call with no filter returned an identical result set, confirming the filter had no effect:&#13;
+&#13;
+```&#13;
+search(filter={'knowledge_base_id': {'$in': ['kb-allowed']}})  -&gt;  ['kb-allowed', 'kb-secret']&#13;
+search(filter=None)                                            -&gt;  ['kb-allowed', 'kb-secret']&#13;
+```&#13;
+&#13;
+On 0.11.3 the same filter returned only the readable entry, while the unfiltered control still returned both, confirming the collection held both and the filter is what excluded the second:&#13;
+&#13;
+```&#13;
+search(filter={'knowledge_base_id': {'$in': ['kb-allowed']}})  -&gt;  ['kb-allowed']&#13;
+search(filter=None)                                            -&gt;  ['kb-allowed', 'kb-secret']&#13;
+```&#13;
+&#13;
+The Chroma client, run the same way on both tags, returned only the readable entry in every case, which is the default backend being unaffected. The S3 Vectors client was additionally run against a stub that answers every query with the whole index regardless of the filter it is sent: on 0.11.0 it returned both entries, and on 0.11.3 it returned only the readable one.&#13;
+&#13;
+The remaining backends were checked by driving each patched filter builder with the exact filter the knowledge tool sends and confirming the request it produces restricts to the readable knowledge base.&#13;
+&#13;
+## Credits&#13;
+Reported by @Classic298.</description>
+      <guid isPermaLink="false">GHSA-pcvc-8vrv-8q6w</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Mon, 31 Aug 2026 16:13:50 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Channel members can overwrite another member's message via the chat completions endpoint</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-fmqh-xp37-5hr8</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
+
+Affected:
+- pip/open-webui &gt;= 0.9.5, &lt; 0.11.1 (patched: &gt;= 0.11.1)
+
+---
+
+# Channel members can overwrite another member's message via the chat completions endpoint&#13;
+&#13;
+## Summary&#13;
+Any member of a channel who can post to it could also replace the text of a message written by a different member. The channel branch of the chat completions endpoint checked that the caller may write to the channel, and that the targeted message belongs to that channel, but never checked that the caller actually wrote the message being edited. The message kept its original author, so the replacement text was displayed and stored as though the victim had written it. The dedicated channel message edit route performed the authorship check correctly and refused the same edit, so the two paths disagreed about who may modify a message.&#13;
+&#13;
+## Preconditions&#13;
+- Channels must be enabled. `ENABLE_CHANNELS` defaults to `False`, so a default deployment is not affected until an administrator turns channels on.&#13;
+- The attacker must be an approved user holding write access to the target channel, which is the ordinary state for any participant. No elevated role, group membership or additional permission is needed, and the attacker does not need to be the channel owner.&#13;
+- The attacker must know the id of the targeted message. That id is returned to every member who reads the channel, so it requires no further access.&#13;
+- Channels the attacker cannot post to are not affected, and neither are deployments with channels disabled.&#13;
+&#13;
+## Impact&#13;
+An attacker can rewrite what another member said, under that member's name, in a shared channel. The stored record and every later reader show the victim as the author of text they never wrote, so this is a loss of both integrity and non-repudiation: the victim cannot point to the record to show what they actually said. A conversation can be silently altered after the fact rather than only appended to.&#13;
+&#13;
+How much control the attacker has over the replacement text depends on the configured model, because the text is produced by generating a completion into the victim's message. Reducing a message to unrelated or empty content works regardless of the model, while reproducing an exact attacker-chosen string requires a model that returns the supplied prompt closely enough. The attack grants no new role or permission, does not reach channels the attacker cannot already post to, and exposes no message content they could not already read.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by commit `7d392bedc` (#28631). The gate on the channel branch now also compares the targeted message's author against the calling user and refuses when they differ, which is the condition the dedicated channel message update route already applied. Administrators retain the ability to edit any message, on both paths, as before. Upgrading to 0.11.1 fully resolves this, and no configuration change is required.&#13;
+&#13;
+## Root cause&#13;
+Affected components:&#13;
+- the channel branch of the chat completions handler, which resolves a client-supplied message id for editing&#13;
+- the channel event emitter, which re-checks the message before persisting the update&#13;
+&#13;
+Not affected: the dedicated channel message update route, which already held the correct check.&#13;
+&#13;
+The channel branch was written to answer the question of whether the caller may write into this channel and whether the message belongs to it. Both of those checks were present and effective. The question it never asked was whether the caller wrote the message. Ownership of a channel message is carried by the message record rather than by the channel, so channel-level write access was treated as sufficient authority over every message inside it. The dedicated edit route grew the authorship comparison because editing is its only purpose, while the completions path reached the same operation through a general-purpose entry point and inherited only the coarser channel check.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced against a running instance built from the development branch, with channels enabled and an OpenAI-compatible upstream that echoes the submitted prompt so the replacement text is deterministic.&#13;
+&#13;
+Setup, entirely through the ordinary API: an administrator creates two further accounts, Alice and Mallory, both with the plain user role and no additional permissions, creates a channel, and grants both accounts read and write access. Alice posts a message reading `ALICE ORIGINAL MESSAGE`. Nothing is written directly to the database.&#13;
+&#13;
+Control, through the dedicated route:&#13;
+&#13;
+```&#13;
+POST /api/v1/channels/&lt;channel_id&gt;/messages/&lt;alice_message_id&gt;/update&#13;
+Authorization: Bearer &lt;mallory_token&gt;&#13;
+{"content": "PWNED_BY_MALLORY"}&#13;
+-&gt; 403&#13;
+```&#13;
+&#13;
+Attack, submitting the same target id to the completions endpoint:&#13;
+&#13;
+```&#13;
+POST /api/chat/completions&#13;
+Authorization: Bearer &lt;mallory_token&gt;&#13;
+{"model": "&lt;model&gt;", "stream": true,&#13;
+ "chat_id": "channel:&lt;channel_id&gt;",&#13;
+ "id": "&lt;alice_message_id&gt;",&#13;
+ "messages": [{"role": "user", "content": "PWNED_BY_MALLORY"}]}&#13;
+-&gt; 200&#13;
+```&#13;
+&#13;
+Reading the channel back afterwards shows the targeted message content replaced with the attacker's string while its recorded author is still Alice.&#13;
+&#13;
+## Credits&#13;
+- **@Classic298** — identified that the completions path and the dedicated edit route disagreed on message authorship, and reproduced the cross-member overwrite end to end.</description>
+      <guid isPermaLink="false">GHSA-fmqh-xp37-5hr8</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Mon, 31 Aug 2026 15:48:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Same-origin XSS to account takeover via terminal port-preview iframe hardcoding allow-same-origin</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jmc6-2wr8-h3wj</link>
+      <description>CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
+
+Affected:
+- pip/open-webui &gt;= 0.8.11, &lt;= 0.11.0 (patched: 0.11.1)
+
+---
+
+# Same-origin XSS to account takeover via terminal port-preview iframe hardcoding allow-same-origin&#13;
+&#13;
+## Summary&#13;
+Any authenticated user with access to a shared terminal server could get script of their choosing to run in the Open WebUI origin itself. The in-app port preview rendered the content of a previewed port in an iframe whose sandbox always granted `allow-same-origin` alongside `allow-scripts`, and that content is served from a path on the application's own origin, so the sandbox provided no isolation at all. Script served on a previewed port could read the victim's session token and take over the account.&#13;
+&#13;
+## Preconditions&#13;
+- At least one terminal server configured by an admin (`TERMINAL_SERVER_CONNECTIONS`, empty by default) and reachable by both the attacker and the victim. Deployments with no terminal server configured are not affected.&#13;
+- The attacker needs a normal authenticated account with access to that terminal connection, no admin rights, plus the ability to start a process listening on a port there.&#13;
+- Personal terminals a user configures for themselves are not affected. Those carry an external URL, so the previewed document is cross-origin and the sandbox held.&#13;
+- The victim has to open the port list and click the attacker's port.&#13;
+- `TERMINAL_PROXY_HEADERS` unset and no `CONTENT_SECURITY_POLICY` set, which are the defaults. An operator who had already set a restrictive Content-Security-Policy through either was not exposed, since those headers apply to the proxied response.&#13;
+- The `iframeSandboxAllowSameOrigin` user setting is off by default, but the affected branch ignored it entirely.&#13;
+&#13;
+## Impact&#13;
+The previewed page runs in the application origin, so it can reach the parent window, read the session token out of `localStorage` and exfiltrate it, which is full account takeover of the victim. If the victim is an admin, or any user holding `workspace.functions`, that takeover extends to server-side code execution through Functions. Serving the page costs the attacker nothing beyond the terminal access they already hold, so the only real barrier is getting the victim to open that port. Instances with no terminal server configured were never affected, and neither were personal terminals pointed at an external URL.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by 54d7a2237. The port preview now gates `allow-same-origin` behind a `terminalPreviewAllowSameOrigin` user setting that is off by default, so the preview loads at an opaque origin and cannot reach the parent context. Upgrading is sufficient and no configuration change is required. Previews of pages that need same-origin access still work if a user turns that setting on, and doing so re-enables the behaviour described here for that user.&#13;
+&#13;
+## Root cause&#13;
+- `src/lib/components/chat/FileNav/PortPreview.svelte`, the preview iframe, reached by clicking a port in the file navigator's port list.&#13;
+- Present from 0.8.11, the first release containing the component, through 0.11.0.&#13;
+&#13;
+Every other iframe in the application had already been moved to an opt-in same-origin setting. The port preview kept a static sandbox string with `allow-same-origin` baked into it, and it was missed when the equivalent problem was fixed in the file preview for 0.11.0. Because the terminal proxy is mounted under the application's own origin and forwards the upstream response and its content type without adding a Content-Security-Policy of its own unless the operator configured one, and no global CSP is set, the sandbox was the only isolation boundary left, and it was granting precisely the permission that dissolved it.&#13;
+&#13;
+## Proof of concept&#13;
+On a terminal server the victim can also reach, serve an HTML page containing a script that reads `window.parent.localStorage.token` and sends it to a host the attacker controls. The victim opens the file navigator, switches to the port list and clicks that port. The preview opens, the script executes at the application origin, and the token is exfiltrated.&#13;
+&#13;
+## Credits&#13;
+Reported by @manus-use (researcher zx / Jace).</description>
+      <guid isPermaLink="false">GHSA-jmc6-2wr8-h3wj</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Mon, 31 Aug 2026 15:43:57 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — SSRF into internal services via DNS rebinding in the Playwright web loader</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4v28-j6q3-5m4r</link>
+      <description>CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-367, CWE-918
+
+Affected:
+- pip/open-webui &gt;= 0.9.6, &lt; 0.11.1 (patched: &gt;= 0.11.1)
+
+---
+
+# SSRF into internal services via DNS rebinding in the Playwright web loader&#13;
+&#13;
+## Summary&#13;
+With the Playwright web loader enabled, Open WebUI checks the address behind a user-submitted URL before allowing the request, then handed the request to the browser to perform. The browser resolved the hostname a second time, on its own, and that answer was never checked. An attacker who controls the authoritative DNS for a hostname they submit can answer the first lookup with a public address and the second with an internal one, so the browser connects to an address the check exists to block. The connection-layer pinning that protects the other fetch paths could not apply here, because the request ran inside the browser rather than through our own HTTP clients.&#13;
+&#13;
+## Preconditions&#13;
+- `WEB_LOADER_ENGINE=playwright`. This is not the default, and deployments on the default web loader are unaffected.&#13;
+- A reachable Playwright browser, either local or via `PLAYWRIGHT_WS_URL`.&#13;
+- Any authenticated user who can submit a URL for ingestion or trigger a web search. No administrator role is required.&#13;
+- Control of the authoritative DNS for a hostname the attacker submits, serving a short TTL and alternating answers. No timing race is needed, because the two lookups are separate queries the attacker answers differently.&#13;
+- Internal services the browser process can actually reach. A deployment whose browser has no route to internal addresses loses nothing here.&#13;
+&#13;
+## Impact&#13;
+An authenticated user can make the server read HTTP responses from addresses only it can reach: cloud instance metadata, loopback-bound admin APIs, and internal services on the same network. The response body is fulfilled back into the page, and the loader returns that page as the document, so the content lands in the web-search or ingestion result the user receives. On a cloud host with IMDSv1 reachable, that is enough to take instance IAM credentials.&#13;
+&#13;
+Because the intercepted request forwards the original method and headers, a page the attacker controls can also drive requests that need a header or a non-GET method, which covers the header-gated metadata endpoints. This is a read primitive; no modification of Open WebUI data and no availability impact was demonstrated. Deployments on the default web loader are not affected at all.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by commit `27402ff21` (#28634). The interceptor no longer asks the browser to perform the request. It issues the request from the SSRF-safe HTTP client instead, which resolves the hostname once and connects to that same validated address, re-validates every redirect hop, and then fulfils the browser with the response it received. Upgrading to 0.11.1 fully resolves this, and no configuration change is required.&#13;
+&#13;
+## Root cause&#13;
+Affected component: `SafePlaywrightURLLoader` in `backend/open_webui/retrieval/web/utils.py`, in both the sync and async request interceptors. Affected setup: only builds running the Playwright loader engine.&#13;
+&#13;
+The address check and the connection were performed by two different resolvers in two different processes. Validation resolved the hostname in Python and inspected the result, then the request was handed to the browser, which resolved the name again and connected to whatever it got. Playwright's request-fetch API offers no way to pin a connection to an already-validated address, so the fix that had been applied to the other fetch paths, resolving once and connecting to that same address, could not reach this one. The check was therefore an opinion about an earlier lookup rather than a constraint on the connection that followed.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced against the real implementation: the validation and interception code was taken unmodified, with only the module-level configuration constants stubbed at their documented defaults, and driven against a real Chromium instance inside an unprivileged network namespace with an authoritative DNS server answering the first lookup public and the second internal. Instance metadata and a loopback service were both reached, with the response body returned through the page. A second run showed an attacker-controlled page driving the header-gated metadata sequence to completion. The path from the HTTP endpoint to the loader was traced in source rather than driven end to end.&#13;
+&#13;
+## Credits&#13;
+- **@baeseungwon1010** — identified that the address check and the browser's own resolution are two separate lookups, so the check cannot constrain where the browser connects.</description>
+      <guid isPermaLink="false">GHSA-4v28-j6q3-5m4r</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Mon, 31 Aug 2026 15:42:38 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Any authenticated user can inject chats into another user's folder via chat completions</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3pf7-q2g3-wj28</link>
@@ -4174,167 +4403,6 @@ In 0.10.0:&#13;
       <category>LOW</category>
       <category>open-webui/open-webui</category>
       <pubDate>Mon, 29 Jun 2026 23:19:39 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Account enumeration via observable login timing discrepancy (CVE-2026-59218)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-7rw5-9f7q-xj36</link>
-      <description>CVE-2026-59218 · CVSS 5.3 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N) · CWE-208
-
-Affected:
-- pip/open-webui &lt; 0.10.0 (patched: &gt;= 0.10.0)
-
----
-
-### Summary&#13;
-&#13;
-The `/api/v1/auths/signin` endpoint leaked whether an email address belonged to a registered account through a response-time side channel. Password verification ran bcrypt only when the email was found in the database; for a non-existent email the request returned early without hashing. The expensive bcrypt comparison therefore made valid-account attempts respond significantly slower (~180 ms) than non-existent ones (~5 ms), so an unauthenticated attacker could enumerate valid accounts by measuring response time.&#13;
-&#13;
-### Details&#13;
-&#13;
-On signin the backend looked the user up by email and only performed the bcrypt password comparison if a record existed. A missing email short-circuited before any hashing, producing the timing gap. The built-in brute-force throttling did not prevent it: sending one request at a time with a small delay between requests stays under the rate limit while still exposing the difference.&#13;
-&#13;
-Observed in the reporter's run (HTTP 400 for every attempt, the response time is the signal):&#13;
-&#13;
-```&#13;
-Email                Status   Response time&#13;
-joe@example.com      400      186 ms   &lt;- valid account&#13;
-larry@example.com    400        9 ms&#13;
-jose@example.com     400        6 ms&#13;
-james@example.com    400        5 ms&#13;
-```&#13;
-&#13;
-### Impact&#13;
-&#13;
-An unauthenticated attacker can enumerate which email addresses are registered accounts, which enables targeted password-spraying against confirmed accounts. The impact is amplified by MFA not being enabled by default. No data is read or modified; the disclosure is limited to account existence.&#13;
-&#13;
-### Patched&#13;
-&#13;
-The authentication path now runs a bcrypt verification against a constant placeholder hash whenever the email does not resolve to an active credential, so a real hash comparison executes on every attempt and the response time is the same whether or not the account exists. Fixed in 0.10.0.&#13;
-&#13;
-### Credits&#13;
-&#13;
-@dievus</description>
-      <guid isPermaLink="false">GHSA-7rw5-9f7q-xj36</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 29 Jun 2026 23:15:33 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Same-origin Pyodide code execution allows server-side RCE via a shared chat (CVE-2026-59214)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4r2p-27mh-5m22</link>
-      <description>CVE-2026-59214 · CVSS 7.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
-
-Affected:
-- pip/open-webui &lt; 0.10.0 (patched: &gt;= 0.10.0)
-
----
-
-**Title:** Same-origin Pyodide code execution allows server-side RCE via a shared chat&#13;
-&#13;
-### Summary&#13;
-&#13;
-Open WebUI runs client-side Python (Pyodide) in a same-origin web worker. Through Pyodide's JavaScript API (`pyodide.http.pyfetch`, or the `js` module which exposes the page's `fetch` / `XMLHttpRequest`) executed Python can issue requests on the application origin, and those requests carry the victim's session cookie. A low-privileged user can store such a payload in a chat message, share the chat, and when a victim opens it and clicks **Run** the payload executes authenticated same-origin requests as the victim. When the victim is an admin (or a user holding `workspace.functions` / `workspace.tools` permissions) the payload creates a Function/Tool whose body runs server-side, yielding **remote code execution**.&#13;
-&#13;
-### Details&#13;
-&#13;
-Pyodide's `js` bridge gives Python in the worker the same reach as inline JavaScript on the origin, and the worker is same-origin, so a credentialed request to the app's own API is authenticated as the victim. No separate XSS sink is required: storing the payload in a shared chat and having the victim run it is enough.&#13;
-&#13;
-```python&#13;
-from pyodide.http import pyfetch&#13;
-import json&#13;
-await pyfetch('/api/v1/functions/create', method='POST', credentials='include',&#13;
-              headers={'Content-Type': 'application/json'},&#13;
-              body=json.dumps({'id': 'x', 'name': 'x', 'meta': {'description': 'x'},&#13;
-                               'content': "import os; os.system('&lt;attacker command&gt;')"}))&#13;
-```&#13;
-&#13;
-### Impact&#13;
-&#13;
-When the victim runs the shared code, an authenticated low-privileged user achieves remote code execution on the server (the created Function/Tool runs server-side Python) if the victim is an admin or holds `workspace.functions` / `workspace.tools` permissions. More generally the executed code can issue any authenticated request as the victim. Requires the victim to click Run, and Open WebUI configured to use Pyodide.&#13;
-&#13;
-### Patched&#13;
-&#13;
-Pyodide now runs in a sandboxed iframe at an opaque origin by default (`sandbox="allow-scripts"`, no `allow-same-origin`). At an opaque origin `pyfetch`, `fetch` and `XMLHttpRequest` to the app become cross-origin requests that carry no session cookie and are CORS-blocked, and the `js` bridge operates on the isolated iframe window with no access to the parent's cookie, token, `localStorage` or DOM. Full Python, JavaScript and external fetch keep working. IDBFS persistence is available only behind `ENABLE_PYODIDE_FILE_PERSISTENCE=true`, which restores the same-origin worker and re-accepts this risk.&#13;
-&#13;
-### Workaround&#13;
-&#13;
-Until upgraded, disable Pyodide code execution or set the Code Execution / Code Interpreter engine to a server-side option.&#13;
-&#13;
-### Credits&#13;
-&#13;
-@gg0h</description>
-      <guid isPermaLink="false">GHSA-4r2p-27mh-5m22</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 29 Jun 2026 20:57:32 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] icinga/icinga2 — Icinga 2 DSL Injection via Unescaped Import Template Name (CVE-2026-61552)</title>
-      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-jgqj-x5j9-vgcm</link>
-      <description>CVE-2026-61552 · CVSS 7.2 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H)
-
-Affected:
-- Icinga 2 &gt;=2.4, &lt;2.16.2 (patched: 2.16.2, 2.15.4, 2.14.9)
-
----
-
-### Impact&#13;
-&#13;
-When creating config objects via the `/v1/objects` API endpoint, the template names from the request were written to the resulting Icinga 2 config files without proper sanitization, allowing any `ApiUser` with the permission to create configuration to inject arbitrary configuration that allows them to escalate their privileges.&#13;
-&#13;
-### Patches&#13;
-&#13;
-The following versions of Icinga 2 include fixes for this vulnerability: v2.16.2, v2.15.4, and v2.14.9.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-The vulnerability is only exploitable by API users with any of the `objects/create/*` permissions, so these permissions can be removed from them as a workaround.&#13;
-&#13;
-### References&#13;
-&#13;
-* [Release Announcement](https://icinga.com/blog/icinga2-security-release-v2-16-2/)&#13;
-* [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10910)&#13;
-&#13;
-### Acknowledgements&#13;
-&#13;
-While working on a release with the fix, this issue was also reported independently by @TristanInSec and @de3erve-hunter.</description>
-      <guid isPermaLink="false">GHSA-jgqj-x5j9-vgcm</guid>
-      <category>HIGH</category>
-      <category>icinga/icinga2</category>
-      <pubDate>Mon, 29 Jun 2026 12:46:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] icinga/icinga2 — Stack overflow via deeply nested JSON objects (CVE-2026-61551)</title>
-      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-wh38-wg57-5w7g</link>
-      <description>CVE-2026-61551 · CVSS 8.6 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H)
-
-Affected:
-- Icinga 2 &lt;2.16.2 (patched: 2.16.2, 2.15.4, 2.14.9)
-
----
-
-### Impact&#13;
-&#13;
-An attacker can trigger a stack overflow in Icinga 2 by sending crafted JSON. The affected code is also reachable by unauthenticated clients and can be used to crash the Icinga 2 process. Due to the issue being a stack overflow, the possibility of this leading to code execution can't be ruled out, but hasn't been demonstrated yet.&#13;
-&#13;
-**Any Icinga 2 instance that is accessible to an attacker over the network is affected.**&#13;
-&#13;
-### Patches&#13;
-&#13;
-The following versions of Icinga 2 include fixes for this vulnerability: v2.16.2, v2.15.4, and v2.14.9.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-There is no workaround within Icinga 2 for this. Restricting access on the network level so that only trusted users can access Icinga 2 (TCP port 5665) can be done as a mitigation.&#13;
-&#13;
-### References&#13;
-&#13;
-* [Release Announcement](https://icinga.com/blog/icinga2-security-release-v2-16-2/)&#13;
-* [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10908)</description>
-      <guid isPermaLink="false">GHSA-wh38-wg57-5w7g</guid>
-      <category>HIGH</category>
-      <category>icinga/icinga2</category>
-      <pubDate>Mon, 29 Jun 2026 12:45:28 +0000</pubDate>
     </item>
   </channel>
 </rss>
