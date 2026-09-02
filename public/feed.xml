@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 01 Sep 2026 09:07:56 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 02 Sep 2026 08:21:13 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-pcvc-8vrv-8q6w</link>
@@ -680,9 +680,9 @@ The endpoint was added as a second entry point into the same session-issuing pat
       <pubDate>Sat, 29 Aug 2026 10:45:07 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] composer/composer — Composer arbitrary command execution via a malicious package's Perforce source URL</title>
+      <title>[HIGH] composer/composer — Composer arbitrary command execution via a malicious package's Perforce source URL (CVE-2026-84361)</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-rvx4-ffvw-m9q3</link>
-      <description>CVSS 7.7 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-78
+      <description>CVE-2026-84361 · CVSS 7.7 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-78
 
 Affected:
 - composer/composer/composer &gt;= 2.3.0, &lt; 2.10.3 (patched: 2.10.3)
