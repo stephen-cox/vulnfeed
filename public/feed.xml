@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 02 Sep 2026 08:21:13 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 03 Sep 2026 08:31:03 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-pcvc-8vrv-8q6w</link>
@@ -1292,9 +1292,9 @@ The default Content Security Policy limits the real-world impact. The classic RE
       <pubDate>Tue, 04 Aug 2026 06:25:26 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] zammad/zammad — S/MIME signature verification allows forged sender impersonation</title>
+      <title>[HIGH] zammad/zammad — S/MIME signature verification allows forged sender impersonation (CVE-2026-84465)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-m9ff-hjr3-93h4</link>
-      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-290, CWE-295, CWE-347
+      <description>CVE-2026-84465 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-290, CWE-295, CWE-347
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
@@ -1312,9 +1312,9 @@ Zammad will display that email with the same "validly signed" indicator as a gen
       <pubDate>Tue, 04 Aug 2026 06:25:18 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Stored HTML injection in Knowledge Base video widget enables forced session switching via unescaped iframe attribute</title>
+      <title>[MEDIUM] zammad/zammad — Stored HTML injection in Knowledge Base video widget enables forced session switching via unescaped iframe attribute (CVE-2026-84463)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-cxjg-4gmf-5xqc</link>
-      <description>CVSS 6.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:N/VI:N/VA:N/SC:H/SI:H/SA:N) · CWE-79, CWE-352, CWE-838
+      <description>CVE-2026-84463 · CVSS 6.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:N/VI:N/VA:N/SC:H/SI:H/SA:N) · CWE-79, CWE-352, CWE-838
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
@@ -1330,9 +1330,9 @@ When another user who has permission to switch between user sessions views the a
       <pubDate>Tue, 04 Aug 2026 06:25:09 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Missing Authorization in TagsController#list Allows Cross-Object Tag Enumeration</title>
+      <title>[MEDIUM] zammad/zammad — Missing Authorization in TagsController#list Allows Cross-Object Tag Enumeration (CVE-2026-84460)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-6vgm-xxp4-p6jv</link>
-      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639
+      <description>CVE-2026-84460 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
@@ -1346,9 +1346,9 @@ Any authenticated user can call the REST endpoint for getting a tag list and rec
       <pubDate>Tue, 04 Aug 2026 06:25:00 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] zammad/zammad — IDOR in External Data Source rendering exposes ticket, user, group, and organization data</title>
+      <title>[HIGH] zammad/zammad — IDOR in External Data Source rendering exposes ticket, user, group, and organization data (CVE-2026-84464)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-jvm2-cr58-4qxp</link>
-      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639, CWE-863
+      <description>CVE-2026-84464 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639, CWE-863
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
@@ -1364,9 +1364,9 @@ An authenticated user, including one with only basic customer access, could expl
       <pubDate>Tue, 04 Aug 2026 06:24:54 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] zammad/zammad — AI Agent template sanitizer bypass leads to remote code execution</title>
+      <title>[HIGH] zammad/zammad — AI Agent template sanitizer bypass leads to remote code execution (CVE-2026-84462)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-gp3x-9xm8-rcj6</link>
-      <description>CVSS 8.6 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-20, CWE-94, CWE-1336
+      <description>CVE-2026-84462 · CVSS 8.6 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-20, CWE-94, CWE-1336
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
@@ -1380,9 +1380,9 @@ A security filter that protects Zammad's AI Agent configuration can be bypassed 
       <pubDate>Tue, 04 Aug 2026 06:24:45 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Missing rate limiting allows password brute-forcing during two-factor login</title>
+      <title>[MEDIUM] zammad/zammad — Missing rate limiting allows password brute-forcing during two-factor login (CVE-2026-84461)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-6vh5-pfp2-5rmh</link>
-      <description>CVSS 6.9 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-203, CWE-307, CWE-799
+      <description>CVE-2026-84461 · CVSS 6.9 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-203, CWE-307, CWE-799
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
@@ -1412,9 +1412,9 @@ The legacy `destroy_form` action on AttachmentsController deletes UploadCache St
       <pubDate>Tue, 04 Aug 2026 06:23:34 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] zammad/zammad — Account takeover via unverified email matching during SSO auto-link</title>
+      <title>[CRITICAL] zammad/zammad — Account takeover via unverified email matching during SSO auto-link (CVE-2026-84458)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-86cc-3ggh-mf2m</link>
-      <description>CVSS 9.1 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-287
+      <description>CVE-2026-84458 · CVSS 9.1 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-287
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
