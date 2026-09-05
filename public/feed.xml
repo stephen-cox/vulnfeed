@@ -7,7 +7,349 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 04 Sep 2026 08:26:30 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 05 Sep 2026 08:01:21 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Unauthenticated requests can stall the server via uncached OIDC fetches in back-channel logout</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3g9q-v48f-hh9w</link>
+      <description>CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H) · CWE-405, CWE-770
+
+Affected:
+- pip/open-webui &gt;= 0.9.0, &lt;= 0.11.0 (patched: 0.11.1)
+
+---
+
+# Unauthenticated requests can stall the server via uncached OIDC fetches in back-channel logout&#13;
+&#13;
+## Summary&#13;
+&#13;
+The OIDC back-channel logout endpoint is unauthenticated by design, because the identity provider calls it without a browser session. Before checking whether the submitted logout token was genuine, the handler fetched the provider's discovery document and its signing keys over the network, and repeated both fetches on every request because nothing was cached. The signing-key fetch also ran as a blocking call inside the async event loop. A small number of requests carrying a worthless token was therefore enough to make the whole instance stop answering.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+- `ENABLE_OAUTH_BACKCHANNEL_LOGOUT=true`. The default is `False`, so a stock deployment is not affected. This setting is recommended in the Open WebUI hardening documentation, which is why the issue is treated as in scope.&#13;
+- At least one OIDC provider configured (`OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OPENID_PROVIDER_URL`).&#13;
+- No account, credential, session or secret identifier is required. The attacker needs network access to the instance and the configured issuer string, which is published in the provider's own discovery document.&#13;
+&#13;
+## Impact&#13;
+&#13;
+Against 0.11.0, with the identity provider answering in 150 ms, 60 concurrent requests carrying a token whose signature was four characters long stalled the async event loop for 8.3 seconds, measured against an idle baseline of 10.8 ms. For the length of that stall the process answers nothing: no chat requests, no API calls, no health check. Open WebUI runs a single worker by default, so the effect is instance-wide rather than per-connection, and no rate limit sits in front of the endpoint.&#13;
+&#13;
+The same traffic is also amplified outward: 20 sequential requests produced 20 discovery fetches and 40 key-set fetches at the identity provider, so an attacker can drive load onto the provider through the instance.&#13;
+&#13;
+No data is read, modified or exposed, and the forged token is still rejected. The cost is paid before the rejection.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in 0.11.1. The handler now resolves both the discovery document and the signing keys through the already-configured OAuth client, so each is fetched once per provider and reused afterwards, and both fetches are asynchronous rather than blocking the event loop. A token carrying no `kid` header is rejected before any key lookup happens. Upgrading is sufficient, and no configuration change is required.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+Affected component: the OIDC back-channel logout handler in `backend/open_webui/utils/oauth.py`, reached through `POST /oauth/backchannel-logout`. Affected setups: releases 0.9.0 through 0.11.0 with back-channel logout enabled and an OIDC provider configured.&#13;
+&#13;
+The handler treated its network work as cheap preparation rather than as work worth protecting. For every request it opened a new HTTP session per configured provider to re-read the discovery document, then constructed a fresh JWKS client, whose own cache consequently started empty each time, and asked that client for the signing key through a synchronous call issued directly on the event loop. All of this ran before the token signature was verified, so an attacker unable to produce a valid token still cost the server two network round trips and a blocked loop per request. Both fetches used the library default timeout of five minutes.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+Reproduced by running the unmodified handler from the 0.11.0 and 0.11.1 backends against a loopback identity provider that counted every inbound request and could answer with a configured delay. The submitted token carried a valid issuer and audience, a `kid` naming a key the provider does not hold, and `AAAA` as its signature.&#13;
+&#13;
+20 sequential requests, provider answering immediately:&#13;
+&#13;
+| Version | Discovery fetches | Key-set fetches | Response |&#13;
+| --- | --- | --- | --- |&#13;
+| 0.11.0 | 20 | 40 | 400 |&#13;
+| 0.11.1 | 1 | 1 | 400 |&#13;
+&#13;
+60 concurrent requests, provider answering in 150 ms:&#13;
+&#13;
+| Version | Wall time | Discovery fetches | Key-set fetches | Worst event-loop stall |&#13;
+| --- | --- | --- | --- | --- |&#13;
+| 0.11.0 | 18.6 s | 60 | 120 | 8255 ms |&#13;
+| 0.11.1 | under 0.01 s | 0 | 0 | none measurable |&#13;
+&#13;
+Idle event-loop stall was 10.8 ms in both cases. On 0.11.1 the first request an instance receives warms both caches, and every request after that reaches the signature check without any outbound network call.&#13;
+&#13;
+## Credits&#13;
+&#13;
+@galanko, for reporting the issue and identifying both the missing caching and the blocking call.</description>
+      <guid isPermaLink="false">GHSA-3g9q-v48f-hh9w</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Fri, 04 Sep 2026 12:08:59 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can suppress calendar alerts instance-wide via a non-numeric alert value</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-v39v-59xw-j98g</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-754, CWE-1287
+
+Affected:
+- pip/open-webui &gt;= 0.9.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Any authenticated user can suppress calendar alerts instance-wide via a non-numeric alert value&#13;
+&#13;
+## Summary&#13;
+&#13;
+Calendar events carry a free-form `meta` object that is stored exactly as submitted, with no validation of the values inside it. The scheduler reads the per-event alert offset out of that object in a single pass that covers every user's upcoming events, and compares it numerically without checking that it is a number. Any verified user could store a text value there, which made the comparison raise and abort the whole pass, so no calendar reminder fired for anyone on the instance while that event stayed inside the lookahead window.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+- Calendar is enabled (`ENABLE_CALENDAR` / `calendar.enable`, default `True`).&#13;
+- The attacker is a verified user (role `user` or `admin`) holding the `calendar` feature permission, which is granted to all users by default (`USER_PERMISSIONS_FEATURES_CALENDAR`, default `True`).&#13;
+- The event's start time falls inside the scheduler's one hour lookahead window, so the shared alert pass selects it.&#13;
+&#13;
+No admin access, no shared calendar, no recurrence rule and no open registration are required, an invited account is enough. Deployments running with the calendar disabled, or with the calendar feature permission removed from regular users, are not affected.&#13;
+&#13;
+## Impact&#13;
+&#13;
+Availability loss on one feature, affecting every user on the instance. While a single event carrying a non-numeric alert value sat in the upcoming window, the shared alert pass raised before emitting anything, so no user received calendar alerts and no event was recorded as alerted. The same events were selected again on the next poll, so the suppression lasted as long as the event stayed in the window, roughly one hour per event, and could be sustained by storing a new one. Every user on a default deployment holds the permission needed to do this.&#13;
+&#13;
+Chat, timers, automations and the HTTP API kept working throughout, and authenticated calendar reads continued to succeed. There is no crash, no code execution, and no access to other users' data. Alerts resumed on their own once the event left the window or was deleted.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in https://github.com/open-webui/open-webui/pull/28790, released in 0.11.1. The scheduler now treats any non-numeric alert value as unset and falls back to the default alert offset, so a stored text value can no longer interrupt the pass. Upgrading is sufficient and no configuration change is required. Events already holding a bad value simply revert to the default alert timing.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+Affected component: the upcoming-event lookup in the calendar event model, which the scheduler's alert pass calls every poll. Affected setup: every build carrying the calendar feature, which was introduced in 0.9.0.&#13;
+&#13;
+Event `meta` is an untyped dictionary and was written to the database exactly as submitted, so nothing on the write path guaranteed that the alert offset was a number. The alert pass then read that value back and compared it numerically on the assumption that the write path had already constrained it, and the loop had no per-event error handling. Because a single background pass serves the whole instance rather than one user at a time, one unusable value from one user aborted the pass for everyone.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+Reported with a scripted reproduction against 0.11.0 (`ghcr.io/open-webui/open-webui:latest`) with the calendar enabled and two ordinary user accounts. The first account created an upcoming event with the alert offset stored as the text `"5"`, the second created a normal upcoming event with a numeric offset. Across several scheduler polls the second user's event was never marked as alerted and no alert was delivered, while the server logged a type error from the alert pass on each poll. Health checks and authenticated calendar reads returned normally during the fault. After the first account's event was deleted, the second user's event was marked as alerted on the next poll and alerting resumed.&#13;
+&#13;
+## Credits&#13;
+&#13;
+Reported by @DshtAnger.</description>
+      <guid isPermaLink="false">GHSA-v39v-59xw-j98g</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Fri, 04 Sep 2026 12:05:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can start a non-terminating request via a folder parent cycle</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-8r35-5x5r-hv74</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-835
+
+Affected:
+- pip/open-webui &gt;= 0.10.0, &lt;= 0.11.0 (patched: 0.11.1)
+
+---
+
+# Any authenticated user can start a non-terminating request via a folder parent cycle&#13;
+&#13;
+## Summary&#13;
+Any authenticated user can move one of their own folders under itself, leaving a loop in their folder tree. The re-parent endpoint performed no check that the new parent was not the folder itself or one of its own subfolders, and the folder tree walks did not track which folders they had already visited. A single request against a folder in a loop therefore never finishes.&#13;
+&#13;
+## Preconditions&#13;
+Folders must be enabled (`ENABLE_FOLDERS`, default true) and the acting user's role must hold the folders feature permission (`USER_PERMISSIONS_FEATURES_FOLDERS`, default true). Both are on in a default install. Any authenticated account is sufficient: no administrator, no second user, no shared folder and no victim interaction. Deployments that disable folders, or withhold the folders feature permission from non-admin roles, are not affected.&#13;
+&#13;
+## Impact&#13;
+A single request that never returns. It keeps running after the client disconnects, holds a CPU core and grows its in-memory folder list at roughly 0.6 GB per hour until the process is restarted. The folder stays in the looping state in the database, so any later request touching that folder starts the loop again.&#13;
+&#13;
+The instance stays responsive while this happens. Each step of the walk waits on a database query, so other users continue to be served normally; measured on a default install, two concurrent instances of this request left unrelated users unaffected, and roughly 900 concurrent requests were needed before anyone else saw a slowdown. Nothing is denied to any other party at the time of the attack, and an unattended instance degrades over hours rather than immediately. No user data is exposed and no data belonging to another user is modified.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28748. Moving a folder into itself or into one of its own subfolders is now rejected with a 400, every folder tree walk skips ids it has already visited, and a folder whose parent chain loops is returned to the root the next time the folder list is requested. An instance that already holds folders in this state recovers on upgrade with no operator action.&#13;
+&#13;
+## Root cause&#13;
+Affected components: the folder re-parent handler `POST /api/v1/folders/{id}/update/parent`, the subtree walk in the folder model that expands a folder into its descendants, and the two endpoints that call it, `DELETE /api/v1/folders/{id}` and `POST /api/v1/folders/{id}/read`. Affected setup: the subtree walk was introduced in 0.10.0, so no earlier release carries the code.&#13;
+&#13;
+The folder hierarchy is stored as a plain parent reference per folder, with the acyclic property assumed rather than enforced. The write path never validated that assumption, and the read paths were written as if it always held, so nothing on either side would notice or stop a loop.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced against a default 0.11.0 install. As an ordinary authenticated user:&#13;
+&#13;
+1. Create a folder and note its id.&#13;
+2. `POST /api/v1/folders/{id}/update/parent` with `parent_id` set to that same id. The request is accepted.&#13;
+3. `DELETE /api/v1/folders/{id}` (or `POST /api/v1/folders/{id}/read`). The request never returns, and the worker continues running after the client disconnects.&#13;
+&#13;
+No data was seeded directly into the database. Every step ran through the public API.&#13;
+&#13;
+## Credits&#13;
+@luida-ikura, who reported the folder parent cycle and the non-terminating subtree walk it reaches.</description>
+      <guid isPermaLink="false">GHSA-8r35-5x5r-hv74</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Fri, 04 Sep 2026 11:49:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Admin demoted through SSO role sync keeps read and write access to all users' notes</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wjwr-xfp9-r66p</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:N) · CWE-613, CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.9.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Admin demoted through SSO role sync keeps read and write access to all users' notes&#13;
+&#13;
+## Summary&#13;
+&#13;
+A user who is demoted from admin by an identity provider keeps admin-level read and write access to every user's notes, over any Socket.IO connection that was already open when the demotion happened. Open WebUI caches the user's role on the socket at connection time, and the two SSO role-sync paths, the reverse-proxy trusted role header and OAuth role mapping, changed the role in the database without tearing that cached session down. Only the admin user-management endpoints invalidated sessions, so a demotion driven by the identity provider left the old privileges live on the socket.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+A role-sync SSO mode has to be enabled. Either trusted-header authentication with `WEBUI_AUTH_TRUSTED_ROLE_HEADER` set, which is unset by default, or OAuth with role mapping enabled, which is off by default. Deployments that change roles only through the admin panel are not affected, because that path already invalidated the user's sockets.&#13;
+&#13;
+The account has to be an admin at the moment it opens a Socket.IO connection, has to keep that connection open across the demotion, and has to be demoted through the SSO path rather than through the admin panel. Signing out, reloading the page, or any network interruption ends the exposure, because the reconnect reads a fresh role from the database.&#13;
+&#13;
+## Impact&#13;
+&#13;
+Until the socket closes, the demoted account can open and edit any user's note through the collaborative-notes socket handlers, which grant admins access to every note. That is read and write access to other users' private notes, held by someone the operator has already removed from the admin role.&#13;
+&#13;
+The rest of the product is not affected. Every HTTP endpoint reads the role fresh from the database on each request, so the demoted account has no admin access to the REST API, no user management, no settings and no model or connection configuration. The exposure ends the moment the connection drops, and the account controls that only by keeping the browser tab open.&#13;
+&#13;
+The realistic case is off-boarding or a least-privilege downgrade performed in the identity provider, which is a normal administrative action rather than a misconfiguration.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in 0.11.1 by commit `ce3c175e260709f359d7e6cbb3132f0572098b95`. Role changes and user deletions now publish an internal event, and a session handler tears down that user's Socket.IO connections whenever the event fires, so every path that can change a role invalidates cached sessions instead of only the admin endpoints. Upgrading is sufficient, no configuration change is needed.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+Affected components:&#13;
+&#13;
+- `backend/open_webui/routers/auths.py`, the trusted-header role sync in the sign-in handler.&#13;
+- `backend/open_webui/utils/oauth.py`, the OAuth role sync run on login.&#13;
+- `backend/open_webui/socket/main.py`, which caches the user record on the socket and authorizes the collaborative-notes handlers against that cached copy.&#13;
+&#13;
+Session invalidation on role change was added as an explicit call, made at the call sites that changed a role rather than inside the role-change itself. The admin user-management endpoints made that call, the two SSO sync paths did not, and nothing else refreshed the role cached on an open socket. The socket keep-alive rewrites the cached record to reset the idle timer and preserves the stale role while doing so, so a connection that stays active is never reaped. Because the notes handlers grant full access to any note when the cached role reads admin, the gap turned into read and write access over all notes for as long as the connection lived.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+Deploy Open WebUI with trusted-header authentication and `WEBUI_AUTH_TRUSTED_ROLE_HEADER` set, or with OAuth role mapping enabled. Sign in as an admin and leave the browser open on a page holding a Socket.IO connection. Demote the account through the identity provider, meaning the next sign-in carries the role header set to `user`, or the account's group is changed at the OAuth provider. The database role is now `user`.&#13;
+&#13;
+Over the connection that is still open, join and edit another user's note by its id. Both are granted, because the role cached on that socket still reads admin. Performing the same demotion through the admin panel instead drops the connection and revokes the access, which is the behaviour the SSO paths were missing.&#13;
+&#13;
+This was established by source inspection against 0.11.0 rather than by an executed exploit.&#13;
+&#13;
+## Credits&#13;
+&#13;
+Reported by @mtholmquist.</description>
+      <guid isPermaLink="false">GHSA-wjwr-xfp9-r66p</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Fri, 04 Sep 2026 11:48:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — A user's session cookies are sent to tool servers configured for bearer authentication</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-p78m-89r6-pgf7</link>
+      <description>CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-201
+
+Affected:
+- pip/open-webui &gt;= 0.6.27, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# A user's session cookies are sent to tool servers configured for bearer authentication&#13;
+&#13;
+## Summary&#13;
+&#13;
+When more than one external tool server is reachable in the same request, a tool call to a server configured for bearer authentication can arrive carrying the calling user's Open WebUI session cookies alongside that server's own key. The cookie jar is built per connection, but the callable that performs the request reads it late instead of per connection, so every tool callable built in the same pass sends the cookies belonging to whichever connection was processed last. An administrator who configures a server with its own API key has not chosen to send that server anything else, and the operator of that server receives a live session credential for the user who triggered the call.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+At least two external tool servers must be attached to the same request, and at least one of them must be set to session or system OAuth authentication, since no cookie jar is assembled otherwise. The connection using that authentication mode must be the one processed last, which follows the order of the tool servers attached to the request rather than anything the receiving party controls.&#13;
+&#13;
+A deployment with no tool servers, with only one tool server, or where no attached server uses session or system OAuth authentication, is not affected. Tool servers are not configured by default.&#13;
+&#13;
+## Impact&#13;
+&#13;
+The operator of a tool server that was configured with only its own API key receives the session token of every user whose tool call reaches it. That token authenticates as the user against the whole application, so the receiving party can act as that user for the lifetime of the token, which is a full account takeover of anyone whose request lands on that server. Where the affected user is an administrator, the receiving party gains administrative access.&#13;
+&#13;
+The receiving party is the operator of a server the administrator deliberately registered, so this is a disclosure of user credentials to a partially trusted third party rather than to an arbitrary attacker. It nonetheless crosses a boundary the administrator set, because selecting bearer authentication for a connection states that the connection is authenticated by its own key alone. The leak does not depend on the tool server behaving maliciously to obtain the token, only on it receiving and retaining ordinary request data.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28630. The tool callable now takes its own connection's cookie jar as a parameter, in the same way it already took that connection's headers, so each request carries only what its own connection was configured to send. Upgrading resolves the issue with no configuration change.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+Affected component: the tool loading routine in `backend/open_webui/utils/tools.py`, which builds one callable per tool across all attached connections; the header and cookie builder in the same module, which populates a cookie jar only for session and system OAuth connections; and the tool server request function, which places the supplied jar on the outgoing request.&#13;
+&#13;
+Headers were passed into the callable factory as an argument and were therefore fixed per connection, while the cookie jar was left as a variable in the enclosing scope and was read only when the tool was finally invoked. By then both loops had completed and the variable held the last value assigned to it. The two values are produced together by the same builder and were plainly intended to travel together, so this is an oversight in how one of them was captured rather than a forwarding decision. The equivalent code path for terminal tool servers in the same module binds both values per connection and does not carry the defect.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+Two tool servers were registered: one using bearer authentication with its own key, and one using session authentication, with the session connection processed last. A tool call was driven to an operation belonging to the bearer server, and that server recorded the incoming request.&#13;
+&#13;
+The bearer server received its own key in the authorization header, together with the calling user's `token` and `oauth_session_id` cookies. The received token matched the calling user's session token.&#13;
+&#13;
+Control: with the session connection removed and only the bearer server registered, the same tool call arrived with no cookies at all, confirming that the leak depends on a session connection being present and processed last.&#13;
+&#13;
+Reproduced against a running instance built from the affected snapshot, with the receiving tool servers replaced by recording servers.&#13;
+&#13;
+## Credits&#13;
+&#13;
+Classic298, who reported the issue and demonstrated the cross-connection cookie leak against a running instance.</description>
+      <guid isPermaLink="false">GHSA-p78m-89r6-pgf7</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Fri, 04 Sep 2026 11:47:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Sign-in as another user via wildcard characters in the OAuth subject claim on SQLite</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wpmr-8h3q-fwj7</link>
+      <description>CVSS 8.1 (CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H) · CWE-155, CWE-287
+
+Affected:
+- pip/open-webui &gt;= 0.6.41, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Sign-in as another user via wildcard characters in the OAuth subject claim on SQLite&#13;
+&#13;
+## Summary&#13;
+&#13;
+On SQLite deployments, the lookup that maps an external identity to a local account does a substring match instead of an exact match. A subject value containing SQL wildcard characters therefore matches accounts the value was never issued for, and the sign-in binds to whichever account the database returns first, which can be an administrator. The same defect affects SCIM external-ID resolution. PostgreSQL deployments are not affected, because they take a separate and correct code path.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+* The database is SQLite. This is the default backend. PostgreSQL deployments are not affected at all.&#13;
+* OAuth or OIDC sign-in is configured, or SCIM provisioning is enabled. Both are off by default.&#13;
+* For an attacker to steer the match deliberately, they must control the value of the claim Open WebUI uses as the subject. That value is normally assigned by the identity provider and is not attacker-controlled: the shipped GitHub and Feishu configurations use provider-assigned numeric identifiers, and a standard OIDC `sub` is provider-assigned. The deliberate case therefore requires an operator to have pointed `OAUTH_SUB_CLAIM` at a claim the end user can set at the identity provider, such as a username or email claim, or an identity provider that lets a user choose their own subject value.&#13;
+* No attacker and no misconfiguration are needed for the accidental case. A legitimate subject value that happens to contain an underscore matches other accounts as well, and which account is returned depends on database row order.&#13;
+* For the SCIM path, the caller must already hold the SCIM bearer token, which is a privileged credential.&#13;
+&#13;
+## Impact&#13;
+&#13;
+A sign-in can be bound to an account other than the one the identity provider authenticated. Where the operator has made the subject claim user-settable, an attacker who registers at that provider can choose a value that matches an existing account and receive a session for it, including an administrator account, which is a full compromise of the instance. Where the subject claim is provider-assigned, the deliberate attack is not available, and what remains is a correctness failure in which an ordinary subject value containing an underscore can resolve to the wrong account and hand one user another user's session non-deterministically.&#13;
+&#13;
+The defect is in the identity match itself, so it is not mitigated by any downstream permission check: by the time a session is issued the wrong account has already been selected. It does not allow account creation, and it does not affect password sign-in, PostgreSQL deployments, or any deployment with OAuth, OIDC and SCIM all disabled.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28624. The two identity lookups now compare the nested JSON value directly through SQLAlchemy's JSON subscript operator, which emits an exact match on both supported databases, instead of going through the column-level `contains()` operator that degraded to a substring comparison on SQLite. The hand-written per-dialect branching is removed, since the operator already handles both backends.&#13;
+&#13;
+Upgrading fully resolves it and no configuration change is required. Existing stored identities are unaffected, as the stored format does not change.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+* `backend/open_webui/models/users.py` — `get_user_by_oauth_sub`, resolves an OAuth or OIDC identity to a local account.&#13;
+* `backend/open_webui/models/users.py` — `get_user_by_scim_external_id`, the same pattern for SCIM.&#13;
+* Reached from the OAuth callback handler and the OAuth token-exchange handler, and from the SCIM user routes.&#13;
+* Affects builds running on SQLite, which is the default database.&#13;
+&#13;
+The `oauth` and `scim` columns are declared with SQLAlchemy's generic `JSON` type. That type does not implement a containment comparator, so a `contains()` call against it falls back to the generic string operator and compiles to a `LIKE` with the operand wrapped in `%` on both sides. The intent was a JSON containment test; what was emitted was a substring test against the serialized JSON, in which `%` and `_` carry their usual `LIKE` meaning. The PostgreSQL branch was written separately against `JSONB` with an equality comparison and is correct, which is why the defect is confined to the default backend and why it survived review: the two branches look symmetrical and only one of them does what it appears to do.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+Against a SQLite instance with an OIDC provider configured, two accounts exist: an administrator whose stored subject is `admin_sub_9999`, and an ordinary user whose stored subject is `bob_sub_1234`. Both rows were seeded directly rather than created through a live provider sign-in; the lookup under test was then called as the application calls it.&#13;
+&#13;
+Resolving the subject value `%` returns the administrator account. Resolving `admin_sub_%` likewise returns the administrator account. Resolving the correct full values returns the correct accounts, and resolving an unknown value returns nothing, so the failure is visible only when the supplied value contains a wildcard character. A subsequent check with an ordinary subject value containing an underscore showed it matching more than one account, with the returned account determined by row order.&#13;
+&#13;
+## Credits&#13;
+&#13;
+Reported by @Classic298.</description>
+      <guid isPermaLink="false">GHSA-wpmr-8h3q-fwj7</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Fri, 04 Sep 2026 11:43:51 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-pcvc-8vrv-8q6w</link>
@@ -4100,309 +4442,6 @@ Note: Other Ydoc handlers (`ydoc:document:join`, `ydoc:document:update`, `ydoc:d
       <category>LOW</category>
       <category>open-webui/open-webui</category>
       <pubDate>Thu, 02 Jul 2026 12:08:53 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] composer/composer — Path traversal in package bin field lets dependencies chmod arbitrary host files (CVE-2026-59946)</title>
-      <link>https://github.com/composer/composer/security/advisories/GHSA-gjfg-22fp-rrxx</link>
-      <description>CVE-2026-59946 · CVSS 6.1 (CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:L/A:N) · CWE-22, CWE-732
-
-Affected:
-- composer/composer/composer &gt;= 2.3.0, &lt; 2.10.2 (patched: 2.10.2)
-- composer/composer/composer &gt;= 1.0, &lt; 2.2.29 (patched: 2.2.29)
-
----
-
-## Summary&#13;
-&#13;
-A Composer package declares its executables in the `bin` field of its `composer.json`. When Composer installs a package, it processes each `bin` entry and changes the file mode of the corresponding file so it is executable.&#13;
-&#13;
-If a `bin` entry contains `..` path segments, it can resolve to a path outside the package's own install directory. A malicious package can use this to make Composer run `chmod` against a file that already exists elsewhere on the machine. The resulting mode is world-readable and world-executable (0755 under the common umask of 022). This happens when the package is installed, e.g. during `composer install`, `composer update`, and `composer require`. Any dependency can trigger it, including a transitive dependency several levels deep.&#13;
-&#13;
-The vulnerability *changes file permissions only, and does not read, modify, or execute the contents of the target file, and it is not remote code execution*. The impact is to confidentiality: a file with deliberately restrictive permissions, such as a private key at mode 0600, can be made readable by other users on the same host.&#13;
-&#13;
-## Am I affected?&#13;
-&#13;
-We reviewed packagist.org data and found no evidence that any published package exploited this vulnerability. If you install packages only from packagist.org, you are not affected by any known exploitation.&#13;
-&#13;
-You are potentially affected if *all* of the following are true:&#13;
-&#13;
-- Your Composer project depends, directly or transitively, on a package you do not fully trust.&#13;
-- A file you rely on for its restrictive permissions already exists at a path the Composer process can write to. Examples include SSH private keys, `.env` files, `~/.aws/credentials`, and `.netrc`.&#13;
-&#13;
-The most likely way to be affected is to add or update a dependency that is malicious or has been compromised, then run an install on a machine that holds sensitive, permission-restricted files.&#13;
-&#13;
-Two points to note:&#13;
-&#13;
-- `--no-scripts`, `--no-plugins`, and an `allow-plugins` allow-list do not prevent this. The permission change happens during normal binary installation, outside the plugin and script trust model.&#13;
-- Impact scales with privilege: As a regular user, only files owned by that user can be affected, which typically means your own secrets becoming readable by other local users on a shared machine. As root (for example, a CI container with no non-root user, or `sudo composer install`), any file on the system can be affected, including system credential stores.&#13;
-&#13;
-## Patched versions&#13;
-&#13;
-The fix makes Composer reject any package whose binary entry contains a `..` path segment. During install/update the operation aborts before any file permission is changed, and the same check now also applies when a package is published to Packagist.org, so such packages are refused upstream.&#13;
-&#13;
-Fixed in 2.2.29 (2.2 LTS line) and 2.10.2 (current 2.x line). Composer 1.x is end of life and will not be patched. 1.x users should upgrade to a patched 2.x release.&#13;
-&#13;
-## Workarounds&#13;
-&#13;
-Upgrading to a patched release is the only complete fix. There is no configuration option that disables the vulnerable behavior.</description>
-      <guid isPermaLink="false">GHSA-gjfg-22fp-rrxx</guid>
-      <category>MEDIUM</category>
-      <category>composer/composer</category>
-      <pubDate>Wed, 01 Jul 2026 09:31:11 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] composer/composer —  URL-embedded HTTP-Basic username leaks to verbose logs (GitHub PAT exposure) (CVE-2026-59947)</title>
-      <link>https://github.com/composer/composer/security/advisories/GHSA-g6xq-892h-64w3</link>
-      <description>CVE-2026-59947 · CVSS 4.7 (CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-532
-
-Affected:
-- composer/composer/composer &gt;= 2.3.0, &lt; 2.10.2 (patched: 2.10.2)
-- composer/composer/composer &gt;= 1.0, &lt; 2.2.29 (patched: 2.2.29)
-
----
-
-## Summary&#13;
-&#13;
-When Composer is run with -vvv (debug verbosity), it could print a credential that was embedded directly in a repository or package URL, but not as a password, to its debug output. Composer already masked the password portion of such URLs, but the username portion was shown in clear text. Because GitHub and several other services support placing an access token in the username position of a URL (for example https://[token]@github.com/owner/repo), a token used that way could end up written to the verbose log in full.&#13;
-&#13;
-This is an information disclosure issue. The credential is only ever exposed to whoever can already read Composer's debug output.&#13;
-&#13;
-## Am I affected?&#13;
-&#13;
-You are potentially affected only if **all** of the following apply:&#13;
-&#13;
-- A credential is embedded inside a URL that Composer handles, e.g. in a `repositories` entry in composer.json, in a package dist/source URL - rather than being supplied through auth.json or the COMPOSER_AUTH environment variable.&#13;
-- The secret sits in the username slot of that URL (e.g. `https://TOKEN@host/…`). A normal `username:password@host` pair where the username is an ordinary account name did not expose the password, that was already masked.&#13;
-- Composer is run with -vvv (debug verbosity), and that output is retained or shared somewhere others can read it: public CI build logs, output pasted into an issue or chat, archived terminal sessions, and so on.&#13;
-&#13;
-If you keep credentials in auth.json or environment variables, or you never run Composer at debug verbosity, you were not exposed.&#13;
-&#13;
-The most realistic exposure is the documented pattern of embedding a GitHub Personal Access Token in a URL's username position on a machine (often CI) that captures verbose output.&#13;
-&#13;
-## Patched versions&#13;
-&#13;
-The username is now masked the same way the password already was, so an embedded token no longer appears in verbose output (a short, non-secret prefix may be shown to aid debugging, but never the full value).&#13;
-&#13;
-Fixed in Composer 2.10.2 and the 2.2.29.&#13;
-&#13;
-## Workarounds&#13;
-&#13;
-There is no configuration setting that prevents outputting credentials while keeping normal behavior.&#13;
-&#13;
-If you cannot upgrade right away, you can reduce exposure by:&#13;
-&#13;
-- Not running Composer with -vvv (debug verbosity) in environments where output is captured or shared.&#13;
-- Moving credentials out of URLs and into auth.json or COMPOSER_AUTH.&#13;
-- Scrubbing existing CI/build logs that may already contain a leaked token.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-g6xq-892h-64w3</guid>
-      <category>MEDIUM</category>
-      <category>composer/composer</category>
-      <pubDate>Wed, 01 Jul 2026 09:31:06 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] composer/composer — Arbitrary file write outside vendor via malicious transitive package name (CVE-2026-59948)</title>
-      <link>https://github.com/composer/composer/security/advisories/GHSA-499r-g7pc-vmp9</link>
-      <description>CVE-2026-59948 · CVSS 7.0 (CVSS:3.1/AV:L/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H) · CWE-22, CWE-787
-
-Affected:
-- composer/composer/composer &gt;= 2.3.0, &lt; 2.10.2 (patched: 2.10.2)
-- composer/composer/composer &gt;= 1.0, &lt; 2.2.29 (patched: 2.2.29)
-
----
-
-## Summary&#13;
-&#13;
-A maliciously crafted package, published on an untrusted third party repository other than Packagist.org or Private Packagist, can cause Composer to write files outside the `vendor/` directory and outside your project, with attacker-controlled content, during a normal `install` or `update` through using an invalid package name, which was not correctly validated by Composer.&#13;
-&#13;
-This is an arbitrary file write that can be used to execute code outside the Composer project's context in which you expected the package code to execute (for example by writing shell startup files, SSH `authorized_keys`, or a cron entry). It is a supply-chain issue: it requires a malicious or compromised package to be present in the dependency graph, it is not otherwise remotely exploitable against a machine.&#13;
-&#13;
-The fix makes Composer validate every package produced by dependency resolution before anything is written to `composer.lock` or installed, and abort with a security error if a package name is not a valid `vendor/package` name.&#13;
-&#13;
-## Am I affected?&#13;
-&#13;
-You may be affected if you install packages from an untrusted third party repository, which does not sufficiently validate package names. Packagist.org and Private Packagist are safe, as they validate package names correctly.&#13;
-&#13;
-## Patched versions&#13;
-&#13;
-Fixed in **2.2.29** and **2.10.2**. Composer 1.x is also affected and you should move to a safe 2.x release.&#13;
-&#13;
-## Workarounds&#13;
-&#13;
-Do not use untrusted package repositories. If you have to, mirror them through an internal repository like Private Packagist.</description>
-      <guid isPermaLink="false">GHSA-499r-g7pc-vmp9</guid>
-      <category>HIGH</category>
-      <category>composer/composer</category>
-      <pubDate>Wed, 01 Jul 2026 09:31:04 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — POST /api/v1/images/edit bypasses the global image-edit switch and the per-user image-generation permission (CVE-2026-59227)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-rqj7-6wrp-6g2g</link>
-      <description>CVE-2026-59227 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-862, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.8.11, &lt; 0.10.0 (patched: &gt;= 0.10.0)
-
----
-
-## Summary&#13;
-&#13;
-`POST /api/v1/images/edit` performed no authorization beyond requiring a verified account. Every other image-editing surface in Open WebUI enforces the global image-edit switch and the per-user image-generation permission — the `/api/v1/images/generations` route, the built-in `edit_image` tool, and the chat image-edit middleware — but the direct edit route enforced neither. A verified non-admin user could therefore invoke server-side image editing, reaching the configured image-edit provider with the administrator's credentials, even when the administrator had globally disabled image editing (`ENABLE_IMAGE_EDIT=False`) or denied that user image-generation permission. The image-editing UI is surfaced only to administrators (Playground), so the route additionally exposed an admin-only capability to any verified user.&#13;
-&#13;
-## Impact&#13;
-&#13;
-An authenticated, non-admin user can:&#13;
-&#13;
-- bypass the global `ENABLE_IMAGE_EDIT=False` administrator control;&#13;
-- bypass a denied per-user/group `features.image_generation` permission;&#13;
-- cause the server to send billable image-edit requests to the configured provider (OpenAI-compatible, Gemini, or ComfyUI) using administrator-configured credentials (`IMAGES_EDIT_OPENAI_API_KEY` for the OpenAI engine).&#13;
-&#13;
-No cross-user data is exposed and the provider credentials are never returned to the caller; the impact is the control/permission bypass and the associated billable resource consumption.&#13;
-&#13;
-## Affected Versions&#13;
-&#13;
-`&gt;= 0.8.11, &lt; 0.10.0` (the `/api/v1/images/edit` route was introduced in 0.8.11 and was ungated from the outset). Fixed in **v0.10.0**.&#13;
-&#13;
-## Details&#13;
-&#13;
-`/api/v1/images/generations` enforces `ENABLE_IMAGE_GENERATION` (403 if globally disabled) and `features.image_generation` (403 for non-admins without the permission). The `edit_image` built-in tool and the chat image-edit middleware likewise gate on `ENABLE_IMAGE_EDIT` and `features.image_generation`. The direct `POST /api/v1/images/edit` route ran on `Depends(get_verified_user)` alone and proceeded straight to provider dispatch, applying none of these controls.&#13;
-&#13;
-## Proof of Concept&#13;
-&#13;
-As a verified non-admin user, with image editing globally disabled (`ENABLE_IMAGE_EDIT=False`) or `features.image_generation` denied for the user:&#13;
-&#13;
-```http&#13;
-POST /api/v1/images/edit&#13;
-Authorization: Bearer &lt;non_admin_user_token&gt;&#13;
-Content-Type: application/json&#13;
-&#13;
-{"image":"data:image/png;base64,&lt;png&gt;","prompt":"edit","model":"gpt-image-1"}&#13;
-```&#13;
-&#13;
-The request reaches the configured image-edit provider and returns an edited image despite the disabled control/permission.&#13;
-&#13;
-## Patch&#13;
-&#13;
-The direct route is split from its shared implementation (mirroring `generate_images`/`image_generations`): a thin `/edit` route now enforces `ENABLE_IMAGE_EDIT` and the per-user `features.image_generation` permission before delegating to the shared `image_edits()` implementation. The internal callers (the `edit_image` tool and the chat middleware) call the implementation directly and already gate themselves, so they are unaffected.</description>
-      <guid isPermaLink="false">GHSA-rqj7-6wrp-6g2g</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 29 Jun 2026 23:29:25 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — ReDoS in skill-mention regexes causes whole-instance DoS on default config (CVE-2026-59220)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-ffpj-xv5c-p3gw</link>
-      <description>CVE-2026-59220 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-1333
-
-Affected:
-- pip/open-webui &gt;= 0.9.2, &lt; 0.10.0 (patched: &gt;= 0.10.0)
-
----
-
-## Summary&#13;
-Two regexes in `backend/open_webui/utils/middleware.py` that parse `&lt;$skillId|label&gt;` skill-mention tags backtrack in O(n²) on input that contains `&lt;$` followed by a long run with no closing `&gt;`. Both run synchronously, on the asyncio event loop, on **every** chat completion with no feature gate. Because the default deployment is a single uvicorn worker, one such input pins a CPU core inside `re` and freezes the entire instance for all users until the worker is killed. Any authenticated user can trigger it with one chat message; it also fires accidentally on benign retrieved content (a RAG chunk or tool output) containing the pattern.&#13;
-&#13;
-## Affected versions&#13;
-`&gt;= 0.9.2, &lt; 0.10.0`. Fixed in **v0.10.0** (there is no 0.9.7 release).&#13;
-- `SKILL_MENTION_RE` (the extract pattern) has been O(n²) since **v0.9.2**; exploitable on 0.9.2–0.9.5 with a large input (hundreds of KB).&#13;
-- **v0.9.6** added a second, far more aggressive O(n²) in the strip pattern (introduced by the "keep label as readable text" change), so on 0.9.6 a small input is enough to hang the instance.&#13;
-&#13;
-Both are fixed by the same patch.&#13;
-&#13;
-## Affected component&#13;
-`backend/open_webui/utils/middleware.py` (line numbers as of v0.9.6):&#13;
-&#13;
-```python&#13;
-# line 2223 — used by extract_skill_ids_from_messages(), called unconditionally (~line 2625)&#13;
-SKILL_MENTION_RE = re.compile(r'&lt;\$([^|&gt;]+)\|?[^&gt;]*&gt;')&#13;
-&#13;
-# line 2247 — used by strip_skill_mentions(), called unconditionally (line 2662)&#13;
-strip_re = re.compile(r'&lt;\$[^|&gt;]+\|?([^&gt;]*)&gt;')&#13;
-```&#13;
-&#13;
-`extract_skill_ids_from_messages()` runs before the `if all_skill_ids:` block (that guard gates only skill *injection*, not the regex), and `strip_skill_mentions()` runs with no guard at all. Neither requires a skill to exist or any setting to be enabled. Both functions are plain synchronous calls inside the async `process_chat_payload` coroutine, so they block the event loop; with the default `UVICORN_WORKERS=1` (`backend/start.sh`) the whole instance stalls.&#13;
-&#13;
-## Root cause&#13;
-`[^|&gt;]` is a subset of `[^&gt;]`, so the quantifier pair `[^|&gt;]+ \|? [^&gt;]*` is ambiguous: on input that never closes with `&gt;`, `[^|&gt;]+` greedily consumes the tail, `&gt;` fails, and the engine backtracks through every split point between `[^|&gt;]+` and `[^&gt;]*` — O(n) positions each doing O(n) work. Polynomial, not exponential, but more than enough to hang a single worker on a ~100 KB input.&#13;
-&#13;
-## Proof of concept&#13;
-Standalone (no Open WebUI required):&#13;
-&#13;
-```python&#13;
-import re, time&#13;
-EXTRACT = re.compile(r'&lt;\$([^|&gt;]+)\|?[^&gt;]*&gt;')&#13;
-STRIP   = re.compile(r'&lt;\$[^|&gt;]+\|?([^&gt;]*)&gt;')&#13;
-for n in (8_000, 16_000, 32_000, 64_000):&#13;
-    s = '&lt;$' + ('a' * n)&#13;
-    for name, rx in (('extract', EXTRACT), ('strip', STRIP)):&#13;
-        t = time.perf_counter(); rx.search(s)&#13;
-        print(f'n={n:&gt;6} {name:&gt;7} = {(time.perf_counter()-t)*1000:8.1f} ms')&#13;
-```&#13;
-&#13;
-Time quadruples per doubling of `n` (textbook O(n²)); the strip pattern runs for ~6 seconds on a 64k blob and for minutes on a ~96 KB one.&#13;
-&#13;
-End-to-end against a live instance (default config):&#13;
-1. `docker run ghcr.io/open-webui/open-webui:v0.9.6` on defaults.&#13;
-2. Log in as any user (no admin or skill setup).&#13;
-3. Send a chat message containing `&lt;$` followed by 50k+ characters with no `&gt;`.&#13;
-4. One CPU core pegs in `re`; UI and API stop responding for every user until the worker is killed.&#13;
-&#13;
-## Patch&#13;
-Rewrite the optional `|label` as a non-capturing optional group so the two quantifiers no longer overlap. Both patterns become linear; captures and substituted output are unchanged on well-formed `&lt;$id|label&gt;`, `&lt;$id|&gt;`, and bare `&lt;$id&gt;` mentions.&#13;
-&#13;
-```python&#13;
-SKILL_MENTION_RE = re.compile(r'&lt;\$([^|&gt;]+)(?:\|[^&gt;]*)?&gt;')&#13;
-strip_re         = re.compile(r'&lt;\$[^|&gt;]+(?:\|([^&gt;]*))?&gt;')&#13;
-```&#13;
-&#13;
-After the patch the same hostile input returns in under 1 ms. Shipped in v0.10.0.&#13;
-&#13;
-## Credit&#13;
-Reported by @Vlad-WKG, including a correct root-cause analysis and patch.</description>
-      <guid isPermaLink="false">GHSA-ffpj-xv5c-p3gw</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 29 Jun 2026 23:25:59 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] open-webui/open-webui — Scheduled automations continue after pending-user deactivation and stored model ACL revocation (CVE-2026-59226)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-mvx4-532p-xfm9</link>
-      <description>CVE-2026-59226 · CVSS 3.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-285, CWE-862, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt; 0.10.0 (patched: &gt;= 0.10.0)
-
----
-
-**Title:** Scheduled automations continue after pending-user deactivation and stored model ACL revocation&#13;
-&#13;
-### Summary&#13;
-&#13;
-Open WebUI documents `pending` as a zero-access role used for new sign-ups and deactivated users, and normal HTTP routes enforce that with `get_verified_user()` (which rejects `pending`), while automation create/update/run routes additionally require the `features.automations` permission. Two paths missed that lifecycle gate, so a deactivated (`pending`) account could keep acting through the background automation scheduler:&#13;
-&#13;
-1. **Scheduler did not re-gate the owner.** When a stored automation became due, `execute_automation()` rehydrated the owner with `Users.get_user_by_id(...)` and re-entered the chat completion pipeline without re-checking that the owner was still `user`/`admin` or still held `features.automations`. A still-active automation therefore kept running after its owner was deactivated.&#13;
-2. **Model ACL only enforced for exact role `user`.** `check_model_access()` applied private-model grants only when `user.role == "user"`, so a `pending` principal fell through a branch that denies a normal non-owner `user`.&#13;
-&#13;
-Net effect: a deactivated account could continue scheduled chat generation through the background worker, consuming the operator's configured model-provider credentials and reaching a stored automation model ID that its current role/ACL state would no longer permit through normal routes.&#13;
-&#13;
-### Impact&#13;
-&#13;
-A `pending`/deactivated account continues to execute due scheduled automations after its access has been revoked, consuming the operator's provider credentials, quota and shared capacity, and bypassing the private-model ACL for the automation's stored model ID. Exploitation requires a previously created active automation and a later transition to `pending` (deactivation or approval rollback), so it is bounded and not interactive. It does not grant unauthenticated access, account takeover, code execution, or cross-user data exfiltration.&#13;
-&#13;
-### Patched&#13;
-&#13;
-In 0.10.0:&#13;
-&#13;
-- `execute_automation()` aborts and records an error unless the rehydrated owner is still `user` or `admin` and (for non-admins) still holds `features.automations`, so a deactivated or de-permissioned owner's due automation no longer runs.&#13;
-- `check_model_access()` enforces model ACLs for every non-admin role rather than only the exact role `user`, so a `pending` or otherwise unrecognised role no longer falls through.&#13;
-&#13;
-### Credits&#13;
-&#13;
-@rexpository</description>
-      <guid isPermaLink="false">GHSA-mvx4-532p-xfm9</guid>
-      <category>LOW</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 29 Jun 2026 23:19:39 +0000</pubDate>
     </item>
   </channel>
 </rss>
