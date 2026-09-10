@@ -7,11 +7,51 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 09 Sep 2026 08:35:06 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 10 Sep 2026 08:37:49 +0000</lastBuildDate>
     <item>
-      <title>[HIGH] open-webui/open-webui — Unauthenticated requests can stall the server via uncached OIDC fetches in back-channel logout</title>
+      <title>[MEDIUM] open-webui/open-webui — Users denied by the OAuth role policy can still sign in via token exchange</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wvm9-9g5j-623f</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
+- docker/openwebui/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
+
+---
+
+# Users denied by the OAuth role policy can still sign in via token exchange&#13;
+&#13;
+## Summary&#13;
+Open WebUI's OAuth token exchange endpoint issues a session for a provider access token without running the OAuth role management that the normal OAuth login callback runs. A user whose provider roles the login callback would refuse, or would demote, could still obtain a working session at their existing role through this endpoint.&#13;
+&#13;
+## Preconditions&#13;
+- `ENABLE_OAUTH_TOKEN_EXCHANGE=True`. It is disabled by default, so a default deployment is not affected.&#13;
+- `ENABLE_OAUTH_ROLE_MANAGEMENT=True` together with `OAUTH_ALLOWED_ROLES` or `OAUTH_ADMIN_ROLES`. Role management is off by default, and deployments not using it are not affected.&#13;
+- A valid, unexpired access token on the configured provider.&#13;
+- An Open WebUI account already linked to that provider subject, or an account with a matching email when `OAUTH_MERGE_ACCOUNTS_BY_EMAIL` is enabled. This endpoint never creates accounts, so a token for a subject with no existing account is rejected.&#13;
+&#13;
+## Impact&#13;
+An admin who relies on OAuth role management expects a user to lose access, or lose admin, as soon as the identity provider stops reporting the required role. The login callback does enforce this on the next sign-in. Token exchange kept issuing sessions and never re-evaluated the role, so the user retained working access as their existing account at its existing role, including an admin role the provider had already revoked. The endpoint cannot create an account and cannot raise anyone's role, so this grants continued access rather than new or elevated access.&#13;
+&#13;
+## Fix&#13;
+d799e81ed, released in 0.11.1, runs the same role evaluation on the provider's response that the login callback runs. The exchange is denied with 403 when the reported roles match no allowed or admin role, and the account's role is updated to match the provider otherwise. Upgrading restores the check with no further action.&#13;
+&#13;
+## Root cause&#13;
+The affected component is the OAuth token exchange endpoint in `backend/open_webui/routers/auths.py`, present in builds from 0.8.0 onward.&#13;
+&#13;
+The endpoint was added as a second entry point into the same session-issuing path the OAuth login callback uses, but it re-implemented only the identity lookup and not the policy checks surrounding it. Role evaluation lived inside the callback's own body rather than in shared code, so the second caller inherited none of it.&#13;
+&#13;
+## Credits&#13;
+@Classic298</description>
+      <guid isPermaLink="false">GHSA-wvm9-9g5j-623f</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Wed, 09 Sep 2026 21:59:45 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Unauthenticated requests can stall the server via uncached OIDC fetches in back-channel logout (CVE-2026-87011)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3g9q-v48f-hh9w</link>
-      <description>CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H) · CWE-405, CWE-770
+      <description>CVE-2026-87011 · CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H) · CWE-405, CWE-770
 
 Affected:
 - pip/open-webui &gt;= 0.9.0, &lt;= 0.11.0 (patched: 0.11.1)
@@ -77,9 +117,9 @@ Idle event-loop stall was 10.8 ms in both cases. On 0.11.1 the first request an 
       <pubDate>Fri, 04 Sep 2026 12:08:59 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can suppress calendar alerts instance-wide via a non-numeric alert value</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can suppress calendar alerts instance-wide via a non-numeric alert value (CVE-2026-87012)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-v39v-59xw-j98g</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-754, CWE-1287
+      <description>CVE-2026-87012 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-754, CWE-1287
 
 Affected:
 - pip/open-webui &gt;= 0.9.0, &lt; 0.11.1 (patched: 0.11.1)
@@ -129,9 +169,9 @@ Reported by @DshtAnger.</description>
       <pubDate>Fri, 04 Sep 2026 12:05:52 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can start a non-terminating request via a folder parent cycle</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can start a non-terminating request via a folder parent cycle (CVE-2026-87013)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-8r35-5x5r-hv74</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-835
+      <description>CVE-2026-87013 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-835
 
 Affected:
 - pip/open-webui &gt;= 0.10.0, &lt;= 0.11.0 (patched: 0.11.1)
@@ -176,9 +216,9 @@ No data was seeded directly into the database. Every step ran through the public
       <pubDate>Fri, 04 Sep 2026 11:49:34 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Admin demoted through SSO role sync keeps read and write access to all users' notes</title>
+      <title>[MEDIUM] open-webui/open-webui — Admin demoted through SSO role sync keeps read and write access to all users' notes (CVE-2026-87014)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wjwr-xfp9-r66p</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:N) · CWE-613, CWE-863
+      <description>CVE-2026-87014 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:N) · CWE-613, CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.9.0, &lt; 0.11.1 (patched: 0.11.1)
@@ -236,9 +276,9 @@ Reported by @mtholmquist.</description>
       <pubDate>Fri, 04 Sep 2026 11:48:27 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — A user's session cookies are sent to tool servers configured for bearer authentication</title>
+      <title>[MEDIUM] open-webui/open-webui — A user's session cookies are sent to tool servers configured for bearer authentication (CVE-2026-87015)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-p78m-89r6-pgf7</link>
-      <description>CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-201
+      <description>CVE-2026-87015 · CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-201
 
 Affected:
 - pip/open-webui &gt;= 0.6.27, &lt; 0.11.1 (patched: 0.11.1)
@@ -292,9 +332,9 @@ Classic298, who reported the issue and demonstrated the cross-connection cookie 
       <pubDate>Fri, 04 Sep 2026 11:47:12 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Sign-in as another user via wildcard characters in the OAuth subject claim on SQLite</title>
+      <title>[HIGH] open-webui/open-webui — Sign-in as another user via wildcard characters in the OAuth subject claim on SQLite (CVE-2026-87016)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wpmr-8h3q-fwj7</link>
-      <description>CVSS 8.1 (CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H) · CWE-155, CWE-287
+      <description>CVE-2026-87016 · CVSS 8.1 (CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H) · CWE-155, CWE-287
 
 Affected:
 - pip/open-webui &gt;= 0.6.41, &lt; 0.11.1 (patched: 0.11.1)
@@ -351,9 +391,9 @@ Reported by @Classic298.</description>
       <pubDate>Fri, 04 Sep 2026 11:43:51 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends</title>
+      <title>[MEDIUM] open-webui/open-webui — Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends (CVE-2026-87017)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-pcvc-8vrv-8q6w</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
+      <description>CVE-2026-87017 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.7.0, &lt;= 0.11.0 (patched: 0.11.1)
@@ -417,9 +457,9 @@ Reported by @Classic298.</description>
       <pubDate>Mon, 31 Aug 2026 16:13:50 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Channel members can overwrite another member's message via the chat completions endpoint</title>
+      <title>[MEDIUM] open-webui/open-webui — Channel members can overwrite another member's message via the chat completions endpoint (CVE-2026-87994)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-fmqh-xp37-5hr8</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
+      <description>CVE-2026-87994 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
 
 Affected:
 - pip/open-webui &gt;= 0.9.5, &lt; 0.11.1 (patched: &gt;= 0.11.1)
@@ -490,9 +530,9 @@ Reading the channel back afterwards shows the targeted message content replaced 
       <pubDate>Mon, 31 Aug 2026 15:48:12 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Same-origin XSS to account takeover via terminal port-preview iframe hardcoding allow-same-origin</title>
+      <title>[HIGH] open-webui/open-webui — Same-origin XSS to account takeover via terminal port-preview iframe hardcoding allow-same-origin (CVE-2026-87995)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jmc6-2wr8-h3wj</link>
-      <description>CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
+      <description>CVE-2026-87995 · CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
 
 Affected:
 - pip/open-webui &gt;= 0.8.11, &lt;= 0.11.0 (patched: 0.11.1)
@@ -535,9 +575,9 @@ Reported by @manus-use (researcher zx / Jace).</description>
       <pubDate>Mon, 31 Aug 2026 15:43:57 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — SSRF into internal services via DNS rebinding in the Playwright web loader</title>
+      <title>[HIGH] open-webui/open-webui — SSRF into internal services via DNS rebinding in the Playwright web loader (CVE-2026-87996)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4v28-j6q3-5m4r</link>
-      <description>CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-367, CWE-918
+      <description>CVE-2026-87996 · CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-367, CWE-918
 
 Affected:
 - pip/open-webui &gt;= 0.9.6, &lt; 0.11.1 (patched: &gt;= 0.11.1)
@@ -580,9 +620,9 @@ Reproduced against the real implementation: the validation and interception code
       <pubDate>Mon, 31 Aug 2026 15:42:38 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can inject chats into another user's folder via chat completions</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can inject chats into another user's folder via chat completions (CVE-2026-87997)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3pf7-q2g3-wj28</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
+      <description>CVE-2026-87997 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
 
 Affected:
 - pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
@@ -633,9 +673,9 @@ whyiug, for reporting the missing folder write-access check on the chat-completi
       <pubDate>Sun, 30 Aug 2026 17:00:13 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Non-admin users can delete admin-owned external knowledge connections via knowledge base deletion</title>
+      <title>[HIGH] open-webui/open-webui — Non-admin users can delete admin-owned external knowledge connections via knowledge base deletion (CVE-2026-87998)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2724-6cpj-gf3v</link>
-      <description>CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L) · CWE-269, CWE-863
+      <description>CVE-2026-87998 · CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L) · CWE-269, CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
@@ -693,9 +733,9 @@ On 0.11.1 the same request deletes the knowledge base, the connection list still
       <pubDate>Sun, 30 Aug 2026 16:54:04 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Any authenticated user can reach the Azure platform channel via server-side web fetch</title>
+      <title>[HIGH] open-webui/open-webui — Any authenticated user can reach the Azure platform channel via server-side web fetch (CVE-2026-87999)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-34r3-9m95-vq73</link>
-      <description>CVSS 7.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N) · CWE-918
+      <description>CVE-2026-87999 · CVSS 7.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N) · CWE-918
 
 Affected:
 - pip/open-webui &lt; 0.11.1 (patched: 0.11.1)
@@ -787,9 +827,9 @@ A user explicitly forbidden from reading `Contact.emailAddress` can still recove
       <pubDate>Sat, 29 Aug 2026 15:27:27 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via message deletion in a cyclic chat tree</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via message deletion in a cyclic chat tree (CVE-2026-88000)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3cgp-3cqx-j8w2</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
+      <description>CVE-2026-88000 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
 
 Affected:
 - pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
@@ -844,9 +884,9 @@ On 0.11.1 the same payload returns HTTP 200 in 0.011s, `/health` stays available
       <pubDate>Sat, 29 Aug 2026 11:52:10 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Server-side fetches reach blocked and internal hosts via unvalidated HTTP redirect targets</title>
+      <title>[MEDIUM] open-webui/open-webui — Server-side fetches reach blocked and internal hosts via unvalidated HTTP redirect targets (CVE-2026-88001)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-5x7x-4c3c-qf5w</link>
-      <description>CVSS 5.0 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:N/A:N) · CWE-918
+      <description>CVE-2026-88001 · CVSS 5.0 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:N/A:N) · CWE-918
 
 Affected:
 - pip/open-webui &gt;= 0.9.5, &lt;= 0.11.0 (patched: 0.11.1)
@@ -923,9 +963,9 @@ Instrumenting 0.11.1 on a redirect that is allowed shows both controls running a
       <pubDate>Sat, 29 Aug 2026 11:49:13 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via a cyclic chat message history</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via a cyclic chat message history (CVE-2026-88002)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jqhh-cjmq-vmv6</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
+      <description>CVE-2026-88002 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
 
 Affected:
 - pip/open-webui &gt;= 0.5.0, &lt; 0.11.1 (patched: 0.11.1)
@@ -972,49 +1012,39 @@ On 0.11.1 the same payload returns promptly, `/health` stays available throughou
       <pubDate>Sat, 29 Aug 2026 10:57:26 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Users denied by the OAuth domain allowlist or role policy can still sign in via token exchange</title>
+      <title>[MEDIUM] open-webui/open-webui — Users outside the OAuth domain allowlist can still sign in via token exchange</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4qg5-cxx4-g927</link>
       <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
 
 Affected:
-- pip/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
-- docker/openwebui/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
+- pip/open-webui &gt;= 0.8.0, &lt; 0.9.0 (patched: 0.9.0)
+- docker/openwebui/open-webui &gt;= 0.8.0, &lt; 0.9.0 (patched: 0.9.0)
 
 ---
 
-# Users denied by the OAuth domain allowlist or role policy can still sign in via token exchange&#13;
+# Users outside the OAuth domain allowlist can still sign in via token exchange&#13;
 &#13;
 ## Summary&#13;
-&#13;
-Open WebUI's OAuth token exchange endpoint issues a session for a provider access token without applying the access controls that the normal OAuth login callback applies. Before 0.9.0 it skipped the email domain allowlist, and before 0.11.1 it skipped OAuth role management, so an account that the login callback would have refused could still obtain a working session through this endpoint. The endpoint also carried no request throttle of any kind before 0.11.0.&#13;
+Open WebUI's OAuth token exchange endpoint issues a session for a provider access token without applying the email domain allowlist that the normal OAuth login callback enforces. An account whose email domain the login callback would refuse could still obtain a working session through this endpoint.&#13;
 &#13;
 ## Preconditions&#13;
-&#13;
 - `ENABLE_OAUTH_TOKEN_EXCHANGE=True`. It is disabled by default, so a default deployment is not affected.&#13;
-- At least one of the skipped controls is actually in use: `OAUTH_ALLOWED_DOMAINS`, or `ENABLE_OAUTH_ROLE_MANAGEMENT` together with `OAUTH_ALLOWED_ROLES` / `OAUTH_ADMIN_ROLES`.&#13;
+- `OAUTH_ALLOWED_DOMAINS` set to something other than `*`. Deployments without a domain allowlist are not affected.&#13;
 - A valid, unexpired access token on the configured provider.&#13;
 - An Open WebUI account already linked to that provider subject, or an account with a matching email when `OAUTH_MERGE_ACCOUNTS_BY_EMAIL` is enabled. This endpoint never creates accounts, so a token for a subject with no existing account is rejected.&#13;
 &#13;
 ## Impact&#13;
-&#13;
-An admin who narrows the domain allowlist, or an identity provider that revokes the role a user needs, expects that user to lose access at their next sign-in. The login callback does deny them. Token exchange kept issuing sessions, so the user retained working access as their existing account at its existing role. The endpoint cannot create an account and cannot raise anyone's role, so this grants continued access rather than new or elevated access.&#13;
-&#13;
-The absent throttle allowed unlimited exchange attempts, which lowers the cost of probing with leaked tokens.&#13;
+An admin who narrows the domain allowlist expects users outside it to lose access at their next sign-in. The login callback does deny them. Token exchange kept issuing sessions, so a user whose domain was removed retained working access as their existing account at its existing role. The endpoint cannot create an account and cannot raise anyone's role, so this grants continued access rather than new or elevated access.&#13;
 &#13;
 ## Fix&#13;
-&#13;
-The domain allowlist check was added in `fb5ef978b` and released in 0.9.0. Role management was added in `e96844581` and released in 0.11.1, so the endpoint now runs the same role evaluation on the provider's response that the login callback runs, and denies a user whose reported roles match no allowed or admin role. An optional throttle was added in `453b9fb02` and released in 0.11.0.&#13;
-&#13;
-Upgrading to 0.11.1 restores the domain and role checks with no further action. The throttle stays off until a deployment sets `OAUTH_TOKEN_EXCHANGE_RATE_LIMIT` to a number, optionally with `OAUTH_TOKEN_EXCHANGE_RATE_LIMIT_WINDOW`. It keys on the client address, so where a proxy forwards a caller-controlled `X-Forwarded-For` it acts as a cost control rather than a security boundary.&#13;
+fb5ef978b, released in 0.9.0, adds the same domain allowlist check to the token exchange endpoint that the login callback runs, and denies the exchange with 403 when the email domain is not allowed. Upgrading restores the check with no further action.&#13;
 &#13;
 ## Root cause&#13;
+The affected component is the OAuth token exchange endpoint in `backend/open_webui/routers/auths.py`, present in builds from 0.8.0 onward.&#13;
 &#13;
-The affected component is the OAuth token exchange endpoint in `backend/open_webui/routers/auths.py`, which exists in builds from 0.8.0 onward.&#13;
-&#13;
-The endpoint was added as a second entry point into the same session-issuing path the OAuth login callback uses, but it re-implemented only the identity lookup and not the policy checks surrounding it. Those checks lived inside the callback's own body rather than in shared code, so the second caller inherited none of them and each control had to be added to it separately as it was noticed.&#13;
+The endpoint was added as a second entry point into the same session-issuing path the OAuth login callback uses, but it re-implemented only the identity lookup and not the policy checks surrounding it. The domain allowlist check lived inside the callback's own body rather than in shared code, so the second caller inherited none of it.&#13;
 &#13;
 ## Credits&#13;
-&#13;
 @Classic298</description>
       <guid isPermaLink="false">GHSA-4qg5-cxx4-g927</guid>
       <category>MEDIUM</category>
@@ -4355,93 +4385,6 @@ One CVE for the consolidated advisory.</description>
       <category>HIGH</category>
       <category>open-webui/open-webui</category>
       <pubDate>Thu, 02 Jul 2026 12:52:22 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] open-webui/open-webui — Unauthenticated WebSocket Access to Collaborative Document Handlers (ydoc:awareness:update, ydoc:document:leave) (CVE-2026-59715)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gmfw-g93r-vg53</link>
-      <description>CVE-2026-59715 · CVSS 3.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-306
-
-Affected:
-- pip/open-webui &gt;= 0.6.16, &lt; 0.10.0 (patched: &gt;= 0.10.0)
-
----
-
-## Summary&#13;
-&#13;
-The Socket.IO server is configured with `always_connect=True` (lines 78, 91 in `backend/open_webui/socket/main.py`) and the `connect` handler (line 329) never rejects unauthenticated connections. Two Ydoc event handlers have zero authentication checks, allowing unauthenticated clients to interact with collaborative document sessions.&#13;
-&#13;
-## Vulnerable Code&#13;
-&#13;
-### `ydoc:awareness:update` (line 741) — No auth check at all&#13;
-```python&#13;
-@sio.on('ydoc:awareness:update')&#13;
-async def yjs_awareness_update(sid, data):&#13;
-    document_id = data['document_id']&#13;
-    user_id = data.get('user_id', sid)&#13;
-    update = data['update']&#13;
-    # No SESSION_POOL check, no room membership check&#13;
-    await sio.emit(&#13;
-        'ydoc:awareness:update',&#13;
-        {'document_id': document_id, 'user_id': user_id, 'update': update},&#13;
-        room=f'doc_{document_id}',&#13;
-        skip_sid=sid,&#13;
-    )&#13;
-```&#13;
-&#13;
-### `ydoc:document:leave` (line 711) — No auth check at all&#13;
-```python&#13;
-@sio.on('ydoc:document:leave')&#13;
-async def yjs_document_leave(sid, data):&#13;
-    document_id = data['document_id']&#13;
-    user_id = data.get('user_id', sid)&#13;
-    # No auth check&#13;
-    await YDOC_MANAGER.remove_user(document_id=document_id, user_id=sid)&#13;
-    await sio.emit('ydoc:user:left',&#13;
-        {'document_id': document_id, 'user_id': user_id},&#13;
-        room=f'doc_{document_id}')&#13;
-```&#13;
-&#13;
-### Root Cause: `always_connect=True` (line 78)&#13;
-```python&#13;
-sio = socketio.AsyncServer(&#13;
-    always_connect=True,   # Never rejects connections&#13;
-    ...&#13;
-)&#13;
-```&#13;
-&#13;
-The `connect` handler (line 329) adds authenticated users to `SESSION_POOL` but never returns `False` or raises an exception for unauthenticated connections.&#13;
-&#13;
-## Exploitation&#13;
-&#13;
-1. An unauthenticated attacker connects via Socket.IO (no token needed)&#13;
-2. The attacker emits `ydoc:awareness:update` with:&#13;
-   - `document_id`: a known/guessed note UUID (format: `note:{uuid}`)&#13;
-   - `user_id`: spoofed to impersonate any user&#13;
-   - `update`: arbitrary awareness data (fake cursor positions, selections)&#13;
-3. The fake awareness data is broadcast to all legitimate users in the document room&#13;
-4. The attacker can also emit `ydoc:document:leave` with spoofed `user_id` to broadcast fake `ydoc:user:left` events&#13;
-&#13;
-## Impact&#13;
-&#13;
-- **UI disruption**: Fake cursor positions and user presence in collaborative editing sessions&#13;
-- **User impersonation**: Attacker can spoof any `user_id` in awareness updates&#13;
-- **Resource exhaustion**: Unlimited unauthenticated WebSocket connections maintained by the server&#13;
-&#13;
-Note: Other Ydoc handlers (`ydoc:document:join`, `ydoc:document:update`, `ydoc:document:state`) correctly check `SESSION_POOL` membership.&#13;
-&#13;
-## Suggested Fix&#13;
-&#13;
-1. Set `always_connect=False` or reject unauthenticated connections in the `connect` handler&#13;
-2. Add `SESSION_POOL` checks to `ydoc:awareness:update` and `ydoc:document:leave`&#13;
-3. Add room membership verification before broadcasting to document rooms&#13;
-&#13;
----&#13;
-&#13;
-&gt; **AI Disclosure (per Rule 11):** AI (Claude) was used to assist with source code review, identifying potential vulnerability patterns, and drafting this report. The researcher directed the analysis, selected focus areas, and independently verified all findings against a running v0.8.12 Docker instance using real HTTP requests with two test accounts. The PoCs included are reproducible and were confirmed live before submission.</description>
-      <guid isPermaLink="false">GHSA-gmfw-g93r-vg53</guid>
-      <category>LOW</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Thu, 02 Jul 2026 12:08:53 +0000</pubDate>
     </item>
   </channel>
 </rss>
