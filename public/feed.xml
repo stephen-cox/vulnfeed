@@ -7,11 +7,11 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 10 Sep 2026 08:37:49 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 11 Sep 2026 08:31:32 +0000</lastBuildDate>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Users denied by the OAuth role policy can still sign in via token exchange</title>
+      <title>[MEDIUM] open-webui/open-webui — Users denied by the OAuth role policy can still sign in via token exchange (CVE-2026-88006)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wvm9-9g5j-623f</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
+      <description>CVE-2026-88006 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
@@ -162,7 +162,7 @@ Reported with a scripted reproduction against 0.11.0 (`ghcr.io/open-webui/open-w
 &#13;
 ## Credits&#13;
 &#13;
-Reported by @DshtAnger.</description>
+Binbin Xu​ of Tencent YUNDING LAB CodeBuddy Security.</description>
       <guid isPermaLink="false">GHSA-v39v-59xw-j98g</guid>
       <category>MEDIUM</category>
       <category>open-webui/open-webui</category>
@@ -1012,9 +1012,9 @@ On 0.11.1 the same payload returns promptly, `/health` stays available throughou
       <pubDate>Sat, 29 Aug 2026 10:57:26 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Users outside the OAuth domain allowlist can still sign in via token exchange</title>
+      <title>[MEDIUM] open-webui/open-webui — Users outside the OAuth domain allowlist can still sign in via token exchange (CVE-2026-88005)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4qg5-cxx4-g927</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
+      <description>CVE-2026-88005 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.8.0, &lt; 0.9.0 (patched: 0.9.0)
