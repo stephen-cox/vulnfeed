@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 15 Sep 2026 09:09:56 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 16 Sep 2026 09:01:58 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Users denied by the OAuth role policy can still sign in via token exchange (CVE-2026-88006)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wvm9-9g5j-623f</link>
@@ -807,15 +807,21 @@ No request was issued to a live Azure platform channel. The read-back property w
       <description>CWE-863
 
 Affected:
-- composer/espocrm/espocrm &lt;=10.0.3 (patched: 10.0.4)
+- php/EspoCRM &lt;=10.0.3 (patched: 10.0.4)
 
 ---
 
+The impact is low. It is rare that a user who has access to a meeting should not have access to&#13;
+&#13;
 ## Summary&#13;
  &#13;
 EspoCRM exposes attendee lists for meetings and calls through authenticated helper endpoints. The helper fetches related users, contacts, and leads with their `emailAddress` column selected. It then tries to mask hidden attendee emails — but the masking check uses the parent event scope (`Meeting` or `Call`) instead of the attendee entity's own scope (`Contact`, `Lead`, or `User`).&#13;
  &#13;
 A user explicitly forbidden from reading `Contact.emailAddress` can still recover hidden attendee emails through the meeting or call attendees helper, because the ACL check is performed against the wrong entity type.&#13;
+&#13;
+## Notes&#13;
+&#13;
+Impact is very low. Users who already have access to the meeting and have access to the attendee record by default have access to the email address. It is a rare case that access to the email address will be restricted.&#13;
  &#13;
 ## Reporter&#13;
 &#13;
