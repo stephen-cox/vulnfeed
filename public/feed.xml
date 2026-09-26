@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 25 Sep 2026 09:20:42 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 26 Sep 2026 09:02:58 +0000</lastBuildDate>
     <item>
       <title>[CRITICAL] WordPress/wordpress-develop — Unauthenticated path traversal in page-template resolution leading to conditional RCE (CVE-2026-87902)</title>
       <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-7hp8-65ch-5whp</link>
