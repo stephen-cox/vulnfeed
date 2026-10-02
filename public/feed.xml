@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 01 Oct 2026 10:42:09 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 02 Oct 2026 10:17:16 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] espocrm/espocrm — IDOR allowing users with access to Import scope to extract data from attachments with known ID</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-5729-xq64-4h22</link>
