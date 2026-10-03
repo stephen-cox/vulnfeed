@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 02 Oct 2026 10:17:16 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 03 Oct 2026 09:38:18 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] espocrm/espocrm — IDOR allowing users with access to Import scope to extract data from attachments with known ID</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-5729-xq64-4h22</link>
@@ -64,7 +64,7 @@ Wenhao Wu, Southeast University</description>
       <pubDate>Tue, 29 Sep 2026 07:50:46 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] espocrm/espocrm — Note read does not run ACL output filter leaking values of forbidden audited fields</title>
+      <title>[MEDIUM] espocrm/espocrm — Note read does not run ACL output filter against audit data exposing values of fields that are restricted with field-level security</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-mr36-xx82-qf6h</link>
       <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
 
@@ -73,10 +73,11 @@ Affected:
 
 ---
 
-&#13;
 ## Summary&#13;
 &#13;
-EspoCRM Role *Field Level Security* hides selected fields on record GET/list and, separately, strips those fields from Stream update notes via `NoteAccessControl`. `GET /Note/{id}` does not run that stripper. A user who is allowed to *stream* a parent record but forbidden to *read* a field can recover `data.attributes.was` / `became` for that field by opening the note id shown in the (already-stripped) stream.&#13;
+EspoCRM Role *Field Level Security* hides selected fields on record GET/list and, separately, strips those fields from Stream update notes via `NoteAccessControl`. `GET /Note/{id}` does not run that stripper. A user who has access to *stream* of a parent record but is restricted to *read* a field can recover `data.attributes.was` / `became` for that field by opening the note ID.&#13;
+&#13;
+Note that this affects only fields that are marked as *audited*.&#13;
 &#13;
 ## Credit&#13;
 &#13;
