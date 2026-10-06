@@ -7,7 +7,524 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 05 Oct 2026 11:08:42 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 06 Oct 2026 10:59:33 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] zammad/zammad — Knowledge base reordering, publishing and administration possible without the required permission</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-qvmq-j8hm-2mmc</link>
+      <description>CVSS 7.2 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:N/VI:H/VA:H/SC:L/SI:L/SA:N) · CWE-269, CWE-862, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Agents with read-only knowledge base access were able to change the order of knowledge base categories and answers, and to change the publication state of answers. Both are intended to be restricted to knowledge base editors, but the permission checks accepted any level of knowledge base access. Because agents receive read access by default, any agent could publish answers to the public help site, archive or un-archive them, and set the publication dates. Answers meant to stay internal could therefore be made available to anonymous visitors, and published answers could be removed from the site.
+
+Separately, agents with knowledge base editor access were able to create, change and delete knowledge bases themselves, although this is reserved for knowledge base administrators. An editor could change the public address and the appearance of a knowledge base, take it offline, or delete it together with all of its categories and answers.
+</description>
+      <guid isPermaLink="false">GHSA-qvmq-j8hm-2mmc</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:18 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Customer-visible ticket update responses leak unredacted user and organization data</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fqh9-pvgg-jgpw</link>
+      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-359, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Ticket update responses could include unredacted personal data that should have been hidden from the requesting user.&#13;
+&#13;
+When a customer updated one of their own tickets and requested a detailed response, the reply could contain unfiltered details about the agents involved in that ticket - such as private phone numbers, postal address, department and internal notes - as well as internal information about their organization, including internal notes and the VIP flag. The same data is correctly hidden when simply viewing the ticket; only the update responses were affected.&#13;
+&#13;
+Customers could therefore obtain personal information about support staff and internal administrative notes that are meant for internal use only.</description>
+      <guid isPermaLink="false">GHSA-fqh9-pvgg-jgpw</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:17 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad — Clipboard HTML injection via unescaped user and organization display name</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-4r9g-r4wx-44p6</link>
+      <description>CVSS 2.1 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:A/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-116
+
+Affected:
+- other/Zammad &gt;= 7.0.0, &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+The desktop view offers a button to copy a user's or an organization's name together with a link to their profile. The copied content was assembled without properly escaping the name, so a name that contains markup was copied as markup rather than as plain text.&#13;
+&#13;
+An attacker could use this by choosing a crafted name — for example by sending an email into the helpdesk with a specially prepared sender name, which does not require an account. If an agent then copies that name and pastes it into a formatted text field, such as a reply to a customer, the pasted content can contain a link or other elements chosen by the attacker instead of the intended profile link. This can be used to make a message written by an agent point recipients at an attacker-controlled destination.</description>
+      <guid isPermaLink="false">GHSA-4r9g-r4wx-44p6</guid>
+      <category>LOW</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:15 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Channel administration APIs return stored channel credentials in clear text</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-xq4h-fjvm-m7x4</link>
+      <description>CVSS 6.9 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-116, CWE-200, CWE-522
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad stores the access data of the configured channels, such as Facebook page access tokens, the Telegram bot token, the SMS gateway token and the passwords or OAuth tokens of email accounts. Whenever a channel configuration is sent to the browser, these values are supposed to be replaced by a masked placeholder, so that stored access data cannot be read back once it has been saved. For several channels this masking did not take effect.&#13;
+&#13;
+As a result, an administrator holding the permission for one of the affected channels could obtain the stored access data in clear text through the channel administration APIs, and use it to access the connected external service directly, outside of Zammad. Affected are the Facebook, Telegram, SMS and email channels, including the Google and Microsoft 365 variants.&#13;
+&#13;
+Only instances that have such a channel configured are affected, and only administrators who already hold the administration permission for that channel type could read the access data.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-xq4h-fjvm-m7x4</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:14 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Missing authorization on ticket articles can expose article content to unauthorized users</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-jhhg-q69j-35wq</link>
+      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+A missing authorization check in the ticket-article creation endpoint allows any authenticated customer to read the content of arbitrary ticket articles, including internal agent notes and articles belonging to other organizations, that they are not permitted to view. This constitutes a confidentiality break of Zammad's core ticketing data, requiring no elevated privileges and no user interaction.</description>
+      <guid isPermaLink="false">GHSA-jhhg-q69j-35wq</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Stored HTML injection in Knowledge Base video widget rendered inside Zammad enables forced session switching</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-87pp-7pxh-xfcg</link>
+      <description>CVSS 6.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:N/VI:N/VA:N/SC:H/SI:H/SA:N) · CWE-79, CWE-352, CWE-838
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+A user with Knowledge Base editing rights for a category can embed a video widget in an answer with a specially crafted value. When that answer is opened in Zammad's knowledge base view, the value is inserted into the page's HTML without being escaped for the context it appears in, allowing it to break out and inject additional HTML into the page. The answer does not need to be published for this to happen.&#13;
+&#13;
+When another user who has permission to switch between user sessions opens the affected answer, the injected HTML causes their browser to silently send a request to Zammad's session-switching endpoint using their own active credentials. This results in switching their session to an account chosen by the person who wrote the Knowledge Base answer. No action is required from the viewer beyond opening the answer.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-87pp-7pxh-xfcg</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Unscoped GraphQL template query and subscription bypass TemplatePolicy scope</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-8xp6-vq6v-xrfj</link>
+      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-862
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Ticket templates were not restricted to the users allowed to see them. Agents were able to see templates that had been deactivated, and customers were able to receive the contents of all templates — including deactivated ones — whenever any template was created, changed or deleted.&#13;
+&#13;
+The disclosed information covered the name of each template and the values it fills in, such as prepared ticket titles, message texts, and the customer, group, owner or tag settings stored in it. Access was limited to reading; it was not possible to change templates, tickets or any other data this way. How sensitive the disclosed information was depended on what each installation had stored in its templates.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-8xp6-vq6v-xrfj</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:10 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Second-order SQL injection in ticket overview sorting</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-h5pm-rjvp-fr47</link>
+      <description>CVSS 7.2 (CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:H/SI:H/SA:H) · CWE-89, CWE-94
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad's ticket overview handling contained a second-order SQL injection flaw. A user permitted to create or modify ticket overviews could store a crafted value in an overview's sort-order configuration. That value was not restricted to the expected sort keywords, and when tickets for the overview were later retrieved through the API, it was incorporated into the underlying database query without being safely escaped for that context. Triggering it required no action by any other user.&#13;
+&#13;
+An attacker able to reach this could have read arbitrary data from the Zammad database — including other users' password hashes, ticket content and configuration data — regardless of what their own role was meant to grant them access to. The further reachable impact depended on the privileges of the database account the installation runs Zammad with. Installations using the packaged (Linux) setup, where Zammad runs with a restricted non-superuser database role, were limited to that read impact; where the database role held elevated privileges, the same access could have been extended to reading and writing files on the database host and, from there, to executing arbitrary code with the privileges of the database server process.&#13;
+&#13;
+Reported by: Gabriele PARIS from NATO Cyber Security Centre (NCSC)</description>
+      <guid isPermaLink="false">GHSA-h5pm-rjvp-fr47</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:09 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Arbitrary configuration disclosure via recent view endpoint</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-g9f6-7w7h-99f7</link>
+      <description>CVSS 8.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:H/SI:N/SA:N) · CWE-200, CWE-639, CWE-862
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Any authenticated user, including the lowest-privileged customer role, could read the name and stored value of arbitrary application configuration settings. Because the configuration also holds deployment secrets, this included credentials a non-administrative user would otherwise never reach, such as the Elasticsearch endpoint password and the credentials of configured import sources.&#13;
+&#13;
+Affected were all settings neither marked as protected nor restricted to a specific permission — roughly a quarter of all settings on a default installation, including the credential-bearing ones. Sensitive values existed only where the corresponding feature was configured. Access was read-only and limited to configuration data.&#13;
+&#13;
+Upgrading does not undo an exposure that already happened. Administrators should rotate the affected credentials after upgrading.&#13;
+&#13;
+Reported by: Gabriele PARIS from NATO Cyber Security Centre (NCSC)</description>
+      <guid isPermaLink="false">GHSA-g9f6-7w7h-99f7</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:07 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Stored XSS in ticket zoom via attacker-controlled article preferences</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fhq9-h46w-68hg</link>
+      <description>CVSS 8.5 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-79, CWE-915
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+A customer was able to store content of their own choosing in the internal metadata of a ticket article they created. When an agent later opened that ticket, parts of this metadata were displayed without being neutralized for safe rendering, so the stored content was interpreted as active content in the agent's browser session.&#13;
+&#13;
+As a result, a user with only standard customer permissions was able to cause code to run in the session of any agent who opened the affected ticket, without any special configuration or elevated privileges. Because the code ran with the agent's session, its impact extended to whatever that agent could reach, including tickets in other groups and internal notes.</description>
+      <guid isPermaLink="false">GHSA-fhq9-h46w-68hg</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:06 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] zammad/zammad — Unfiltered sign-up and ticket update fields allow cross-organization ticket disclosure and takeover</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-79wh-8g2f-xj2c</link>
+      <description>CVSS 9.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-287, CWE-863, CWE-915
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad's public sign-up form accepted account fields that it should have ignored. An attacker without any account could use this to register on an email address they did not own, have that account treated as already email-confirmed, and add it to any organization in the system.&#13;
+&#13;
+Because members of an organization can see each other's tickets by default, such an account could then read and reply to tickets of other customers of those organizations. A second issue allowed any customer account to change fields of another customer's ticket in the same organization — including which customer the ticket belongs to — which could take a ticket away from the person who opened it.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-79wh-8g2f-xj2c</guid>
+      <category>CRITICAL</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:04 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Remote code execution via template sanitizer bypass in automation configuration</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-gvvq-mfj3-g56x</link>
+      <description>CVSS 8.6 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-20, CWE-94, CWE-1336
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+ A user allowed to configure automations in Zammad — such as triggers, scheduled jobs, ticket macros or AI agents — could execute arbitrary commands on the server hosting Zammad. A specially crafted value in an automation's configuration bypassed the escaping Zammad applied to such text, and the resulting code ran with the privileges of the Zammad application process. No interaction from another user was required.&#13;
+&#13;
+This could have been used to read or modify any data reachable by that process, including the ticket and customer database and any credentials available to it. On a default installation the required permission is held only by full administrators, who already have supported ways of running code on the server, so the practical gain there was limited; it became a genuine privilege escalation where a scoped or delegated role, or a hosted deployment, granted automation configuration without full administrative access. Installations with AI agents configured were exposed on an additional path, because values returned by the configured AI provider were processed in the same way.</description>
+      <guid isPermaLink="false">GHSA-gvvq-mfj3-g56x</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:03 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Inactive sessions remain authorized over ActionCable GraphQL</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-x777-frqf-7w45</link>
+      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-613
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+An account that had been deactivated in Zammad could retain access to ticket data through Zammad's real-time WebSocket connections. The web-based HTTP interface correctly rejected such accounts after deactivation, but the WebSocket connections restored the session's user without applying the same check for whether the account was still active.&#13;
+&#13;
+As a result, a deactivated agent could continue to read tickets within the scope of their previous group and role assignments, and a deactivated customer could continue to read their own ticket history and shared-organization data, until the underlying session expired or was removed. Because these connections also carry Zammad's live updates, the exposure was not limited to data that already existed at the point of deactivation: ticket changes and notifications occurring afterwards could continue to reach the affected account. The issue required an existing, retained session for an account that was later deactivated; it did not allow a new account, or an attacker without a valid session, to gain access.&#13;
+&#13;
+Administrators who deactivated accounts while running an affected version should treat any sessions still stored for those accounts as potentially usable and remove them in addition to upgrading. Installations in which no account was ever deactivated were not exposed.</description>
+      <guid isPermaLink="false">GHSA-x777-frqf-7w45</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:01 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Session identifier disclosed in authenticated configuration response enabled off-host session takeover</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-23hj-h8w6-rgm3</link>
+      <description>CVSS 7.4 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-522, CWE-807
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad returned the signed-in user's session identifier in an authenticated configuration response, where scripts running in that user's browser were able to read it — which the session cookie's `HttpOnly` flag is meant to prevent. The real-time channel of the classic web interface also accepted such an identifier as proof of identity.
+
+An attacker who had already gained script execution in a user's session, through a separate weakness, could copy the identifier to a machine of their own and act as that user from there for the life of the session, without their password or second factor. This included reading everything the account could see, such as tickets with their internal notes, and creating or changing data in the user's name. The reach scaled with the privileges of the affected account.</description>
+      <guid isPermaLink="false">GHSA-23hj-h8w6-rgm3</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:59:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Deactivated roles still granted knowledge base editor access</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-7622-vcx5-885g</link>
+      <description>CVSS 7.6 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-266, CWE-863
+
+Affected:
+- other/Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad did not check whether a role was still active when resolving the knowledge base access that role granted. A user who still held a role an administrator had set to inactive therefore kept editor access: they could read internal categories and answers that are not published on the public help site, and create, modify and permanently delete them.
+
+The impact was limited to knowledge base content; no ticket data, user records or credentials were exposed. Only installations that deactivated a role carrying knowledge base permissions while it was still assigned to users were affected; administrators who withdrew access that way should review those users' knowledge base activity.
+</description>
+      <guid isPermaLink="false">GHSA-7622-vcx5-885g</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:59 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Deactivated roles still granted ticket group access in overviews and search</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-hrpc-pjjc-v9vg</link>
+      <description>CVSS 6.0 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-266, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Deactivating a role in Zammad did not revoke the group access it granted. An agent who still held such a deactivated role, and who could still sign in through another active role with agent permissions, retained access to everything scoped by those groups: tickets stayed listed in overviews, search and ticket selection, exposing metadata such as title, number, customer, state and owner, and group-restricted text modules, macros and shared ticket drafts remained available as well.
+
+Opening an affected ticket was correctly refused, so ticket article content stayed protected and no ticket could be changed. Only installations that revoked access by deactivating a role while leaving it assigned to users were affected; administrators who did so should assume the affected agents retained that access throughout.</description>
+      <guid isPermaLink="false">GHSA-hrpc-pjjc-v9vg</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Disclosure of names of users from other organizations to customers</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-r4xq-6xg5-72p7</link>
+      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-201, CWE-359, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Users can be assigned to further organizations in addition to their primary one. Customers are only meant to see the name and active state of their own organization, but due to a missing check on one attribute, a customer reading their own organization also received the list of users assigned to it as secondary members, along with the names of those users.&#13;
+&#13;
+As a result, a customer could learn the names of users who belong to other organizations. Only names, the active state and avatar information were exposed, no contact details, notes or ticket content, and nothing could be modified this way. Only instances that use secondary organization assignments are affected.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-r4xq-6xg5-72p7</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:56 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Ticket data of no-longer-accessible tickets disclosed to agents via online notification API</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-hpwv-2cr4-rqpf</link>
+      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-359, CWE-639, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Agents who had received an in-app notification about a ticket kept read access to it after losing access — because the ticket moved to a group they cannot see, or their group permissions were narrowed. Opening the ticket was correctly refused, but the notification could still be fetched individually through the API, and its response carried the ticket's title, number, state, priority, escalation data, owner and customer assignment, plus the linked users' names and email addresses.&#13;
+&#13;
+Only a valid agent account and an existing notification were required, with no action by anyone else. Exposure was limited to tickets the agent still held a notification for, and notifications are retained only for a limited period; other users' notifications were not reachable. Responses carried current data, so later changes were disclosed too. Only installations using group-based access to separate agents from tickets were affected.</description>
+      <guid isPermaLink="false">GHSA-hpwv-2cr4-rqpf</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:55 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Ticket link list disclosed the existence and relation of tickets outside the user's permission scope</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-jr3g-8mch-9vrf</link>
+      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-862, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+The REST endpoint listing an object's links required a session, but never checked whether the requesting user was allowed to see the object they asked about. Any authenticated user, including a customer without agent permissions, could therefore learn that a ticket outside their permission scope existed and was linked to one of their own tickets, and of what link type. As ticket ids are sequential, this could be repeated to find every such link.&#13;
+&#13;
+No content of the inaccessible ticket was exposed: title, number, customer, group and articles stayed protected, and only links to objects the requester could already read were revealed. Installations that never link tickets across permission boundaries were unaffected, as was the GraphQL API.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-jr3g-8mch-9vrf</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:54 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Group configuration and email address disclosure to authenticated users via getting started endpoint</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-x3fm-p95w-xj7v</link>
+      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+An API endpoint that supplies start-up information to the web interface required a valid login, but did not check what the account was permitted to see. Any authenticated user, including a customer without agent or administrator permissions, could read the configuration of all active groups — internal group notes, signature and sender-address assignments, and internal ticket handling settings — together with the full list of configured email addresses. Groups the account had no relationship to were included as well.&#13;
+&#13;
+The exposure was read-only. No ticket content and no personal data of users or customers were affected. Installations that allow customer self-registration, or that keep internal remarks in group notes, are most affected.</description>
+      <guid isPermaLink="false">GHSA-x3fm-p95w-xj7v</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Activity stream disclosed content of tickets moved out of an agent's groups</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-f8x4-5mjf-mc32</link>
+      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-863
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad's activity stream returned information about tickets that the requesting agent was no longer allowed to open. Once a ticket had been moved into a group the agent has no access to, or the agent's access to its group had been withdrawn, activity entries recorded earlier remained visible to that agent. Depending on which representation of the activity stream was requested, those entries disclosed the ticket's title, number, current group and customer, and the subject and body of its articles, although the ticket itself was correctly refused. Only agents who previously had access to the affected ticket were able to see this; customers were not affected, and no data could be changed this way.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-f8x4-5mjf-mc32</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:51 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Password reset endpoint disclosed whether an account existed via response timing</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-8rr9-v56q-rcq9</link>
+      <description>CVSS 6.3 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-203, CWE-208
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad's password reset function answered every request identically, so that it would not reveal whether an account exists for the submitted email address or login. The time the request took differed, however, depending on whether an account was found, because further processing was only performed in that case. An unauthenticated user able to reach the login screen could therefore determine whether a given address belonged to an active Zammad account.&#13;
+&#13;
+Only that fact was exposed. No personal data, ticket content or other account information could be read, and nothing could be modified. The password reset function had to be enabled and outgoing email had to be configured for the difference to be observable. Existing rate limits — three requests per minute per source IP address and per submitted address — restricted how many addresses could be checked. Both the classic and the new interface were affected.&#13;
+&#13;
+Reported by: Gabriele PARIS from NATO Cyber Security Centre (NCSC)</description>
+      <guid isPermaLink="false">GHSA-8rr9-v56q-rcq9</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:49 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad — Group collection push disclosed full group records to any authenticated session</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-32f8-x62f-599m</link>
+      <description>CVSS 2.3 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-285
+
+Affected:
+- Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad pushed complete group records to every connected browser session over the WebSocket collection update, without applying the field scope that limits group data for non-agent users. Any authenticated user, including a customer with no agent permissions, received all attributes of every group in the system whenever a group was created, changed or deleted.&#13;
+&#13;
+The disclosed data included internal administrative notes, group configuration such as assignment timeouts and shared-draft and signature settings, the list of member user IDs of each group, and groups that were inactive or that the user had no relationship to. No ticket content and no personal contact data were exposed, and the push was read-only, so no group could be altered this way.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-32f8-x62f-599m</guid>
+      <category>LOW</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:48 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] zammad/zammad — Stored XSS in desktop tree select fields via whitespace-only filter</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-mf8g-36j9-x25g</link>
+      <description>CVSS 4.8 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:A/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-79, CWE-116
+
+Affected:
+- other/Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad's new desktop interface rendered option labels in tree select fields as HTML instead of plain text when the dropdown filter contained only whitespace, which happens routinely while typing or deleting a search term. A label containing specially crafted markup was then parsed by the browser instead of being displayed literally.&#13;
+&#13;
+Tree select labels come from object attribute options, group names and knowledge base category titles. A user with permission to maintain any of these, for example a knowledge base editor or an administrator limited to object management, could have stored such a label. Script embedded in it could have executed in the session of any other agent or administrator who opened the affected field and filtered it, allowing actions and data access with the victim's permissions.&#13;
+&#13;
+Only the desktop interface was affected; the legacy interface and the mobile interface were not.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-mf8g-36j9-x25g</guid>
+      <category>MEDIUM</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:47 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] zammad/zammad — Multi-factor authentication could be bypassed through the email verification flow</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-f3qr-94c2-7mx2</link>
+      <description>CVSS 9.1 (CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-287, CWE-304, CWE-308
+
+Affected:
+- other/Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad's email verification flow established a fully authenticated session for an existing user account without requiring the second factor configured for that account. Multi-factor authentication was enforced during a normal sign-in, but not on this path.&#13;
+&#13;
+An account was affected if it had never completed email verification — the default state for accounts created by an administrator, through the API, a directory import, or an incoming email — and had multi-factor authentication configured. Exploitation required possession of the verification email sent to the account's own address; knowing the address was not sufficient, and no password was needed. The resulting session carried the full permissions of the account, up to administrator, and could be used to create a personal access token that outlived it.&#13;
+&#13;
+Installations relying on multi-factor authentication for agent or administrator accounts are affected most.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-f3qr-94c2-7mx2</guid>
+      <category>CRITICAL</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:46 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] zammad/zammad — Stored XSS in desktop autocomplete fields via unescaped option label</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-852x-r9wm-4v5j</link>
+      <description>CVSS 8.6 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-79, CWE-116
+
+Affected:
+- other/Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+Zammad's desktop interface rendered an autocomplete option label as HTML whenever the label did not contain the text the agent had typed. Only labels matching that text were escaped, and a server-side search regularly returns records whose label does not contain it — a user found by email address, shown by name — so unescaped labels reached the browser during ordinary work.&#13;
+&#13;
+Those labels came from user and organization names, which anyone able to register an account could set. Crafted markup in a name was therefore parsed by the browser and executed in the session of the agent who looked the record up, with that agent's permissions.&#13;
+&#13;
+The legacy interface and the mobile interface were not affected.</description>
+      <guid isPermaLink="false">GHSA-852x-r9wm-4v5j</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:44 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] zammad/zammad — Forward quote header discloses agent email addresses</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-5qm6-wgv7-2344</link>
+      <description>CVSS 2.1 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:A/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-359
+
+Affected:
+- other/Zammad &lt;= 7.2.0 (patched: 7.2.1)
+
+---
+
+When an agent forwarded an existing message from a ticket, the quoted message header that Zammad generated could contain the personal email address of the agent who wrote the original message, instead of the shared email address of the group.&#13;
+&#13;
+As a result, that agent's personal address could be sent to the external recipient of the forwarded message. Because the forwarded message is stored as a publicly visible article, the address was also readable by the customer of the ticket, even though customers are otherwise never given the email addresses of agents.&#13;
+&#13;
+Only instances whose sender format for outgoing email is configured to show the agent name alone are affected. Instances using the default sender format are not affected.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-5qm6-wgv7-2344</guid>
+      <category>LOW</category>
+      <category>zammad/zammad</category>
+      <pubDate>Tue, 06 Oct 2026 05:58:33 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] espocrm/espocrm — IDOR allowing users with access to Import scope to extract data from attachments with known ID</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-5729-xq64-4h22</link>
@@ -3150,714 +3667,6 @@ EspoCRM contains an access control vulnerability in the mass-update functionalit
       <category>MEDIUM</category>
       <category>espocrm/espocrm</category>
       <pubDate>Thu, 13 Aug 2026 07:32:32 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] WordPress/wordpress-develop — Remote code execution vulnerability via malicious file upload by an Author level user or higher (CVE-2026-65640)</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-8vr3-7mxf-gx8w</link>
-      <description>CVE-2026-65640 · CVSS 8.8 (CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H) · CWE-434
-
-Affected:
-- wordpress/WordPress 7.0.0 - 7.0.3 (patched: 7.0.4)
-- wordpress/WordPress 6.9.0 - 6.9.6 (patched: 6.9.7)
-- wordpress/WordPress 6.8.0 - 6.8.7 (patched: 6.8.8)
-- wordpress/WordPress 6.7.0 - 6.7.6 (patched: 6.7.7)
-- wordpress/WordPress 6.6.0 - 6.6.6 (patched: 6.6.7)
-- wordpress/WordPress 6.5.0 - 6.5.9 (patched: 6.5.10)
-- wordpress/WordPress 6.4.0 - 6.4.9 (patched: 6.4.10)
-- wordpress/WordPress 6.3.0 - 6.3.9 (patched: 6.3.10)
-- wordpress/WordPress 6.2.0 - 6.2.10 (patched: 6.2.11)
-- wordpress/WordPress 6.1.0 - 6.1.11 (patched: 6.1.12)
-- wordpress/WordPress 6.0.0 - 6.0.13 (patched: 6.0.14)
-- wordpress/WordPress 5.9.0 - 5.9.15 (patched: 5.9.16)
-- wordpress/WordPress 5.8.0 - 5.8.14 (patched: 5.8.15)
-- wordpress/WordPress 5.7.0 - 5.7.16 (patched: 5.7.17)
-- wordpress/WordPress 5.6.0 - 5.6.18 (patched: 5.6.19)
-- wordpress/WordPress 5.5.0 - 5.5.19 (patched: 5.5.20)
-- wordpress/WordPress 5.4.0 - 5.4.20 (patched: 5.4.21)
-- wordpress/WordPress 5.3.0 - 5.3.22 (patched: 5.3.23)
-- wordpress/WordPress 5.2.0 - 5.2.25 (patched: 5.2.26)
-- wordpress/WordPress 5.1.0 - 5.1.23 (patched: 5.1.24)
-- wordpress/WordPress 5.0.0 - 5.0.26 (patched: 5.0.27)
-- wordpress/WordPress 4.9.0 - 4.9.30 (patched: 4.9.31)
-- wordpress/WordPress 4.8.0 - 4.8.29 (patched: 4.8.30)
-- wordpress/WordPress 4.7.0 - 4.7.34 (patched: 4.7.35)
-
----
-
-Certain installations of WordPress are vulnerable to a remote code execution vulnerability via malicious Postscript file upload by an Author level user or higher.&#13;
-&#13;
-Prerequisites:&#13;
-&#13;
-* Imagick and Ghostscript in use on the server (the weakness is in Ghostscript's handling of certain embedded files)&#13;
-* A malicious user with the `upload_files` capability&#13;
-&#13;
-WordPress version 7.0.4 has been released, containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
-&#13;
-Discovered and responsibly disclosed by [the team at pwn.ai](https://pwn.ai/).</description>
-      <guid isPermaLink="false">GHSA-8vr3-7mxf-gx8w</guid>
-      <category>HIGH</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Wed, 12 Aug 2026 14:44:42 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] WordPress/wordpress-develop — Pre-auth reflected XSS on login screen with potential to lead to PHP code execution (CVE-2026-64638)</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-52p2-r8wf-jcrf</link>
-      <description>CVE-2026-64638 · CVSS 8.9 (CVSS:4.0/AV:N/AC:H/AT:N/PR:N/UI:A/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H)
-
-Affected:
-- wordpress/WordPress 7.0.0 - 7.0.2 (patched: 7.0.3)
-- wordpress/WordPress 6.9.0 - 6.9.5 (patched: 6.9.6)
-- wordpress/WordPress 6.8.0 - 6.8.6 (patched: 6.8.7)
-- wordpress/WordPress 6.7.0 - 6.7.5 (patched: 6.7.6)
-- wordpress/WordPress 6.6.0 - 6.6.5 (patched: 6.6.6)
-- wordpress/WordPress 6.5.0 - 6.5.8 (patched: 6.5.9)
-- wordpress/WordPress 6.4.0 - 6.4.8 (patched: 6.4.9)
-- wordpress/WordPress 6.3.0 - 6.3.8 (patched: 6.3.9)
-- wordpress/WordPress 6.2.0 - 6.2.9 (patched: 6.2.10)
-- wordpress/WordPress 6.1.0 - 6.1.10 (patched: 6.1.11)
-- wordpress/WordPress 6.0.0 - 6.0.12 (patched: 6.0.13)
-- wordpress/WordPress 5.9.0 - 5.9.13 (patched: 5.9.14)
-- wordpress/WordPress 5.8.0 - 5.8.13 (patched: 5.8.14)
-- wordpress/WordPress 5.7.0 - 5.7.15 (patched: 5.7.16)
-- wordpress/WordPress 5.6.0 - 5.6.17 (patched: 5.6.18)
-- wordpress/WordPress 5.5.0 - 5.5.18 (patched: 5.5.19)
-- wordpress/WordPress 5.4.0 - 5.4.19 (patched: 5.4.20)
-- wordpress/WordPress 5.3.0 - 5.3.21 (patched: 5.3.22)
-- wordpress/WordPress 5.2.0 - 5.2.24 (patched: 5.2.25)
-- wordpress/WordPress 5.1.0 - 5.1.22 (patched: 5.1.23)
-- wordpress/WordPress 5.0.0 - 5.0.25 (patched: 5.0.26)
-- wordpress/WordPress 4.9.0 - 4.9.29 (patched: 4.9.30)
-- wordpress/WordPress 4.8.0 - 4.8.28 (patched: 4.8.29)
-- wordpress/WordPress 4.7.0 - 4.7.33 (patched: 4.7.34)
-
----
-
-WordPress is vulnerable to a pre-auth reflected XSS vulnerability on the login screen.&#13;
-&#13;
-Via a specially crafted malicious third-party website hosted by an attacker, it is possible for this to be escalated to an RCE vulnerability with conditions outside of the attackers control. This requires successful social engineering of and explicit interaction by the target victim.&#13;
-&#13;
-This issue affects all versions of WordPress. Version 7.0.3 has been released, containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
-&#13;
-Discovered and responsibly disclosed by [the team at pwn.ai](https://pwn.ai/).&#13;
-&#13;
-Full information about the WordPress 7.0.3 release can be found here: https://wordpress.org/news/2026/08/wordpress-7-0-3-release/.</description>
-      <guid isPermaLink="false">GHSA-52p2-r8wf-jcrf</guid>
-      <category>HIGH</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Thu, 06 Aug 2026 18:54:17 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Stored XSS in ticket article rendering in the new Vue-based interface (CVE-2026-102345)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-4x3x-65c5-8hx4</link>
-      <description>CVE-2026-102345 · CVSS 5.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:L/VI:L/VA:N/SC:L/SI:L/SA:N) · CWE-79, CWE-116
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-Under certain conditions, the new Vue-based interface could render ticket article content without applying the expected output encoding. This could be triggered by an authenticated user and affect other users viewing the ticket.&#13;
-&#13;
-The default Content Security Policy limits the real-world impact. The classic REST/CoffeeScript interface is not affected.</description>
-      <guid isPermaLink="false">GHSA-4x3x-65c5-8hx4</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:25:26 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — S/MIME signature verification allows forged sender impersonation (CVE-2026-84465)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-m9ff-hjr3-93h4</link>
-      <description>CVE-2026-84465 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-290, CWE-295, CWE-347
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-When Zammad checks the digital signature on an incoming S/MIME-signed email, it does not verify that the signing certificate is genuinely trusted - it only checks whether a certificate with a matching name is already stored in the system.&#13;
-&#13;
-An attacker can create their own certificate using the name of a real, previously trusted sender and use it to send a forged email. &#13;
-&#13;
-Zammad will display that email with the same "validly signed" indicator as a genuine message from the real sender, even though the attacker never had access to that sender's actual certificate or private key.</description>
-      <guid isPermaLink="false">GHSA-m9ff-hjr3-93h4</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:25:18 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Stored HTML injection in Knowledge Base video widget enables forced session switching via unescaped iframe attribute (CVE-2026-84463)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-cxjg-4gmf-5xqc</link>
-      <description>CVE-2026-84463 · CVSS 6.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:N/VI:N/VA:N/SC:H/SI:H/SA:N) · CWE-79, CWE-352, CWE-838
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-A user with Knowledge Base editing rights for a category can embed a video widget in a published answer with a specially crafted value. When the answer is rendered, that value is inserted into the page's HTML without being escaped for its attribute context, allowing it to break out and inject additional HTML into the page.&#13;
-&#13;
-When another user who has permission to switch between user sessions views the affected answer, the injected HTML causes their browser to silently send a request to Zammad's session-switching endpoint using their own active credentials. This results in switching their session to an account chosen by the person who wrote the Knowledge Base answer. No action is required from the viewer beyond opening the published answer.</description>
-      <guid isPermaLink="false">GHSA-cxjg-4gmf-5xqc</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:25:09 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Missing Authorization in TagsController#list Allows Cross-Object Tag Enumeration (CVE-2026-84460)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-6vgm-xxp4-p6jv</link>
-      <description>CVE-2026-84460 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-Any authenticated user can call the REST endpoint for getting a tag list and receive the tag names for the given ticket, regardless of whether they have access to that ticket. Tags are an internal categorization feature and may contain sensitive labels. Ticket IDs are sequential integers, making bulk enumeration straightforward.</description>
-      <guid isPermaLink="false">GHSA-6vgm-xxp4-p6jv</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:25:00 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — IDOR in External Data Source rendering exposes ticket, user, group, and organization data (CVE-2026-84464)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-jvm2-cr58-4qxp</link>
-      <description>CVE-2026-84464 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639, CWE-863
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-Zammad's External Data Source feature, used to look up records from an external system, did not properly verify whether a user was allowed to see a specific ticket, user, group, or organization before including its details in a request to that external system.&#13;
-&#13;
-An authenticated user, including one with only basic customer access, could exploit this by referencing another record's ID, and thereby view details of tickets, customer accounts, teams, or organizations that did not belong to them.</description>
-      <guid isPermaLink="false">GHSA-jvm2-cr58-4qxp</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:24:54 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — AI Agent template sanitizer bypass leads to remote code execution (CVE-2026-84462)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-gp3x-9xm8-rcj6</link>
-      <description>CVE-2026-84462 · CVSS 8.6 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-20, CWE-94, CWE-1336
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-A security filter that protects Zammad's AI Agent configuration can be bypassed by entering specially crafted text into one of an AI Agent's fields. An administrator with permission to create or edit AI Agents could exploit this to run arbitrary commands on the server that hosts Zammad - potentially reading, modifying, or destroying all data stored on that server. No interaction from other users is needed; the malicious code runs automatically the next time the affected AI Agent processes a ticket.</description>
-      <guid isPermaLink="false">GHSA-gp3x-9xm8-rcj6</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:24:45 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Missing rate limiting allows password brute-forcing during two-factor login (CVE-2026-84461)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-6vh5-pfp2-5rmh</link>
-      <description>CVE-2026-84461 · CVSS 6.9 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-203, CWE-307, CWE-799
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-The two-factor login step let an attacker try unlimited password guesses for any account without triggering Zammad's normal lockout or rate limiting. The response also revealed whether a guess was correct, even before two-factor authentication was checked. This made it possible to brute-force weak or reused passwords.</description>
-      <guid isPermaLink="false">GHSA-6vh5-pfp2-5rmh</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:23:44 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] zammad/zammad — Pending upload deletion bypass via legacy attachment endpoint (CVE-2026-65828)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-x4f3-367g-m93g</link>
-      <description>CVE-2026-65828 · CVSS 2.3 (CVSS:4.0/AV:N/AC:H/AT:N/PR:L/UI:N/VC:N/VI:L/VA:L/SC:N/SI:N/SA:N) · CWE-862
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-The legacy `destroy_form` action on AttachmentsController deletes UploadCache Store records based solely on a user-supplied `form_id` without verifying that the requesting user owns those records. An authenticated attacker who learns another user's pending-upload UUID can silently remove temporary file uploads before the victim submits their ticket or article.</description>
-      <guid isPermaLink="false">GHSA-x4f3-367g-m93g</guid>
-      <category>LOW</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:23:34 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] zammad/zammad — Account takeover via unverified email matching during SSO auto-link (CVE-2026-84458)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-86cc-3ggh-mf2m</link>
-      <description>CVE-2026-84458 · CVSS 9.1 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-287
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-When the "Automatic account link on initial logon" setting is enabled, Zammad binds an incoming third-party (SSO) identity to an existing local account by matching the email address the identity provider reports, without verifying that the provider actually confirmed ownership of that email. An attacker who controls any identity at a configured provider - including, by default, any Azure AD tenant via Zammad's multi-tenant Microsoft 365 `/common` app registration - can set that identity's email to a victim's address, authenticate, and be logged in as the victim. This bypasses the victim's local password entirely and affects any existing account, including agents and administrators.&#13;
-&#13;
-Zammad will honor the `xms_edov` ID token claim when email verification is required in the Microsoft 365 setting, treating a missing claim as unverified.</description>
-      <guid isPermaLink="false">GHSA-86cc-3ggh-mf2m</guid>
-      <category>CRITICAL</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:23:23 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] zammad/zammad — Authenticated agents can read AI summary error messages from inaccessible tickets (CVE-2026-63204)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-75j9-hpg4-j9f8</link>
-      <description>CVE-2026-63204 · CVSS 2.3 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639, CWE-862
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-An authenticated user with agent permissions can supply an arbitrary AI analytics run identifier to the ticket summarize endpoint and receive the AI provider error message stored for that run, even if the run belongs to a ticket the agent is not authorized to access. The disclosure is limited to the provider error string; ticket content is not exposed.</description>
-      <guid isPermaLink="false">GHSA-75j9-hpg4-j9f8</guid>
-      <category>LOW</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:23:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Channel admins can read unauthorized attachments via signature rich-text body (CVE-2026-63205)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pp8r-x7pp-5qj5</link>
-      <description>CVE-2026-63205 · CVSS 5.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639, CWE-862
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-When creating or updating an email signature, Zammad processes inline images referenced in the signature body. If a signature body contains an HTML `img` tag pointing to any existing attachment, the system copies that attachment into a new signature-owned record - without checking whether the user has permission to access the original attachment.&#13;
-&#13;
-The newly created copy is then downloadable by the same channel-admin user, because attachment access is determined by the copy's owner (the signature), not the original object (e.g., a ticket or knowledge-base article). This allows a user with any of the `admin.channel_email`, `admin.channel_google`, `admin.channel_microsoft365`, or `admin.channel_microsoft_graph` permissions to read attachments they would otherwise be denied access to, such as ticket attachments belonging to groups they are not a member of.</description>
-      <guid isPermaLink="false">GHSA-pp8r-x7pp-5qj5</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:23:01 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Microsoft Graph error logs expose partially masked OAuth access tokens (CVE-2026-63208)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-qh8m-g5vr-7272</link>
-      <description>CVE-2026-63208 · CVSS 5.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:N/VA:N/SC:L/SI:N/SA:N) · CWE-116, CWE-532
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-When a Microsoft Graph request fails, Zammad logs the error including the authentication token used to access the mailbox.&#13;
-&#13;
-The system attempts to hide this token in the log, but the masking is incomplete: for the token format Microsoft uses (JWT), only the first part is hidden, while the remaining parts remain readable in plain text.&#13;
-&#13;
-A Zammad admin with Microsoft Graph channel access can view these logs and see the partial token, which may reveal sensitive claims such as the account scope, tenant, or timing - and could assist in reconstructing the full token while it is still valid.</description>
-      <guid isPermaLink="false">GHSA-qh8m-g5vr-7272</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:22:55 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Remote image tracking bypass via shortened URL scheme (CVE-2026-63206)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fpwp-w2p4-hqg7</link>
-      <description>CVE-2026-63206 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-20, CWE-184
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-Zammad's HTML sanitizer, which blocks remote images in ticket articles and email views, can be bypassed using a shortened URL format that omits the double slash after the scheme (for example `http:tracking.example/pixel.gif` instead of `http://tracking.example/pixel.gif`).&#13;
-&#13;
-Modern browsers treat both forms as equivalent remote URLs. As a result, an attacker who sends a crafted email or ticket can cause the recipient's browser to silently load an image from an external server, revealing when and by whom the ticket was opened. Zammad's "remote content blocked" warning is not shown because the sanitizer does not recognize the shortened form as remote.</description>
-      <guid isPermaLink="false">GHSA-fpwp-w2p4-hqg7</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:22:48 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — HTML sanitizer API path allowlist bypass via interior path traversal in img src/srcset (CVE-2026-63006)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-33p2-cm7w-62g3</link>
-      <description>CVE-2026-63006 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:L/VA:L/SC:N/SI:N/SA:N) · CWE-22
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-Attacker-controlled HTML in inbound emails or tickets could bypass the image URL sanitizer using path traversal sequences. &#13;
-&#13;
-When an authenticated agent views the content, the browser resolves the URL to a protected API endpoint and sends the request with the agent's session cookie, enabling side effects such as forced logout without any user interaction.</description>
-      <guid isPermaLink="false">GHSA-33p2-cm7w-62g3</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:22:39 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Stored XSS via unescaped option labels in the object attribute options context UI (CVE-2026-63216)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-r95m-ghj7-646x</link>
-      <description>CVE-2026-63216 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:L/VA:L/SC:N/SI:N/SA:N) · CWE-80
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-Unsanitized option labels are rendered in the configuration dialogs of AI Agents within Zammad's admin UI.&#13;
-&#13;
-When rendering the list of selected options, the option label is output as raw HTML without escaping. An attacker who can control an option label - for example by setting a malicious string as a user or organization name used in a relation attribute, or by supplying a crafted custom attribute option value - can inject arbitrary HTML and JavaScript. The payload executes in the browser of any admin or agent who opens the affected object attribute configuration view.</description>
-      <guid isPermaLink="false">GHSA-r95m-ghj7-646x</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:22:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Missing article authorization in ticket attachment clone endpoint (CVE-2026-13229)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-32gv-72x5-3983</link>
-      <description>CVE-2026-13229 · CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-863
-
-Affected:
-- Zammad &lt;= 7.1.1 (patched: 7.1.2)
-
----
-
-A customer who can view a ticket cannot see its internal articles through the article listing API. However, the same customer can clone an attachment belonging to an internal article via the attachment `clone` endpoint, bypassing article-level authorization.&#13;
-&#13;
-This is the clone-action counterpart of [GHSA-374g-4f73-g7m7,](https://github.com/zammad/zammad/security/advisories/GHSA-374g-4f73-g7m7) which fixed only the direct download action (`attachment`). The sibling clone action in the same controller was left unpatched.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-32gv-72x5-3983</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:22:01 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Invalid PGP Detached Signatures Reported as Good Signature on Inbound Mail (CVE-2026-61855)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-r957-vp26-563q</link>
-      <description>CVE-2026-61855 · CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-347
-
-Affected:
-- Zammad 7.0.3, 7.1.1 (patched: 7.1.2)
-
----
-
-Under certain conditions, Zammad's verification of inbound PGP-signed email can mark a message as carrying a valid ("Good") PGP signature from a registered sender key, even though the displayed message content is not actually covered by that signature. As a result, the inbound article may be stored with a successful signature status that does not reflect the authenticity of the shown content. This can mislead agents who rely on the signature indicator when assessing the trustworthiness of incoming mail.</description>
-      <guid isPermaLink="false">GHSA-r957-vp26-563q</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:21:56 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Sensitive Information Exposure in Integration Administration API (CVE-2026-63207)</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-48h2-wv8r-fgp9</link>
-      <description>CVE-2026-63207 · CVSS 6.9 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-312, CWE-522
-
-Affected:
-- Zammad 7.0.3, 7.1.1 (patched: 7.1.2)
-
----
-
-An authenticated administrator can obtain stored integration credentials in cleartext through the integration administration API. Certain responses do not consistently mask sensitive fields, so configured secrets can be returned in plain text instead of the expected masked placeholder. Both the LDAP and Exchange integrations are affected.</description>
-      <guid isPermaLink="false">GHSA-48h2-wv8r-fgp9</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 04 Aug 2026 06:21:47 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Any authenticated user can reach internal services and cloud metadata via NAT64-encoded URLs (CVE-2026-70485)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-8x5v-cpv7-8jjp</link>
-      <description>CVE-2026-70485 · CVSS 7.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N) · CWE-918
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt; 0.11.0 (patched: &gt;= 0.11.0)
-
----
-
-# Any authenticated user can reach internal services and cloud metadata via NAT64-encoded URLs&#13;
-&#13;
-## Summary&#13;
-&#13;
-Open WebUI fetches user-supplied URLs on the server for RAG URL ingestion, URL-to-markdown conversion and web-search content retrieval, and decides whether a destination is allowed by asking whether its IP address is globally routable. That test operates on the literal IPv6 address and does not look at the IPv4 address embedded inside it. On a deployment whose network has a NAT64 gateway, any verified user can wrap an internal or cloud-metadata IPv4 address in the NAT64 well-known prefix, pass the filter, and receive the internal response body back through the API.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Any verified (authenticated) user account. No admin role, no elevated permission.&#13;
-- Default configuration: `ENABLE_LOCAL_WEB_FETCH` off, the default `WEB_FETCH_FILTER_LIST` metadata blocklist in place. Neither prevents this, because the blocklist matches hostname strings and the NAT64 literal is not one of them.&#13;
-- The deployment's network must provide NAT64 translation for the well-known `64:ff9b::/96` prefix, which is the common default on IPv6-only and dual-stack cloud and Kubernetes networks.&#13;
-- Deployments on IPv4-only networks, or on any network without a NAT64 gateway, are not affected: the address has nowhere to route.&#13;
-&#13;
-## Impact&#13;
-&#13;
-On an affected network a low-privilege user can read GET responses from services the server can reach but the internet cannot: cloud instance metadata including IAM role credentials, loopback-bound admin surfaces, and internal APIs in the same VPC or cluster. The response body is returned to the caller, so this is full-read, not blind. Exploitation is not universal, it depends entirely on the deployment's network providing NAT64 translation, which is why the score carries high attack complexity. Deployments without NAT64 lose nothing here.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in v0.11.0 by commit `1717b493d`. Address classification now unwraps the IPv4 embedded in IPv6 transition encodings before deciding whether a destination is global, and applies that at all three checkpoints. NAT64-wrapped public destinations continue to work. Upgrading to v0.11.0 fully resolves the issue with no configuration change.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-- `backend/open_webui/retrieval/web/utils.py` — `validate_url()`, the pre-fetch check on the submitted URL.&#13;
-- `backend/open_webui/retrieval/web/utils.py` — `_ssrf_safe_new_conn()` and `_SSRFSafeResolver`, the connect-time re-checks that defeat DNS rebinding.&#13;
-&#13;
-All three decided reachability from `ipaddress.ip_address(ip).is_global` applied to the literal address. That predicate answers whether an IPv6 address sits in globally-routable space, which is a different question from where the packet actually ends up once a transition gateway translates it. The NAT64 well-known prefix is by design a global prefix carrying an arbitrary IPv4 destination, so an internal target wrapped in it satisfies the check while reaching exactly what the check exists to prevent. Because the same predicate backed the connect-time re-checks, no later layer caught it either. The fix inspects every standardized transition encoding rather than only the NAT64 prefix, since the same reasoning error applies to each of them.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Against the real `POST /api/v1/retrieval/process/web` flow on v0.10.2 as an authenticated user, with internal HTTP services returning a marker string. The plain forms are rejected with HTTP 400:&#13;
-&#13;
-```&#13;
-http://169.254.169.254/latest/meta-data/          -&gt; 400&#13;
-http://127.0.0.1/                                 -&gt; 400&#13;
-http://[::ffff:169.254.169.254]/                  -&gt; 400&#13;
-http://metadata.google.internal/                  -&gt; 400&#13;
-```&#13;
-&#13;
-The NAT64 encodings of the same targets are accepted, and the response body is returned in the `content` field:&#13;
-&#13;
-```&#13;
-http://[64:ff9b::a9fe:a9fe]/latest/meta-data/iam/security-credentials/   -&gt; 200, marker returned&#13;
-http://[64:ff9b::7f00:1]/admin/internal-status                          -&gt; 200, marker returned&#13;
-```&#13;
-&#13;
-NAT64 translation was modelled by binding the translated addresses locally rather than by routing through a real NAT64 gateway; everything else, including the request flow and the validation code, is the unmodified v0.10.2 path. After the fix both URLs return 400 while `http://[64:ff9b::808:808]/` (8.8.8.8, public) still returns 200, confirming no over-blocking.&#13;
-&#13;
-## Credits&#13;
-&#13;
-- tonghuaroot — reported the transition-form gap in the address classification and supplied the fix approach.</description>
-      <guid isPermaLink="false">GHSA-8x5v-cpv7-8jjp</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 23:12:13 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] open-webui/open-webui — Any authenticated user can cancel another user's chat generation via the chat delete endpoint (CVE-2026-70483)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3vf6-64vr-3g56</link>
-      <description>CVE-2026-70483 · CVSS 3.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-862
-
-Affected:
-- pip/open-webui &gt;= 0.9.6, &lt; 0.11.0 (patched: 0.11.0)
-
----
-
-# Any authenticated user can cancel another user's chat generation via the chat delete endpoint&#13;
-&#13;
-## Summary&#13;
-`DELETE /api/v1/chats/{id}` cancelled a chat's in-flight tasks before it checked whether the caller was allowed to delete that chat. Any authenticated user who knew another user's chat id could therefore abort that user's running model response, title generation or tag generation. The deletion itself was still refused, so the only missing control was on the cancellation side effect.&#13;
-&#13;
-## Preconditions&#13;
-Default configuration, no special deployment shape. The attacker needs a normal account with the default `user` role and nothing else: the `chat.delete` permission is not required, and revoking it does not prevent the cancellation. The attacker also needs the victim's chat id, which is returned by the read-only shared-chat endpoint when a chat or a folder has been shared with them - otherwise enumerating the chat id requires guessing the chat id or brute forcing it, and the victim must have a generation running at that moment.&#13;
-&#13;
-## Impact&#13;
-A user can repeatedly interrupt another user's generations without any write access to the target chat. Nothing is deleted, modified or disclosed, and the victim can simply regenerate, so the effect is limited to availability of in-flight responses. Because the attacker only needs a chat id, the interruption can be scripted and repeated for as long as the id stays valid.&#13;
-&#13;
-## Fix&#13;
-Fixed in https://github.com/open-webui/open-webui/pull/27006, released in 0.11.0. The handler now resolves and authorizes the chat first and only cancels tasks and deletes once the caller is an admin or a permitted owner; an unauthorized caller gets 401 or 404 with no cancellation.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `delete_chat_by_id` in `backend/open_webui/routers/chats.py`, serving `DELETE /api/v1/chats/{id}`. Affected setup: every build from 0.9.6 up to and including 0.10.2.&#13;
-&#13;
-The cancellation was written as a cleanup step for the delete that follows it, and it was placed at the top of the handler so that it would run before the chat row disappeared. That put an unauthenticated-by-ownership side effect ahead of every check in the function: the admin branch, the `chat.delete` permission check, and the owner lookup all ran afterwards, so their outcome could no longer affect whether the tasks were stopped. The dedicated task-stop endpoint already verified ownership before calling the same helper, so the intended ordering existed elsewhere in the codebase.&#13;
-&#13;
-## Proof of concept&#13;
-Against a 0.10.2 instance with two accounts, a victim admin and an attacker holding the default `user` role, and an upstream that streams slowly:&#13;
-&#13;
-1. As the victim, start a generation in a chat and confirm `GET /api/tasks/chat/{chat_id}` reports one active task.&#13;
-2. As the attacker, confirm `GET /api/v1/chats/{chat_id}` returns 401, then send `DELETE /api/v1/chats/{chat_id}`.&#13;
-3. The delete is refused with 404, the chat still exists, but the victim's task list is now empty and the assistant message is marked done mid-generation. A control run without step 2 keeps generating.&#13;
-&#13;
-Repeating step 2 with the `chat.delete` permission revoked for the `user` role returns 401 and still cancels the task. The same sequence against 0.11.0 leaves the task running.&#13;
-&#13;
-## Credits&#13;
-@GabrielGomesAL, who reported the missing authorization on the chat delete endpoint.</description>
-      <guid isPermaLink="false">GHSA-3vf6-64vr-3g56</guid>
-      <category>LOW</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 23:10:05 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Stored XSS via unescaped KaTeX render-error fallback in rendered messages (CVE-2026-70492)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-pwxh-7358-jq2x</link>
-      <description>CVE-2026-70492 · CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79
-
-Affected:
-- pip/open-webui &gt;= 0.10.0, &lt; 0.11.0 (patched: 0.11.0)
-
----
-
-# Stored XSS via unescaped KaTeX render-error fallback in rendered messages&#13;
-&#13;
-## Summary&#13;
-Any authenticated user can store a chat message whose math block makes KaTeX fail with a stack overflow instead of a parse error. When that happens the renderer falls back to inserting the original math source into the page as HTML rather than as text, so script in the message runs in the browser of whoever views it. Every surface that renders messages is affected, including shared chats and channels, and the missing control is output escaping on the error path.&#13;
-&#13;
-## Preconditions&#13;
-Default configuration, no flags involved. The attacker needs a normal user account and a way to get the target to open the content: a shared chat link, a channel the target reads, or any other message surface. No admin rights and no non-default settings are required on either side.&#13;
-&#13;
-## Impact&#13;
-Script executes in the viewer's browser on the Open WebUI origin, which puts the session token in localStorage within reach and therefore allows taking over the viewing account. If the viewer is an administrator, that is administrator access to the instance. Exploitation needs the target to open the content, but nothing beyond that: no interaction with the message itself. Server-side data and availability are unaffected; the impact is entirely in the viewer's browser session.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.0 by commit bc600d3f0 (PR #26718). The error path now HTML-escapes the math source before it reaches the DOM, so a failed render displays the formula as text instead of as markup. Upgrading fully resolves the issue; no configuration change is needed.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `src/lib/components/chat/Messages/Markdown/KatexRenderer.svelte`, the reactive block that renders math and its `catch` branch. Affected setup: releases 0.10.0 through 0.10.2, which are the versions carrying that fallback.&#13;
-&#13;
-KaTeX was called with `throwOnError: false`, which suppresses parse errors but not a `RangeError` from deeply nested input. The surrounding `catch` treated any failure as "show the original formula" and assigned the untouched source to the value that the template inserts with `{@html}`. Because the Markdown math tokenizer captures everything between the delimiters verbatim, including angle brackets and complete tags, the attacker controls that string exactly.&#13;
-&#13;
-## Proof of concept&#13;
-Send a chat message (or store one via any endpoint that writes message content) consisting of a single inline math block: an opening `$`, 100000 `{` characters, an `&lt;img src=x onerror=alert(document.domain)&gt;` tag, 100000 `}` characters, and a closing `$`.&#13;
-&#13;
-```&#13;
-python3 -c 'N=100000; print("$"+"{"*N+"&lt;img src=x onerror=alert(document.domain)&gt;"+"}"*N+"$")'&#13;
-```&#13;
-&#13;
-Open the chat as any user who can view it. KaTeX overflows the stack, the fallback inserts the raw source, and the `onerror` handler fires. Replacing `alert()` with a request carrying `localStorage.token` sends the viewer's session token to an attacker-controlled host; this was demonstrated against a shared chat opened by an administrator account.&#13;
-&#13;
-## Credits&#13;
-@maxntv — reported the unescaped KaTeX error fallback and demonstrated session-token theft through a shared chat.</description>
-      <guid isPermaLink="false">GHSA-pwxh-7358-jq2x</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 23:08:30 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Cross-user file content disclosure via request-scoped direct model knowledge metadata (CVE-2026-70487)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-6xhv-rxhv-pwm4</link>
-      <description>CVE-2026-70487 · CVSS 5.3 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-862
-
-Affected:
-- pip/open-webui &gt;= 0.8.8, &lt;= 0.10.2 (patched: &gt;= 0.11.0)
-
----
-
-# Cross-user file content disclosure via request-scoped direct model knowledge metadata&#13;
-&#13;
-## Summary&#13;
-Open WebUI lets a client define a model inline on a chat request instead of selecting a saved workspace model. The knowledge attached to such an inline model was used as-is, without checking that the caller can read what it points at. Any authenticated user who knows another user's file id could therefore have the builtin knowledge tools return that file's indexed content back to them.&#13;
-&#13;
-## Preconditions&#13;
-Authenticated user of any role, no admin rights needed. The request must carry a session id and use native function calling, which is the default (only `function_calling: legacy` opts out), and the model's `builtin_tools` capability must not be disabled (default enabled). The attacker must already know the target file's id; ids are UUIDs and are not enumerable through this path. No admin setting needs to be turned on: enabling Direct Connections is not required for the backend to accept an inline model. Knowledge bases attached this way were never affected, their own access grants were enforced on every path.&#13;
-&#13;
-## Impact&#13;
-An authenticated user could read the indexed chunks of another user's or group's file, a cross-user confidentiality loss limited to files whose ids the attacker already holds. It is read-only: nothing is modified or deleted, knowledge-base permissions are unaffected, and saved workspace models were already validated at creation time.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.0 by commit 305880f2e. An inline model's attached knowledge is filtered against the caller's real read access before it is used, dropping any file, knowledge base or note the caller cannot read. Upgrading fully resolves it, no configuration change is required.&#13;
-&#13;
-## Root cause&#13;
-Affected component: the chat completion, chat completed and chat action endpoints, which accept an inline model definition, and the builtin knowledge tools that consume the model's attached knowledge. Affected setups: all builds from 0.8.8 through 0.10.2.&#13;
-&#13;
-Saved workspace models have their attached file references validated against the author when the model is created, updated or imported, so a stored model can only carry files its creator can read. An inline model never passes through that path, yet everything downstream treated its attached knowledge with the same trust, including a helper that grants read access to a file purely because the running model claims it as attached knowledge. The missing control was an access check at the point where client-supplied model metadata enters the request.&#13;
-&#13;
-## Credits&#13;
-Reported by @whyiug.</description>
-      <guid isPermaLink="false">GHSA-6xhv-rxhv-pwm4</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 23:07:17 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Deletion of directories and file embeddings in other knowledge bases via sync cleanup (CVE-2026-70488)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jxc9-xmc4-gr23</link>
-      <description>CVE-2026-70488 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.9.6, &lt;= 0.10.2 (patched: &gt;= 0.11.0)
-
----
-
-# Deletion of directories and file embeddings in other knowledge bases via sync cleanup&#13;
-&#13;
-## Summary&#13;
-A user with write access to one knowledge base could delete directories, and drop file embeddings, belonging to knowledge bases they do not control. The sync cleanup endpoint verified write access on the knowledge base named in the URL and then acted on the directory and file ids supplied in the request body without checking that those objects belonged to that knowledge base.&#13;
-&#13;
-## Preconditions&#13;
-Default configuration, no flags involved. The attacker needs write access to at least one knowledge base, which comes from owning one, from a write access grant, or from the admin role; `workspace.knowledge` is off by default, so an ordinary user cannot simply create one. They also need the victim's directory or file id, which are UUIDs and are not enumerable, so in practice the attacker is someone who can already see the target knowledge base, typically a read-only collaborator on a shared one. Deployments where no knowledge base is shared beyond its owner are not reachable.&#13;
-&#13;
-## Impact&#13;
-The attacker deletes a target directory and, because the deletion runs without moving files to the parent, the knowledge_file associations for every file in that subtree are removed as well, so those documents silently drop out of the victim's knowledge base and out of its retrieval results. Separately, the per-file vector cleanup dropped the standalone `file-&lt;id&gt;` collection for any file id, breaking chat-with-file for that document. The stored files and their database rows survive, since that path was gated on file ownership, and an owner can restore the state by re-adding and reprocessing. Nothing about the target knowledge base's contents is disclosed to the attacker.&#13;
-&#13;
-## Fix&#13;
-Fixed in https://github.com/open-webui/open-webui/pull/26722. Both request-body loops are now scoped to the knowledge base in the URL: a directory is resolved and skipped unless its `knowledge_id` matches, and the per-file vector cleanup runs only for files that are members of that knowledge base. Upgrading fully resolves the issue.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `backend/open_webui/routers/knowledge.py`, handler `sync_knowledge_cleanup`, endpoint `POST /api/v1/knowledge/{id}/sync/cleanup`. Affected setup: all builds from 0.9.6 onward, no optional dependency involved.&#13;
-&#13;
-The handler treated the write-access check on the URL knowledge base as authorization for everything it went on to do, but the objects it acted on came from the request body and were addressed by primary key alone. Directory deletion at the model layer deletes by directory id and has no notion of a parent knowledge base, so the only thing that could have bound the two together was a membership check in the handler, and there was none. The explicit directory-delete endpoint in the same router already carried that check, which is what makes this a gap in one handler rather than a missing model-layer control.&#13;
-&#13;
-## Credits&#13;
-Reported by @whyiug.</description>
-      <guid isPermaLink="false">GHSA-jxc9-xmc4-gr23</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 23:05:27 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Unapproved accounts can open terminal sessions via a WebSocket auth path missing the role check (CVE-2026-70490)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-5gpj-vj23-vhhv</link>
-      <description>CVE-2026-70490 · CVSS 6.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.8.8, &lt; 0.11.0 (patched: &gt;= 0.11.0)
-
----
-
-# Unapproved accounts can open terminal sessions via a WebSocket auth path missing the role check&#13;
-&#13;
-## Summary&#13;
-The terminal WebSocket route authenticates its own first-message JWT instead of going through the HTTP dependency chain, and never applies the role check that `get_verified_user` enforces on every HTTP terminal route. An account whose role is `pending`, meaning registered but not approved, or approved and later deactivated back to `pending`, can therefore open an interactive terminal session that the HTTP terminal endpoints would refuse. The missing control is the verified-user role gate, not the terminal access grants, which are evaluated correctly.&#13;
-&#13;
-## Preconditions&#13;
-At least one terminal server must be configured, which is off by default, and its access grants must cover the account: either public read (`principal_id: "*"`) or a group the account still belongs to. The attacker needs a valid, unexpired JWT for a `pending` account and the terminal server id. Both are obtainable by an account that registered while approvals are pending, or by one that held access and was deactivated, since deactivation sets the role to `pending` without revoking the token, which lasts four weeks by default. Deployments with no terminal server configured, or whose terminal grants are admin-only, are not affected.&#13;
-&#13;
-## Impact&#13;
-A deployment loses the account-approval boundary for terminal access. An unapproved or deactivated account gets interactive shell access, file browsing and terminal-backed tooling in the terminal environment, for as long as its token remains valid. Because the HTTP terminal routes correctly reject the same account, the two planes disagree, so an administrator who deactivates a user sees access revoked over HTTP while the WebSocket keeps working. The terminal access grants themselves are not bypassed: an account with no grant is still refused, so this only widens access to terminals already shared broadly or with a group the account remains in.&#13;
-&#13;
-## Fix&#13;
-Fixed in v0.11.0 by https://github.com/open-webui/open-webui/pull/27537. Token decoding, revocation checking, user lookup and the role check are consolidated into a single `get_verified_user_by_token` helper, and both the terminal WebSocket route and the Socket.IO handshake now go through it. The role set lives in one constant shared with the HTTP gate so the two cannot drift apart again. Upgrading fully resolves the issue; no configuration change is required.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `backend/open_webui/routers/terminals.py`, the `_resolve_authenticated_connection` helper backing the `/{server_id}/api/terminals/{session_id}` WebSocket route. Affected setup: every build from v0.8.8 onward, since the route was introduced there.&#13;
-&#13;
-WebSocket handshakes cannot use FastAPI dependencies, so this route reimplemented authentication inline. The reimplementation reproduced the parts that are visible in the token, that it decodes and that the user row exists, and silently dropped the part that lives in the database row, the role check. Authorization then ran on two independent code paths with no shared definition of what an authenticated user is, and only one of them was updated when the role gate was introduced.&#13;
-&#13;
-## Credits&#13;
-Reported by @rexpository.</description>
-      <guid isPermaLink="false">GHSA-5gpj-vj23-vhhv</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 23:04:23 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Users denied the image-generation permission can still generate images via chat completions (CVE-2026-70484)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-g423-grf7-98rv</link>
-      <description>CVE-2026-70484 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-862, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.7.0, &lt; 0.11.0 (patched: &gt;= 0.11.0)
-
----
-
-# Users denied the image-generation permission can still generate images via chat completions&#13;
-&#13;
-## Summary&#13;
-An authenticated user whose `features.image_generation` permission has been revoked can still make the server generate images by sending the feature flag in a chat-completion request. The chat pipeline took the client-supplied `features` object at face value and never re-checked the permission that the direct image routes enforce, so the denial applied to the UI affordance but not to the server-side generation path.&#13;
-&#13;
-## Preconditions&#13;
-Image generation must be enabled and a provider configured by the administrator (`ENABLE_IMAGE_GENERATION` is off by default). The per-user permission defaults to granted, so only deployments where an administrator explicitly revoked it for some users are affected. On 0.10.0 and later the caller must also set `params.function_calling` to `legacy`; on 0.9.x and earlier the legacy mode was the default, so no special parameter was needed. Deployments on native function calling are unaffected, since that path checks the permission before registering the image tools.&#13;
-&#13;
-## Impact&#13;
-A user the administrator has explicitly denied image generation can consume the operator's configured provider through the chat API, spending the operator's API credits and provider quota and writing generated files to the operator's storage. Where an image is present in the conversation and image editing is enabled, the same handler reaches the image-edit provider as well. No provider credentials are exposed, and no other user's data is reachable.&#13;
-&#13;
-## Fix&#13;
-Fixed in 897d69a (#26703). The legacy chat-features block now re-checks `features.image_generation` against the caller's permissions before invoking the image handler, matching the check the direct image routes and the native function-calling path already performed.&#13;
-&#13;
-## Root cause&#13;
-The chat-completions endpoint stored the request's `features` object into request metadata, and `process_chat_payload` in the chat middleware dispatched to the image handler purely on the truthiness of that client-supplied flag. Permission enforcement lived on the two surfaces that were reached from the UI, the direct `/images/generations` and `/images/edit` routes and the native function-calling tool registration, and was simply absent on the legacy chat path. The flag was treated as a statement of user intent, which it is, rather than as an authorization decision, which the handler behind it made it.&#13;
-&#13;
-## Credits&#13;
-@DavidCarliez, for identifying that the chat pipeline honours the client-supplied image-generation feature flag without re-checking the permission.</description>
-      <guid isPermaLink="false">GHSA-g423-grf7-98rv</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 02 Aug 2026 22:58:19 +0000</pubDate>
     </item>
   </channel>
 </rss>
