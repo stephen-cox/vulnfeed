@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 06 Oct 2026 10:59:33 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 07 Oct 2026 10:49:39 +0000</lastBuildDate>
     <item>
       <title>[HIGH] zammad/zammad — Knowledge base reordering, publishing and administration possible without the required permission</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-qvmq-j8hm-2mmc</link>
