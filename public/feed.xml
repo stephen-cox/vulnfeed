@@ -7,7 +7,509 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 07 Oct 2026 10:49:39 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 08 Oct 2026 11:07:28 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] zammad/zammad — Local privilege escalation to root in DEB/RPM packages (packager.io) (CVE-2026-102490)</title>
+      <link>https://github.com/zammad/zammad/security/advisories/GHSA-p97w-927q-8vxq</link>
+      <description>CVE-2026-102490 · CVSS 8.5 (CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-250, CWE-426, CWE-732
+
+Affected:
+- other/Zammad &lt;= 7.2.1 (patched: 7.2.2)
+
+---
+
+Zammad packages built with packager.io (DEB and RPM) could have allowed a local attacker who already had code execution as the unprivileged `zammad` service account to escalate to full `root` privileges on the host. Service processes began running as `root` and executed files that were owned and writable by the `zammad` account before dropping to that account, and the installation directory was writable by it. An attacker holding that foothold could have escalated within seconds, because the affected services were restarted automatically whenever they stopped; no administrator interaction was required. Only installations from the DEB and RPM packages were affected — installations from source or the official container images were not. All released packaged versions were affected.&#13;
+&#13;
+Credit: The Dutch Institute for Vulnerability Disclosure Foundation (DIVD)</description>
+      <guid isPermaLink="false">GHSA-p97w-927q-8vxq</guid>
+      <category>HIGH</category>
+      <category>zammad/zammad</category>
+      <pubDate>Thu, 08 Oct 2026 10:19:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] argoproj/argo-cd — An oversized OCI manifest can exhaust repo-server memory</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-w996-f2wq-x9c6</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H)
+
+Affected:
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.1.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+Argo CD reads an OCI image manifest into memory with no size limit. A registry can return a manifest large enough to exhaust the repo-server. Kubernetes then kills the process, and manifest generation stops for every Application until the pod restarts. The same request can be sent again after the restart.
+
+All versions from v3.1.0 onward are affected, including every currently supported release. v3.0.23 and earlier are not. The behavior was introduced in [18c4d9d568](https://github.com/argoproj/argo-cd/commit/18c4d9d56869531f7ae017d610d4e79aaa5525c3) (2025-06-06, [#18646](https://github.com/argoproj/argo-cd/pull/18646)), the change that added OCI as an application source, and was first released in v3.1.0.
+
+Argo CD downloads the manifest when it renders an Application whose source is an OCI registry, and when it loads that source's metadata. Resolving a tag to a digest does not download the manifest. The `--oci-manifest-max-extracted-size` flag (default 1G) limits the unpacked image archive. It does not limit the manifest document. See [argocd-repo-server](https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-repo-server/).
+
+Someone who can make Argo CD pull from a registry they control can trigger this. That includes creating an Application with an `oci://` source, which the `default` project's `sourceRepos: ['*']` allows. See [OCI](https://argo-cd.readthedocs.io/en/stable/user-guide/oci/) and [the default project](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#the-default-project). A person who can push to a registry an Application already uses can do the same. This is the OCI counterpart of the Helm index limit in [GHSA-jhwx-mhww-rgc3](https://github.com/argoproj/argo-cd/security/advisories/GHSA-jhwx-mhww-rgc3).
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+The fix rejects an OCI manifest larger than 4 MiB.
+
+Argo CD 3.1 and 3.2 are affected and out of support. They will not receive a patch. Upgrade to a patched 3.3 or newer release.
+
+### Workarounds
+
+There is no setting that caps the OCI manifest document.
+
+* Allow only registries you trust in the AppProject `sourceRepos` list. The `default` project allows every source until that list is changed. See [Projects](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/).
+* Do not grant untrusted users permission to create Applications or repositories that point at other registries. See [RBAC resources](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure).
+
+A user who can push to a registry already listed in `sourceRepos` can still publish an oversized manifest.
+
+### Credits
+
+The Argo CD team would like to thank @andrejtomci for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [18c4d9d56869531f7ae017d610d4e79aaa5525c3](https://github.com/argoproj/argo-cd/commit/18c4d9d56869531f7ae017d610d4e79aaa5525c3) ([#18646](https://github.com/argoproj/argo-cd/pull/18646)), first released in v3.1.0
+* [OCI](https://argo-cd.readthedocs.io/en/stable/user-guide/oci/)
+* [GHSA-jhwx-mhww-rgc3](https://github.com/argoproj/argo-cd/security/advisories/GHSA-jhwx-mhww-rgc3), the Helm index size limit
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-w996-f2wq-x9c6</guid>
+      <category>MEDIUM</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:49 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] argoproj/argo-cd — Command injection via a repository proxy URL on SSH Git repositories (CVE-2026-55797)</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-j6cw-g6p4-7hch</link>
+      <description>CVE-2026-55797 · CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H) · CWE-78
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.11.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+Argo CD runs a shell command in the repo-server when it clones or fetches an SSH Git repository that has a proxy URL. The proxy host and port are copied into an SSH `ProxyCommand`. A host that contains shell metacharacters breaks out of that command and runs in the repo-server.
+
+All versions from v2.11.0 onward are affected, including every currently supported release. v2.10.20 and earlier are not. The behavior was introduced in [9b27aeb1a4](https://github.com/argoproj/argo-cd/commit/9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205) (2024-01-09, [#15864](https://github.com/argoproj/argo-cd/pull/15864)), the change that added SOCKS5 proxy support for SSH Git URLs, and was first released in v2.11.0.
+
+The repository must use SSH. `http`, `https`, and `socks5` proxy URLs all take this path when they are set on an SSH repository. An HTTPS Git repository uses the proxy as an HTTP proxy and does not build this command.
+
+Anyone who can create or update a repository or a repository credential template can set the proxy. That includes a project-scoped repository permission, `argocd repo add --proxy`, and a repository Secret. A credential template applies its proxy to every matching SSH repository that does not have its own credentials. Argo CD runs the command when it tests the repository connection and on later fetches. The process can read other Git, Helm, and OCI credentials stored for the repo-server.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+The fix stops passing the proxy host and port through a shell.
+
+Argo CD 2.x and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release.
+
+### Workarounds
+
+There is no setting that keeps SSH repository proxies and removes the shell command.
+
+* Do not grant repository create or update to untrusted users, including project-scoped repository access. See [RBAC resources](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure) and [project-scoped repositories](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-scoped-repositories-and-clusters).
+* Do not set a proxy on an SSH repository or on a credential template that matches SSH repositories. The proxy field is documented in [Configure repositories with proxy](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#configure-repositories-with-proxy). Credential templates are documented in [Credential templates](https://argo-cd.readthedocs.io/en/stable/user-guide/private-repositories/#credential-templates). The `--proxy` flag is documented in [`argocd repo add`](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_repo_add/).
+
+An HTTPS Git repository with an HTTP proxy does not use this command. Review existing repository and credential-template Secrets for unexpected `proxy` values.
+
+### Credits
+
+The Argo CD team would like to thank @kamil-sawicki, @yuvalelarat, @cherez0ff, @McCaulay, @gehan-psbc, @ria-labs-security, @parameter-ai-security, and @zwindler for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205](https://github.com/argoproj/argo-cd/commit/9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205) ([#15864](https://github.com/argoproj/argo-cd/pull/15864)), first released in v2.11.0
+* [Configure repositories with proxy](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#configure-repositories-with-proxy)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-j6cw-g6p4-7hch</guid>
+      <category>HIGH</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:47 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] argoproj/argo-cd — Extension proxy RBAC ignores application namespace when applications-in-any-namespace is enabled</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-g3ff-q88g-chrj</link>
+      <description>CVSS 4.9 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:L/I:L/A:N) · CWE-284, CWE-863
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.7.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+Argo CD's proxy extension checks Application `get` before it forwards a request to an extension backend. When applications in any namespace are enabled, that check uses the wrong application name. The namespace is left out, so the policy object is `project/name` instead of `project/namespace/name`. The Application API still uses the three-part name.
+
+All versions from v2.7.0 onward are affected, including every currently supported release. v2.6.15 and earlier do not include this check. The behavior was introduced in [974c2de168](https://github.com/argoproj/argo-cd/commit/974c2de1686521437fa755a180b8d0593e9c0533) (2023-02-15, [#11694](https://github.com/argoproj/argo-cd/pull/11694)), the change that added authorization to proxy extensions, and was first released in v2.7.0.
+
+Both features have to be turned on. Proxy extensions are off unless `server.enable.proxy.extension` is set. Applications in any namespace are off unless the API server and application controller are started with the extra application namespaces. An install that keeps every Application in the Argo CD namespace is not affected.
+
+An authenticated user who can invoke a proxy extension, and who has Application `get` on `project/name` or on a wildcard such as `project/*`, can invoke that extension against an Application of the same name in another namespace of the same project. A deny rule written as `project/namespace/name` is not evaluated on this path. The Application API still returns a denial for that Application. The extension backend receives the request, the destination cluster name and URL, and the caller's identity.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+The fix checks the extension request with the Argo CD namespace as the default, which is how the Application API builds the policy object.
+
+Argo CD 2.x and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release.
+
+### Workarounds
+
+There is no setting that restores the three-part application check while proxy extensions and applications in any namespace both stay enabled.
+
+* Leave proxy extensions disabled. They are off by default. To turn them off, do not set `server.enable.proxy.extension` to `true` in `argocd-cmd-params-cm`, and remove `extension.config` from `argocd-cm`. See [Proxy extension configuration](https://argo-cd.readthedocs.io/en/stable/developer-guide/extensions/proxy-extensions/#configuration).
+* Do not enable [applications in any namespace](https://argo-cd.readthedocs.io/en/stable/operator-manual/app-any-namespace/). With every Application in the Argo CD namespace, `project/name` is the policy object the rest of the API uses. Namespace-scoped rules are documented in [Application in any namespaces](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#application-in-any-namespaces).
+* Limit who can invoke an extension. That does not fix the application check. See [The extensions resource](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#the-extensions-resource).
+
+### Credits
+
+The Argo CD team would like to thank @komyunghan, @Nadav0077, @akshatgit, @rexpository, @LHeiakim, @edwardav970, @dhki, @arbor-s, and @ninthlife-tools for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [974c2de1686521437fa755a180b8d0593e9c0533](https://github.com/argoproj/argo-cd/commit/974c2de1686521437fa755a180b8d0593e9c0533) ([#11694](https://github.com/argoproj/argo-cd/pull/11694)), first released in v2.7.0
+* [Applications in any namespace](https://argo-cd.readthedocs.io/en/stable/operator-manual/app-any-namespace/)
+* [Proxy extensions](https://argo-cd.readthedocs.io/en/stable/developer-guide/extensions/proxy-extensions/)
+* [Application in any namespaces](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#application-in-any-namespaces)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-g3ff-q88g-chrj</guid>
+      <category>MEDIUM</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:46 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] argoproj/argo-cd — Login failure rate limit can be bypassed via concurrent requests (CVE-2025-61560)</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-4439-h7jw-5cjj</link>
+      <description>CVE-2025-61560 · CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N) · CWE-307, CWE-362
+
+Affected:
+- go/github.com/argoproj/argo-cd &gt;= 1.5.3, &lt; 2.0.0
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.0.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+Argo CD limits failed local username/password logins. The default is 5 failures in a 5-minute window, set by `ARGOCD_SESSION_FAILURE_MAX_FAIL_COUNT` and `ARGOCD_SESSION_FAILURE_WINDOW_SECONDS`. The limit applies to local accounts, including the built-in `admin` account when it is enabled. It does not apply to SSO or OIDC logins.
+
+The login handler reads the failure count, checks the password, and only then increments the count. Concurrent requests for the same username all read the count before any of them updates it, so more guesses complete than the configured maximum. A correct password in that burst still returns a session token. Failed attempts in the burst return the same invalid-login response as an ordinary failure.
+
+All versions from v1.5.3 onward are affected, including every currently supported release. v1.5.2 and earlier do not have this throttle. The behavior was introduced in [76bacfdea4](https://github.com/argoproj/argo-cd/commit/76bacfdea4d9bbce774887f18a62e3ebc27d486c) (2020-04-21, [#3404](https://github.com/argoproj/argo-cd/pull/3404)) and first released in v1.5.3.
+
+Anyone who can reach `POST /api/v1/session` can attempt this. No Argo CD account is required. A separate cap, `ARGOCD_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT` (default 50), limits how many login requests one API server process handles at once. It is not per username, so it does not make the failure count correct. Each API server process stores its own failure counts. A second replica enforces its own limit.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+The fix handles one local login attempt per username at a time, so the failure count is updated before the next attempt is checked.
+
+Argo CD 1.x, 2.x, and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release, or disable local accounts and use SSO.
+
+### Workarounds
+
+Disable local accounts and require SSO. That removes the password check this limit applies to.
+
+* Disable the built-in `admin` account with `admin.enabled: "false"` in `argocd-cm`. See [Disable admin user](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#disable-admin-user).
+* Disable any other local account with `accounts.&lt;username&gt;.enabled: "false"`. See [Local users/accounts](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#local-usersaccounts).
+* Configure [SSO](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#sso) for login.
+
+Where a local account must stay enabled, set a strong unique password ([Manage users](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#manage-users)). Lowering `ARGOCD_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT` shrinks how many login attempts can be in flight on one API server process ([Failed logins rate limiting](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#failed-logins-rate-limiting)). That cap is not per username, so it does not make the failure counter correct. With more than one API server replica, set `ARGOCD_API_SERVER_REPLICAS` so the cap is divided across them ([argocd-server](https://argo-cd.readthedocs.io/en/stable/operator-manual/high_availability/#argocd-server)).
+
+Restricting network access to the API, or putting an HTTP rate limit in front of it, reduces how many attempts can arrive. Those are not Argo CD settings, and the project docs do not describe them.
+
+### Credits
+
+The Argo CD team would like to thank @foussey and @shivamkumarcyber for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [76bacfdea4d9bbce774887f18a62e3ebc27d486c](https://github.com/argoproj/argo-cd/commit/76bacfdea4d9bbce774887f18a62e3ebc27d486c) ([#3404](https://github.com/argoproj/argo-cd/pull/3404)), first released in v1.5.3
+* [Local users / accounts](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#local-usersaccounts)
+* [Failed logins rate limiting](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#failed-logins-rate-limiting)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-4439-h7jw-5cjj</guid>
+      <category>HIGH</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:44 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] argoproj/argo-cd — AppProject restrictions bypassed by PreDelete/PostDelete resource hooks (CVE-2026-77459)</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-fmxq-cgp8-87wp</link>
+      <description>CVE-2026-77459 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H) · CWE-863
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.10.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+Argo CD checks an Application's AppProject before it creates resources during a sync. That check covers destination namespaces and servers, cluster-scoped resource allow and deny lists, and namespaced resource allow and deny lists, including resource names. PreDelete and PostDelete hooks skip it. When the Application is deleted, Argo CD creates those hooks with the application-controller's credentials on the destination cluster.
+
+All versions from v2.10.0 onward are affected, including every currently supported release. v2.9.22 and earlier are not. PostDelete hooks were introduced in [dcc17f70bf](https://github.com/argoproj/argo-cd/commit/dcc17f70bf7db973fe480b8b613189b2c5ac4b4b) (2023-12-18, [#16595](https://github.com/argoproj/argo-cd/pull/16595)) and first released in v2.10.0. That creation path has never applied the project check. PreDelete hooks, added in [3bf3d8a212](https://github.com/argoproj/argo-cd/commit/3bf3d8a2124e772ac651f3fd42375c4e9b8008af) (2025-12-05, [#22288](https://github.com/argoproj/argo-cd/pull/22288)) and first released in v3.3.0, use the same path. v3.2.12 and earlier do not have PreDelete hooks. PreSync, Sync, PostSync, and SyncFail hooks still go through the project check.
+
+A user who can push to the Git repository an Application syncs from can commit a hook whose namespace, group, kind, or name the AppProject would refuse on sync. The controller adds the delete finalizer when it sees the hook, and the Application stays Synced until someone deletes it. Deleting the Application creates the hook. What that can reach is bounded by the application-controller's access to the destination cluster. In a typical install that access is broad, so a tenant can create a cluster-scoped object such as a `ClusterRoleBinding`, or an object in a namespace the project does not allow. A hook with no deletion policy is removed after it succeeds. A deletion policy that does not remove the hook on success leaves the object in the cluster. A hook such as a Job can create further objects that Argo CD does not clean up.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+The fix applies the same AppProject destination and resource checks used on sync before creating a PreDelete or PostDelete hook.
+
+Argo CD 2.x and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release.
+
+### Workarounds
+
+There is no configuration setting that applies the project check to delete hooks while those hooks stay in use.
+
+* Do not grant untrusted users write access to Git repositories that back Applications in restrictive AppProjects.
+* Limit who can delete Applications. Deletion is what runs PreDelete and PostDelete hooks.
+* Tighten the application-controller's Kubernetes access so a hook cannot reach sensitive namespaces or APIs.
+
+### Credits
+
+The Argo CD team would like to thank @RealFakeAccount, @AdamKorcz, @0xshylines, @thevilledev, @HenriWilliams, @cherez0ff, @ARSB1, and @zwindler for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* PostDelete introducing commit: [dcc17f70bf7db973fe480b8b613189b2c5ac4b4b](https://github.com/argoproj/argo-cd/commit/dcc17f70bf7db973fe480b8b613189b2c5ac4b4b) ([#16595](https://github.com/argoproj/argo-cd/pull/16595)), first released in v2.10.0
+* PreDelete introducing commit: [3bf3d8a2124e772ac651f3fd42375c4e9b8008af](https://github.com/argoproj/argo-cd/commit/3bf3d8a2124e772ac651f3fd42375c4e9b8008af) ([#22288](https://github.com/argoproj/argo-cd/pull/22288)), first released in v3.3.0
+* [AppProject specification](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/)
+* [Resource hooks](https://argo-cd.readthedocs.io/en/stable/user-guide/resource_hooks/)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-fmxq-cgp8-87wp</guid>
+      <category>CRITICAL</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] argoproj/argo-cd — A Jsonnet import can read files from the repo-server</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-m3vr-7329-44ww</link>
+      <description>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
+
+Affected:
+- go/github.com/argoproj/argo-cd &gt;= 0.9.0, &lt; 2.0.0
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.0.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+Argo CD evaluates `.jsonnet` files inside the repo-server with an importer that can open any path the process can read. `import`, `importstr`, and `importbin` all use that importer. An absolute path such as `/proc/self/environ`, a `../` traversal, or a symlink inside the repository that points outside it is opened with the repo-server’s own filesystem permissions. `importstr` of a device such as `/dev/zero` reads until the process runs out of memory. Argo CD redacts generated Secrets, so placing the file contents in a ConfigMap returns them to the caller. The data can include the process environment, the projected service-account token, mounted private keys, and repository credentials.
+
+All versions from v0.9.0 onward are affected, including every currently supported release. v0.8.2 and earlier are not. The behavior was introduced in [27471d524](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) (2018-09-07, [#561](https://github.com/argoproj/argo-cd/pull/561)), the change that added Jsonnet as an application source, and was first released in v0.9.0. The import path was limited to a search list for relative paths. That list does not apply to absolute paths.
+
+Two ways to supply the file:
+
+* Commit a `.jsonnet` file to a Git repository that an Application builds. Directory applications evaluate every `.jsonnet` file in the application directory.
+* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing directory Application. It does not need permission to update or sync the Application, or write access to its Git repository.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+Imports that stay inside the repository still work. The patch resolves each import, including symlinks, and rejects any path outside the repository root. It also rejects anything that is not a regular file, so a device file is not read.
+
+### Workarounds
+
+Set `jsonnet.enable` to `"false"` in the [`argocd-cm` ConfigMap](https://argo-cd.readthedocs.io/en/stable/user-guide/tool_detection/#disable-built-in-tools). Argo CD then skips `.jsonnet` files. That covers a file committed to Git and a file uploaded through `POST /api/v1/applications/manifestsWithFiles`. YAML and JSON in a directory application are still applied. An application that depends on Jsonnet stops rendering those files: they are omitted rather than rejected, so a directory that contains only Jsonnet syncs without those manifests.
+
+### Credits
+
+The Argo CD team would like to thank @hoang-prod, @arpitjain099, @key-moon, @MopMonkAI, @Kushalkhemka, @PontusHanssen, @mayank-jangid-moon, @skigeek16, @opensec-intelligence, @thevilledev, @ShadowByte1, @izhax, @mikecole-mg, @jake-ciolek, and @vitorespf for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [27471d524958878e7acc5131fb466b292079cd05](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) ([#561](https://github.com/argoproj/argo-cd/pull/561)), first released in v0.9.0
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-m3vr-7329-44ww</guid>
+      <category>CRITICAL</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:41 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] argoproj/argo-cd — A Kustomize Helm config home can run commands in the repo-server</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-fw5c-w8rc-j7fx</link>
+      <description>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.1.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+When Kustomize Helm chart rendering is enabled, a kustomization can point Helm at a directory the repository controls and run a program from that directory inside `argocd-repo-server`. Kustomize copies `helmGlobals.configHome` into Helm’s config and data directories. Helm then loads a downloader plugin from `&lt;configHome&gt;/.data/plugins` with no separate plugin-install step, and runs it when a `helmCharts` repository URL uses that plugin’s protocol. The command runs as the repo-server user and can read repository credentials and anything else available to that process.
+
+All versions from v2.1.0 onward are affected, including every currently supported release. v2.0.5 and earlier are not. The behavior was introduced in [b6d5c23bc](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) (2021-04-20, [#6059](https://github.com/argoproj/argo-cd/pull/6059)), the change that upgraded the bundled Kustomize from 3.9.4 to 4.1.2, and was first released in v2.1.0. Kustomize 4.1.0 is what first passes `helmGlobals.configHome` through to Helm ([kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)). Deployments that do not pass `--enable-helm` to `kustomize build` are not affected.
+
+Two ways to supply the kustomization, both of which require that an operator has already enabled `--enable-helm`:
+
+* Commit it to a Git repository that an Application builds with Kustomize.
+* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+Kustomize Helm chart rendering still works for ordinary `http`, `https`, and `oci` chart repositories. The patch points Helm at an empty config and data directory for every Kustomize build, so `helmGlobals.configHome` cannot register a plugin.
+
+### Workarounds
+
+Do not pass `--enable-helm` in [`kustomize.buildOptions`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts). That is a complete workaround for this issue. Applications that render Helm charts through Kustomize cannot use it.
+
+Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A kustomization committed to Git is still built on the next sync while `--enable-helm` is set.
+
+### Credits
+
+The Argo CD team would like to thank @hoang-prod for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [b6d5c23bce2f8a46c52975ba438a3b93d242d96c](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) ([#6059](https://github.com/argoproj/argo-cd/pull/6059)), first released in v2.1.0
+* Kustomize feature: [kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)
+* [Kustomizing Helm charts](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-fw5c-w8rc-j7fx</guid>
+      <category>CRITICAL</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:40 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] argoproj/argo-cd — A Kustomize remote ref can run commands in the repo-server</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-9v9p-x54c-58gc</link>
+      <description>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.7.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
+
+---
+
+### Impact
+
+Kustomize passes a remote resource, base, or component URL to `git fetch`, and appends that URL’s `ref` or `version` query value with no `--` separator. A value that starts with `-`, such as `--upload-pack=&lt;command&gt;`, is parsed as a Git option. `--upload-pack` runs that command inside `argocd-repo-server` when the remote is a local transport such as `file://`. Git does not run it for an `https://` remote. A `file://` URL never leaves the pod, and Git returns the command’s output to the caller in the manifest-generation error. The command runs as the repo-server user and can read repository credentials and anything else available to that process.
+
+All versions from v2.7.0 onward are affected, including every currently supported release. v2.6.15 and earlier are not. The behavior was introduced in [25badeb7a1](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) (2023-03-16, [#12299](https://github.com/argoproj/argo-cd/pull/12299)), the change that upgraded the bundled Kustomize from 4.5.7 to 5.0.1, and was first released in v2.7.0. Kustomize 4.5.7 rejects a `file://` URL, so this payload does not run there. Kustomize 5.0.0 is what first accepts `file://` and hands it to `git fetch`. Replacing the repo-server binary with a newer Kustomize does not help: current Kustomize still passes `ref` through without `--`.
+
+Two ways to supply the Kustomization:
+
+* Commit it to a Git repository that an Application builds with Kustomize.
+* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+The patch keeps Kustomize remote bases working. It places a `git` wrapper ahead of the real `git` on the Kustomize build’s `PATH`, so the remote URL and `ref` cannot be parsed as Git options.
+
+### Workarounds
+
+Pin every Application that runs Kustomize to a Kustomize older than 5.0, such as 4.5.7. Register that binary with [`kustomize.path.&lt;version&gt;`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions) in `argocd-cm`, and set `spec.source.kustomize.version` (or `argocd app set &lt;app&gt; --kustomize-version`) on each Application. The binary that actually runs has to be that older one. Leaving Kustomize 5.x as the default, or as another registered version, leaves that path open.
+
+Applications that rely on Kustomize 5 features cannot use this pin. Those builds will fail or drop behavior that 4.5.7 does not have.
+
+Blocking repo-server egress does not prevent this, because a `file://` remote never leaves the pod. Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A Kustomization committed to Git is still built on the next sync.
+
+There is no complete workaround besides upgrading.
+
+### Credits
+
+The Argo CD team would like to thank @hoang-prod and @yabeow for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [25badeb7a1e154805340bb7237e0ce671f3772dd](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) ([#12299](https://github.com/argoproj/argo-cd/pull/12299)), first released in v2.7.0
+* [Custom Kustomize versions](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-9v9p-x54c-58gc</guid>
+      <category>CRITICAL</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Wed, 07 Oct 2026 15:58:38 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] zammad/zammad — Knowledge base reordering, publishing and administration possible without the required permission</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-qvmq-j8hm-2mmc</link>
@@ -3367,306 +3869,6 @@ Exploitation requires an authenticated agent with AI features enabled and depend
       <category>LOW</category>
       <category>zammad/zammad</category>
       <pubDate>Tue, 25 Aug 2026 05:40:13 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — SSRF protection bypass via DNS rebinding in hostname safety check</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-pfh2-5g93-2rg6</link>
-      <description>CVSS 5.9 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:A/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-350, CWE-367, CWE-918
-
-Affected:
-- Zammad &lt;= 7.1.2 (patched: 7.1.3)
-
----
-
-Zammad validates a URL's resolved IP before fetching it, to prevent the server from being tricked into reaching internal-only addresses (SSRF) such as loopback or cloud-metadata endpoints. The validation and the actual request resolve the hostname separately, without pinning the checked IP. An attacker controlling DNS for a domain can return a safe address during validation and an internal one for the request, bypassing the protection. This affects all features using the check - calendar (iCal) subscriptions, webhooks, avatar fetching, and external data sources. Exploitation requires an admin to configure the attacker-supplied URL and depends on a DNS-timing race, but needs no attacker privileges on the instance.</description>
-      <guid isPermaLink="false">GHSA-pfh2-5g93-2rg6</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 25 Aug 2026 05:39:57 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] RocketChat/Rocket.Chat — Arbitrary notify-user event injection via stream-notify-room-users forward (incomplete fix of GHSA-27jx)</title>
-      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-r3v3-v742-55j5</link>
-      <description>CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L) · CWE-345, CWE-863
-
-Affected:
-- Rocket.Chat &lt;8.8.0, &lt;8.7.2, &lt;8.6.2, &lt;8.5.3, &lt;8.4.6, &lt;8.3.8, &lt;8.2.8, &lt;8.1.8, &lt;7.10.15 (patched: 8.8.0, 8.7.2, 8.6.2, 8.5.3, 8.4.6, 8.3.8, 8.2.8, 8.1.8, 7.10.15)
-
----
-
-## Summary&#13;
-&#13;
-`GHSA-27jx-236m-3f5j` (fixed in 8.6.1) restricted `stream-notify-user`'s `allowWrite` so a client can no longer write arbitrary events directly to another user's notify-user stream (it now only accepts `video-conference` / `media-calls`). However, the sibling stream `stream-notify-room-users` still **forwards an arbitrary, caller-supplied event name to other room members' notify-user streams**, which re-opens the exact primitive GHSA-27jx set out to close - now reachable by any authenticated user who shares a room with the victim.&#13;
-&#13;
-By writing `"&lt;sharedRoomId&gt;/force_logout"` to `stream-notify-room-users`, an attacker delivers a `force_logout` event to every other member's notify-user stream, and the client's `useForceLogout` hook wipes local auth - a repeatable, targeted logout (denial of service). The same primitive can inject other high-impact notify-user events such as `uiInteraction` (renders attacker-controlled UIKit modals/banners → UI phishing) and the fake message/notification that GHSA-27jx originally described.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-`apps/meteor/server/modules/notifications/notifications.module.ts`:&#13;
-&#13;
-```ts&#13;
-// streamUser - the path GHSA-27jx fixed: only 'video-conference' / 'media-calls' are accepted, else return false.&#13;
-this.streamUser.allowWrite(async function (eventName, data) {&#13;
-  const [, e] = eventName.split('/');&#13;
-  if (e === 'video-conference') { /* VideoConf.validateAction(...) */ }&#13;
-  if (e === 'media-calls')      { /* ... */ return false; }&#13;
-  return false;                                   // everything else rejected&#13;
-});&#13;
-&#13;
-// streamRoomUsers - NOT covered by the fix: the event name `e` is taken from the caller and forwarded verbatim.&#13;
-this.streamRoomUsers.allowWrite(async function (eventName, ...args) {&#13;
-  const [roomId, e] = eventName.split('/');       // e is arbitrary at runtime (the type annotation is not a check)&#13;
-  if (this.userId &amp;&amp; (await Subscriptions.countByRoomIdAndUserId(roomId, this.userId)) &gt; 0) {&#13;
-    const subscriptions = await Subscriptions.findByRoomIdAndNotUserId(roomId, this.userId, {...}).toArray();&#13;
-    subscriptions.forEach((subscription) =&gt; self.notifyUser(subscription.u._id, e, ...args)); // forward to notify-user&#13;
-  }&#13;
-  return false;&#13;
-});&#13;
-&#13;
-// notifyUser emits straight onto the notify-user stream:&#13;
-notifyUser(userId, eventName, ...args) { return this.streamUser.emit(`${userId}/${eventName}`, ...args); }&#13;
-```&#13;
-&#13;
-Two things make it exploitable:&#13;
-&#13;
-1. **`e` is never whitelisted at runtime.** The TypeScript type says `` `${string}/video-conference` | `${string}/userData` ``, but at runtime `e = eventName.split('/')[1]` is whatever the caller sends, and it is forwarded to `notifyUser(otherMember, e, …)` → `streamUser.emit(`${otherMember}/${e}`, …)`.&#13;
-2. **The forward is a side-effect inside `allowWrite`.** The streamer method handler (`streamer.module.ts:244-254`) runs `isWriteAllowed()` (which invokes the `allowWrite` callback) *before* deciding to broadcast. The callback performs the `forEach notifyUser(...)` and then returns `false`. Returning `false` only suppresses the notify-room-users broadcast - the forward to notify-user has already happened.&#13;
-&#13;
-The client acts on the injected event without validating its origin, e.g. `apps/meteor/client/views/root/hooks/loggedIn/useForceLogout.ts`:&#13;
-&#13;
-```ts&#13;
-getNotifyUserStream(`${userId}/force_logout`, () =&gt; {&#13;
-  setForceLogout(true);&#13;
-  wipeLocalAuth();   // no payload/sender check - any force_logout event logs the user out&#13;
-});&#13;
-```</description>
-      <guid isPermaLink="false">GHSA-r3v3-v742-55j5</guid>
-      <category>MEDIUM</category>
-      <category>RocketChat/Rocket.Chat</category>
-      <pubDate>Thu, 20 Aug 2026 20:38:34 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] RocketChat/Rocket.Chat — Blind Server-Side Request Forgery (SSRF) In The downloadPublicImportFile Endpoint</title>
-      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-6x96-99rg-wg67</link>
-      <description>CWE-22, CWE-918
-
-Affected:
-- Rocket.Chat &lt;8.8.0, &lt;8.7.2, &lt;8.6.2, &lt;8.5.3, &lt;8.4.6, &lt;8.3.8, &lt;8.2.8 (patched: 8.8.0, 8.7.2, 8.6.2, 8.5.3, 8.4.6, 8.3.8, 8.2.8)
-
----
-
-The import download endpoint accepts a user-controlled fileUrl and performs an outbound HTTP request from the Rocket.Chat server using Node’s native http.get / https.get APIs. The native HTTP does not perform checks against SSRF attacks similarly to Rocket.Chat's serverFetch package.</description>
-      <guid isPermaLink="false">GHSA-6x96-99rg-wg67</guid>
-      <category>MEDIUM</category>
-      <category>RocketChat/Rocket.Chat</category>
-      <pubDate>Thu, 20 Aug 2026 19:35:28 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] RocketChat/Rocket.Chat — sendForgotPasswordEmail Meteor Method Lacks DDP Rate Limit</title>
-      <link>https://github.com/RocketChat/Rocket.Chat/security/advisories/GHSA-7c6v-m68v-v73r</link>
-      <description>CWE-204, CWE-307
-
----
-
-## Summary&#13;
-&#13;
-The Meteor method `sendForgotPasswordEmail`, callable unauthenticated over DDP / WebSocket and over the `POST /api/v1/method.callAnon/sendForgotPasswordEmail` HTTP route, has **no `DDPRateLimiter` rule attached**. Its sibling method `sendConfirmationEmail` (in the same directory, mostly the same shape) does have a rate limit.&#13;
-&#13;
-## Details&#13;
-&#13;
-`sendForgotPasswordEmail.ts` in its entirety:&#13;
-&#13;
-```ts&#13;
-// apps/meteor/server/methods/sendForgotPasswordEmail.ts&#13;
-export const sendForgotPasswordEmail = async (to: string): Promise&lt;boolean | undefined&gt; =&gt; {&#13;
-    const email = to.trim().toLowerCase();&#13;
-&#13;
-    const user = await Users.findOneByEmailAddress(email, { projection: { _id: 1, services: 1 } });&#13;
-&#13;
-    if (!user) {&#13;
-        return true;                                  // &lt;-- silent on non-existent&#13;
-    }&#13;
-&#13;
-    if (user.services &amp;&amp; !user.services.password) {&#13;
-        if (!settings.get('Accounts_AllowPasswordChangeForOAuthUsers')) {&#13;
-            return false;                             // &lt;-- distinguishable signal for OAuth-only users&#13;
-        }&#13;
-    }&#13;
-&#13;
-    try {&#13;
-        Accounts.sendResetPasswordEmail(user._id, email);&#13;
-        return true;&#13;
-    } catch (err) {&#13;
-        SystemLogger.error({ err });&#13;
-    }&#13;
-};&#13;
-&#13;
-Meteor.methods&lt;ServerMethods&gt;({&#13;
-    async sendForgotPasswordEmail(to) {&#13;
-        check(to, String);&#13;
-        return sendForgotPasswordEmail(to);&#13;
-    },&#13;
-});&#13;
-&#13;
-// NB: no DDPRateLimiter.addRule(...) anywhere in this file&#13;
-```&#13;
-&#13;
-Compare `sendConfirmationEmail.ts` (same directory, same purpose-class):&#13;
-&#13;
-```ts&#13;
-// apps/meteor/server/methods/sendConfirmationEmail.ts:29-39&#13;
-DDPRateLimiter.addRule(&#13;
-    { type: 'method', name: 'sendConfirmationEmail', userId() { return true; } },&#13;
-    5,&#13;
-    60000,&#13;
-);&#13;
-```&#13;
-&#13;
-The REST endpoint `POST /api/v1/users.forgotPassword` (`apps/meteor/app/api/server/v1/users.ts:1124`) does not set custom `rateLimiterOptions`, so it falls under the API's default REST rate limiter (`API_Enable_Rate_Limiter_Limit_Calls_Default`). That bounds the REST path. The DDP method has no such floor.&#13;
-&#13;
-## References&#13;
-&#13;
-- `apps/meteor/server/methods/sendForgotPasswordEmail.ts` - affected file&#13;
-- `apps/meteor/server/methods/sendConfirmationEmail.ts:29-39` - correct pattern in sibling method&#13;
-- `apps/meteor/app/api/server/v1/users.ts:1124` - REST entry point (rate-limited via API default)&#13;
-- `apps/meteor/app/api/server/v1/misc.ts:670-720` - `method.callAnon` HTTP-to-DDP bridge&#13;
-</description>
-      <guid isPermaLink="false">GHSA-7c6v-m68v-v73r</guid>
-      <category>LOW</category>
-      <category>RocketChat/Rocket.Chat</category>
-      <pubDate>Thu, 20 Aug 2026 19:23:56 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] icinga/icinga2 — Large memory allocations on JSON-RPC connections may result in denial of service</title>
-      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-wm63-p2jg-5665</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-770
-
-Affected:
-- Icinga 2 &lt;=2.16.4, &lt;= 2.15.5 (patched: 2.16.5, 2.15.6)
-
----
-
-### Impact&#13;
-&#13;
-An authenticated peer on a JSON-RPC message can cause Icinga 2 to allocate and initialize a buffer of up to a size of roughly 1 GB, by announcing to send a large message. This may result in the Icinga 2 process crashing in an out of memory scenario. Note  that in order to allocate more than 1 GB, more than one endpoint certificate needs to be compromised as endpoints are limited to one allocation at a time.&#13;
-&#13;
-### Patches&#13;
-&#13;
-Icinga 2 [v2.16.5](https://github.com/Icinga/icinga2/releases/tag/v2.16.5) and [v2.15.6](https://github.com/Icinga/icinga2/releases/tag/v2.15.6) have been released, which fix this issue by introducing an additional 16 MiB message size limit on all connections except those from nodes in the same or parent zones (from these zones, large config file sync messages may be received).&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-There is no workaround for this in Icinga 2. Network access to port 5665 may be restricted using a firewall.&#13;
-&#13;
-### References&#13;
-&#13;
-- [Release announcement](https://icinga.com/blog/releasing-icinga-2-v2-16-5-and-v2-15-6/)&#13;
-- [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10999)</description>
-      <guid isPermaLink="false">GHSA-wm63-p2jg-5665</guid>
-      <category>MEDIUM</category>
-      <category>icinga/icinga2</category>
-      <pubDate>Tue, 18 Aug 2026 08:19:26 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] icinga/icinga2 — /v1/events filter expressions allow unrestricted access to config objects, ignoring user-specific restrictions</title>
-      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-v265-w3gm-99vg</link>
-      <description>CVSS 4.9 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:N/A:N)
-
-Affected:
-- Icinga 2 &lt;=2.16.4, &lt;= 2.15.5 (patched: 2.16.5, 2.15.6)
-
----
-
-### Impact&#13;
-&#13;
-An authenticated API user with some `events/*` permission allowing access to the `/v1/events` API endpoint may access config objects in filter expressions they may otherwise have no access to and deduce information about them. This can allow them to read attributes or custom variables that may contain sensitive information. This is because some of the restrictions added to `/v1/obects` to address [CVE-2025-61907](https://github.com/Icinga/icinga2/security/advisories/GHSA-gg32-w9rm-vp2v) were not applied to the `/v1/events` API endpoint.&#13;
-&#13;
-### Patches&#13;
-&#13;
-Icinga 2 [v2.16.5](https://github.com/Icinga/icinga2/releases/tag/v2.16.5) and [v2.15.6](https://github.com/Icinga/icinga2/releases/tag/v2.15.6) have been released, which addresses this by applying the same restrictions for filter expressions from the `/v1/objects` API endpoints on `/v1/events` as well.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-An attack requires any of the `events/*` permissions, so these can be removed from untrusted API users.&#13;
-&#13;
-### References&#13;
-&#13;
-- [Release announcement](https://icinga.com/blog/releasing-icinga-2-v2-16-5-and-v2-15-6/)&#13;
-- [Pull Request with the patch](https://github.com/Icinga/icinga2/pull/10998)</description>
-      <guid isPermaLink="false">GHSA-v265-w3gm-99vg</guid>
-      <category>MEDIUM</category>
-      <category>icinga/icinga2</category>
-      <pubDate>Tue, 18 Aug 2026 08:19:11 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] espocrm/espocrm — SSRF via IPv6 transition address bypass of internal-host validation (CVE-2026-88896)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-xwmh-j8hf-cfqw</link>
-      <description>CVE-2026-88896 · CWE-918
-
-Affected:
-- composer/espocrm/espocrm &lt;= 10.0.3 (patched: 10.0.4)
-
----
-
-## Summary&#13;
-&#13;
-EspoCRM's `HostCheck::ipAddressIsNotInternal()` validates outbound URLs to block requests to internal/private IP addresses. The check strips `::ffff:` (IPv4-mapped IPv6) prefixes but does not recognize IPv6 transition addresses that embed private IPv4 addresses: NAT64 (`64:ff9b::`), 6to4 (`2002::`), and Teredo (`2001:0000::`). An attacker controlling a domain with AAAA DNS records pointing to these transition addresses can bypass both the host validation check and the CURLOPT_RESOLVE IP-pinning check, causing EspoCRM to issue outbound requests to internal network services. Affected endpoints include `POST /Attachment/fromImageUrl` (any authenticated user with attachment access) and outbound webhook delivery (admin/API user).&#13;
-&#13;
-&#13;
-## Credit&#13;
-&#13;
-Reported by tonghuaroot (tonghuaroot@gmail.com).&#13;
-</description>
-      <guid isPermaLink="false">GHSA-xwmh-j8hf-cfqw</guid>
-      <category>LOW</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Thu, 13 Aug 2026 07:38:45 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] espocrm/espocrm — Email template renderer leaks restricted record fields in mass email and group email auto-reply  (CVE-2026-77460)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-28w2-h88g-6vgv</link>
-      <description>CVE-2026-77460 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-639
-
-Affected:
-- composer/espocrm/espocrm &lt;= 10.0.2 (patched: 10.0.3)
-
----
-
-## Summary&#13;
- &#13;
-Email template renderer does not strip restricted fields when ACL is disabled (which is the case for mass email and group email auto-reply).&#13;
-&#13;
-A user with edit access to email templates and access to mass email sending can extract restricted user fields.&#13;
-&#13;
-The same issue is applicable to group email auto-reply. Group emails are controlled by admin users but a regular user may have edit access to the used email template.&#13;
-&#13;
-## Reporter&#13;
-&#13;
-Yash Shendge (ashrexon)&#13;
-</description>
-      <guid isPermaLink="false">GHSA-28w2-h88g-6vgv</guid>
-      <category>MEDIUM</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Thu, 13 Aug 2026 07:37:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] espocrm/espocrm — Access control bypass in Mass Update letting regular user with Mass Update permission read any attachment with known ID (CVE-2026-75505)</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-24pg-2q7q-m5p6</link>
-      <description>CVE-2026-75505
-
-Affected:
-- espocrm/espocrm &lt;=10.0.1 (patched: 10.0.2)
-
----
-
-## Summary&#13;
-&#13;
-EspoCRM contains an access control vulnerability in the mass-update functionality that allows an authenticated user with mass-update permission to bypass attachment access restrictions. An attacker who knows a target attachment ID can gain unauthorized access to file contents, bypassing record-level and field-level permissions. Obtaining valid attachment IDs may be difficult, increasing the attack complexity.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-24pg-2q7q-m5p6</guid>
-      <category>MEDIUM</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Thu, 13 Aug 2026 07:32:32 +0000</pubDate>
     </item>
   </channel>
 </rss>
