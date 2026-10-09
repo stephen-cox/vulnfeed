@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 08 Oct 2026 11:07:28 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 09 Oct 2026 11:06:19 +0000</lastBuildDate>
     <item>
       <title>[HIGH] zammad/zammad — Local privilege escalation to root in DEB/RPM packages (packager.io) (CVE-2026-102490)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-p97w-927q-8vxq</link>
@@ -348,43 +348,43 @@ Affected:
 
 ---
 
-### Impact
-
-Argo CD evaluates `.jsonnet` files inside the repo-server with an importer that can open any path the process can read. `import`, `importstr`, and `importbin` all use that importer. An absolute path such as `/proc/self/environ`, a `../` traversal, or a symlink inside the repository that points outside it is opened with the repo-server’s own filesystem permissions. `importstr` of a device such as `/dev/zero` reads until the process runs out of memory. Argo CD redacts generated Secrets, so placing the file contents in a ConfigMap returns them to the caller. The data can include the process environment, the projected service-account token, mounted private keys, and repository credentials.
-
-All versions from v0.9.0 onward are affected, including every currently supported release. v0.8.2 and earlier are not. The behavior was introduced in [27471d524](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) (2018-09-07, [#561](https://github.com/argoproj/argo-cd/pull/561)), the change that added Jsonnet as an application source, and was first released in v0.9.0. The import path was limited to a search list for relative paths. That list does not apply to absolute paths.
-
-Two ways to supply the file:
-
-* Commit a `.jsonnet` file to a Git repository that an Application builds. Directory applications evaluate every `.jsonnet` file in the application directory.
-* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing directory Application. It does not need permission to update or sync the Application, or write access to its Git repository.
-
-### Patches
-
-A patch for this vulnerability has been released in the following Argo CD versions:
-
-* v3.6.0-rc2
-* v3.5.4
-* v3.4.10
-* v3.3.15
-
-Imports that stay inside the repository still work. The patch resolves each import, including symlinks, and rejects any path outside the repository root. It also rejects anything that is not a regular file, so a device file is not read.
-
-### Workarounds
-
-Set `jsonnet.enable` to `"false"` in the [`argocd-cm` ConfigMap](https://argo-cd.readthedocs.io/en/stable/user-guide/tool_detection/#disable-built-in-tools). Argo CD then skips `.jsonnet` files. That covers a file committed to Git and a file uploaded through `POST /api/v1/applications/manifestsWithFiles`. YAML and JSON in a directory application are still applied. An application that depends on Jsonnet stops rendering those files: they are omitted rather than rejected, so a directory that contains only Jsonnet syncs without those manifests.
-
-### Credits
-
-The Argo CD team would like to thank @hoang-prod, @arpitjain099, @key-moon, @MopMonkAI, @Kushalkhemka, @PontusHanssen, @mayank-jangid-moon, @skigeek16, @opensec-intelligence, @thevilledev, @ShadowByte1, @izhax, @mikecole-mg, @jake-ciolek, and @vitorespf for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
-
-### References
-
-* Introducing commit: [27471d524958878e7acc5131fb466b292079cd05](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) ([#561](https://github.com/argoproj/argo-cd/pull/561)), first released in v0.9.0
-
-### For more information
-
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+### Impact&#13;
+&#13;
+Argo CD evaluates `.jsonnet` files inside the repo-server with an importer that can open any path the process can read. `import`, `importstr`, and `importbin` all use that importer. An absolute path such as `/proc/self/environ`, a `../` traversal, or a symlink inside the repository that points outside it is opened with the repo-server’s own filesystem permissions. `importstr` of a device such as `/dev/zero` reads until the process runs out of memory. Argo CD redacts generated Secrets, so placing the file contents in a ConfigMap returns them to the caller. The data can include the process environment, the projected service-account token, mounted private keys, and repository credentials.&#13;
+&#13;
+All versions from v0.9.0 onward are affected, including every currently supported release. v0.8.2 and earlier are not. The behavior was introduced in [27471d524](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) (2018-09-07, [#561](https://github.com/argoproj/argo-cd/pull/561)), the change that added Jsonnet as an application source, and was first released in v0.9.0. The import path was limited to a search list for relative paths. That list does not apply to absolute paths.&#13;
+&#13;
+Two ways to supply the file:&#13;
+&#13;
+* Commit a `.jsonnet` file to a Git repository that an Application builds. Directory applications evaluate every `.jsonnet` file in the application directory.&#13;
+* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing directory Application. It does not need permission to update or sync the Application, or write access to its Git repository.&#13;
+&#13;
+### Patches&#13;
+&#13;
+A patch for this vulnerability has been released in the following Argo CD versions:&#13;
+&#13;
+* v3.6.0-rc2&#13;
+* v3.5.4&#13;
+* v3.4.10&#13;
+* v3.3.15&#13;
+&#13;
+Imports that stay inside the repository still work. The patch resolves each import, including symlinks, and rejects any path outside the repository root. It also rejects anything that is not a regular file, so a device file is not read.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Set `jsonnet.enable` to `"false"` in the [`argocd-cm` ConfigMap](https://argo-cd.readthedocs.io/en/stable/user-guide/tool_detection/#disable-built-in-tools). Argo CD then skips `.jsonnet` files. That covers a file committed to Git and a file uploaded through `POST /api/v1/applications/manifestsWithFiles`. YAML and JSON in a directory application are still applied. An application that depends on Jsonnet stops rendering those files: they are omitted rather than rejected, so a directory that contains only Jsonnet syncs without those manifests.&#13;
+&#13;
+### Credits&#13;
+&#13;
+The Argo CD team would like to thank @hoang-prod, @arpitjain099, @key-moon, @MopMonkAI, @Kushalkhemka, @PontusHanssen, @mayank-jangid-moon, @skigeek16, @opensec-intelligence, @thevilledev, @ShadowByte1, @izhax, @mikecole-mg, @jake-ciolek, and @vitorespf for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).&#13;
+&#13;
+### References&#13;
+&#13;
+* Introducing commit: [27471d524958878e7acc5131fb466b292079cd05](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) ([#561](https://github.com/argoproj/argo-cd/pull/561)), first released in v0.9.0&#13;
+&#13;
+### For more information&#13;
+&#13;
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)&#13;
 * Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
       <guid isPermaLink="false">GHSA-m3vr-7329-44ww</guid>
       <category>CRITICAL</category>
@@ -402,47 +402,47 @@ Affected:
 
 ---
 
-### Impact
-
-When Kustomize Helm chart rendering is enabled, a kustomization can point Helm at a directory the repository controls and run a program from that directory inside `argocd-repo-server`. Kustomize copies `helmGlobals.configHome` into Helm’s config and data directories. Helm then loads a downloader plugin from `&lt;configHome&gt;/.data/plugins` with no separate plugin-install step, and runs it when a `helmCharts` repository URL uses that plugin’s protocol. The command runs as the repo-server user and can read repository credentials and anything else available to that process.
-
-All versions from v2.1.0 onward are affected, including every currently supported release. v2.0.5 and earlier are not. The behavior was introduced in [b6d5c23bc](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) (2021-04-20, [#6059](https://github.com/argoproj/argo-cd/pull/6059)), the change that upgraded the bundled Kustomize from 3.9.4 to 4.1.2, and was first released in v2.1.0. Kustomize 4.1.0 is what first passes `helmGlobals.configHome` through to Helm ([kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)). Deployments that do not pass `--enable-helm` to `kustomize build` are not affected.
-
-Two ways to supply the kustomization, both of which require that an operator has already enabled `--enable-helm`:
-
-* Commit it to a Git repository that an Application builds with Kustomize.
-* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.
-
-### Patches
-
-A patch for this vulnerability has been released in the following Argo CD versions:
-
-* v3.6.0-rc2
-* v3.5.4
-* v3.4.10
-* v3.3.15
-
-Kustomize Helm chart rendering still works for ordinary `http`, `https`, and `oci` chart repositories. The patch points Helm at an empty config and data directory for every Kustomize build, so `helmGlobals.configHome` cannot register a plugin.
-
-### Workarounds
-
-Do not pass `--enable-helm` in [`kustomize.buildOptions`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts). That is a complete workaround for this issue. Applications that render Helm charts through Kustomize cannot use it.
-
-Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A kustomization committed to Git is still built on the next sync while `--enable-helm` is set.
-
-### Credits
-
-The Argo CD team would like to thank @hoang-prod for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
-
-### References
-
-* Introducing commit: [b6d5c23bce2f8a46c52975ba438a3b93d242d96c](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) ([#6059](https://github.com/argoproj/argo-cd/pull/6059)), first released in v2.1.0
-* Kustomize feature: [kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)
-* [Kustomizing Helm charts](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts)
-
-### For more information
-
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+### Impact&#13;
+&#13;
+When Kustomize Helm chart rendering is enabled, a kustomization can point Helm at a directory the repository controls and run a program from that directory inside `argocd-repo-server`. Kustomize copies `helmGlobals.configHome` into Helm’s config and data directories. Helm then loads a downloader plugin from `&lt;configHome&gt;/.data/plugins` with no separate plugin-install step, and runs it when a `helmCharts` repository URL uses that plugin’s protocol. The command runs as the repo-server user and can read repository credentials and anything else available to that process.&#13;
+&#13;
+All versions from v2.1.0 onward are affected, including every currently supported release. v2.0.5 and earlier are not. The behavior was introduced in [b6d5c23bc](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) (2021-04-20, [#6059](https://github.com/argoproj/argo-cd/pull/6059)), the change that upgraded the bundled Kustomize from 3.9.4 to 4.1.2, and was first released in v2.1.0. Kustomize 4.1.0 is what first passes `helmGlobals.configHome` through to Helm ([kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)). Deployments that do not pass `--enable-helm` to `kustomize build` are not affected.&#13;
+&#13;
+Two ways to supply the kustomization, both of which require that an operator has already enabled `--enable-helm`:&#13;
+&#13;
+* Commit it to a Git repository that an Application builds with Kustomize.&#13;
+* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.&#13;
+&#13;
+### Patches&#13;
+&#13;
+A patch for this vulnerability has been released in the following Argo CD versions:&#13;
+&#13;
+* v3.6.0-rc2&#13;
+* v3.5.4&#13;
+* v3.4.10&#13;
+* v3.3.15&#13;
+&#13;
+Kustomize Helm chart rendering still works for ordinary `http`, `https`, and `oci` chart repositories. The patch points Helm at an empty config and data directory for every Kustomize build, so `helmGlobals.configHome` cannot register a plugin.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Do not pass `--enable-helm` in [`kustomize.buildOptions`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts). That is a complete workaround for this issue. Applications that render Helm charts through Kustomize cannot use it.&#13;
+&#13;
+Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A kustomization committed to Git is still built on the next sync while `--enable-helm` is set.&#13;
+&#13;
+### Credits&#13;
+&#13;
+The Argo CD team would like to thank @hoang-prod for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).&#13;
+&#13;
+### References&#13;
+&#13;
+* Introducing commit: [b6d5c23bce2f8a46c52975ba438a3b93d242d96c](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) ([#6059](https://github.com/argoproj/argo-cd/pull/6059)), first released in v2.1.0&#13;
+* Kustomize feature: [kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)&#13;
+* [Kustomizing Helm charts](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts)&#13;
+&#13;
+### For more information&#13;
+&#13;
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)&#13;
 * Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
       <guid isPermaLink="false">GHSA-fw5c-w8rc-j7fx</guid>
       <category>CRITICAL</category>
@@ -460,50 +460,50 @@ Affected:
 
 ---
 
-### Impact
-
-Kustomize passes a remote resource, base, or component URL to `git fetch`, and appends that URL’s `ref` or `version` query value with no `--` separator. A value that starts with `-`, such as `--upload-pack=&lt;command&gt;`, is parsed as a Git option. `--upload-pack` runs that command inside `argocd-repo-server` when the remote is a local transport such as `file://`. Git does not run it for an `https://` remote. A `file://` URL never leaves the pod, and Git returns the command’s output to the caller in the manifest-generation error. The command runs as the repo-server user and can read repository credentials and anything else available to that process.
-
-All versions from v2.7.0 onward are affected, including every currently supported release. v2.6.15 and earlier are not. The behavior was introduced in [25badeb7a1](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) (2023-03-16, [#12299](https://github.com/argoproj/argo-cd/pull/12299)), the change that upgraded the bundled Kustomize from 4.5.7 to 5.0.1, and was first released in v2.7.0. Kustomize 4.5.7 rejects a `file://` URL, so this payload does not run there. Kustomize 5.0.0 is what first accepts `file://` and hands it to `git fetch`. Replacing the repo-server binary with a newer Kustomize does not help: current Kustomize still passes `ref` through without `--`.
-
-Two ways to supply the Kustomization:
-
-* Commit it to a Git repository that an Application builds with Kustomize.
-* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.
-
-### Patches
-
-A patch for this vulnerability has been released in the following Argo CD versions:
-
-* v3.6.0-rc2
-* v3.5.4
-* v3.4.10
-* v3.3.15
-
-The patch keeps Kustomize remote bases working. It places a `git` wrapper ahead of the real `git` on the Kustomize build’s `PATH`, so the remote URL and `ref` cannot be parsed as Git options.
-
-### Workarounds
-
-Pin every Application that runs Kustomize to a Kustomize older than 5.0, such as 4.5.7. Register that binary with [`kustomize.path.&lt;version&gt;`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions) in `argocd-cm`, and set `spec.source.kustomize.version` (or `argocd app set &lt;app&gt; --kustomize-version`) on each Application. The binary that actually runs has to be that older one. Leaving Kustomize 5.x as the default, or as another registered version, leaves that path open.
-
-Applications that rely on Kustomize 5 features cannot use this pin. Those builds will fail or drop behavior that 4.5.7 does not have.
-
-Blocking repo-server egress does not prevent this, because a `file://` remote never leaves the pod. Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A Kustomization committed to Git is still built on the next sync.
-
-There is no complete workaround besides upgrading.
-
-### Credits
-
-The Argo CD team would like to thank @hoang-prod and @yabeow for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
-
-### References
-
-* Introducing commit: [25badeb7a1e154805340bb7237e0ce671f3772dd](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) ([#12299](https://github.com/argoproj/argo-cd/pull/12299)), first released in v2.7.0
-* [Custom Kustomize versions](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions)
-
-### For more information
-
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+### Impact&#13;
+&#13;
+Kustomize passes a remote resource, base, or component URL to `git fetch`, and appends that URL’s `ref` or `version` query value with no `--` separator. A value that starts with `-`, such as `--upload-pack=&lt;command&gt;`, is parsed as a Git option. `--upload-pack` runs that command inside `argocd-repo-server` when the remote is a local transport such as `file://`. Git does not run it for an `https://` remote. A `file://` URL never leaves the pod, and Git returns the command’s output to the caller in the manifest-generation error. The command runs as the repo-server user and can read repository credentials and anything else available to that process.&#13;
+&#13;
+All versions from v2.7.0 onward are affected, including every currently supported release. v2.6.15 and earlier are not. The behavior was introduced in [25badeb7a1](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) (2023-03-16, [#12299](https://github.com/argoproj/argo-cd/pull/12299)), the change that upgraded the bundled Kustomize from 4.5.7 to 5.0.1, and was first released in v2.7.0. Kustomize 4.5.7 rejects a `file://` URL, so this payload does not run there. Kustomize 5.0.0 is what first accepts `file://` and hands it to `git fetch`. Replacing the repo-server binary with a newer Kustomize does not help: current Kustomize still passes `ref` through without `--`.&#13;
+&#13;
+Two ways to supply the Kustomization:&#13;
+&#13;
+* Commit it to a Git repository that an Application builds with Kustomize.&#13;
+* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.&#13;
+&#13;
+### Patches&#13;
+&#13;
+A patch for this vulnerability has been released in the following Argo CD versions:&#13;
+&#13;
+* v3.6.0-rc2&#13;
+* v3.5.4&#13;
+* v3.4.10&#13;
+* v3.3.15&#13;
+&#13;
+The patch keeps Kustomize remote bases working. It places a `git` wrapper ahead of the real `git` on the Kustomize build’s `PATH`, so the remote URL and `ref` cannot be parsed as Git options.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Pin every Application that runs Kustomize to a Kustomize older than 5.0, such as 4.5.7. Register that binary with [`kustomize.path.&lt;version&gt;`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions) in `argocd-cm`, and set `spec.source.kustomize.version` (or `argocd app set &lt;app&gt; --kustomize-version`) on each Application. The binary that actually runs has to be that older one. Leaving Kustomize 5.x as the default, or as another registered version, leaves that path open.&#13;
+&#13;
+Applications that rely on Kustomize 5 features cannot use this pin. Those builds will fail or drop behavior that 4.5.7 does not have.&#13;
+&#13;
+Blocking repo-server egress does not prevent this, because a `file://` remote never leaves the pod. Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A Kustomization committed to Git is still built on the next sync.&#13;
+&#13;
+There is no complete workaround besides upgrading.&#13;
+&#13;
+### Credits&#13;
+&#13;
+The Argo CD team would like to thank @hoang-prod and @yabeow for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).&#13;
+&#13;
+### References&#13;
+&#13;
+* Introducing commit: [25badeb7a1e154805340bb7237e0ce671f3772dd](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) ([#12299](https://github.com/argoproj/argo-cd/pull/12299)), first released in v2.7.0&#13;
+* [Custom Kustomize versions](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions)&#13;
+&#13;
+### For more information&#13;
+&#13;
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)&#13;
 * Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
       <guid isPermaLink="false">GHSA-9v9p-x54c-58gc</guid>
       <category>CRITICAL</category>
