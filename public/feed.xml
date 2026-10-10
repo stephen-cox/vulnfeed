@@ -7,7 +7,71 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Fri, 09 Oct 2026 11:06:19 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 10 Oct 2026 10:24:08 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] go:github.com/argoproj/argo-cd/v2 — Argo CD repo-server command injection via crafted SSH repository SOCKS5 proxy URL (CVE-2026-55797)</title>
+      <link>https://github.com/advisories/GHSA-j6cw-g6p4-7hch</link>
+      <description>CVE-2026-55797 · CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H) · CWE-78
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.11.0, &lt;= 2.14.21
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 (patched: 3.3.15)
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.4.0, &lt; 3.4.10 (patched: 3.4.10)
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.5.0, &lt; 3.5.4 (patched: 3.5.4)
+- go/github.com/argoproj/argo-cd/v3 = 3.6.0-rc1 (patched: 3.6.0-rc2)
+
+---
+
+### Impact
+
+Argo CD runs a shell command in the repo-server when it clones or fetches an SSH Git repository that has a proxy URL. The proxy host and port are copied into an SSH `ProxyCommand`. A host that contains shell metacharacters breaks out of that command and runs in the repo-server.
+
+All versions from v2.11.0 onward are affected, including every currently supported release. v2.10.20 and earlier are not. The behavior was introduced in [9b27aeb1a4](https://github.com/argoproj/argo-cd/commit/9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205) (2024-01-09, [#15864](https://github.com/argoproj/argo-cd/pull/15864)), the change that added SOCKS5 proxy support for SSH Git URLs, and was first released in v2.11.0.
+
+The repository must use SSH. `http`, `https`, and `socks5` proxy URLs all take this path when they are set on an SSH repository. An HTTPS Git repository uses the proxy as an HTTP proxy and does not build this command.
+
+Anyone who can create or update a repository or a repository credential template can set the proxy. That includes a project-scoped repository permission, `argocd repo add --proxy`, and a repository Secret. A credential template applies its proxy to every matching SSH repository that does not have its own credentials. Argo CD runs the command when it tests the repository connection and on later fetches. The process can read other Git, Helm, and OCI credentials stored for the repo-server.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.0-rc2
+* v3.5.4
+* v3.4.10
+* v3.3.15
+
+The fix stops passing the proxy host and port through a shell.
+
+Argo CD 2.x and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release.
+
+### Workarounds
+
+There is no setting that keeps SSH repository proxies and removes the shell command.
+
+* Do not grant repository create or update to untrusted users, including project-scoped repository access. See [RBAC resources](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure) and [project-scoped repositories](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-scoped-repositories-and-clusters).
+* Do not set a proxy on an SSH repository or on a credential template that matches SSH repositories. The proxy field is documented in [Configure repositories with proxy](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#configure-repositories-with-proxy). Credential templates are documented in [Credential templates](https://argo-cd.readthedocs.io/en/stable/user-guide/private-repositories/#credential-templates). The `--proxy` flag is documented in [`argocd repo add`](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_repo_add/).
+
+An HTTPS Git repository with an HTTP proxy does not use this command. Review existing repository and credential-template Secrets for unexpected `proxy` values.
+
+### Credits
+
+The Argo CD team would like to thank @kamil-sawicki, @yuvalelarat, @cherez0ff, @McCaulay, @gehan-psbc, @ria-labs-security, @parameter-ai-security, and @zwindler for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
+
+### References
+
+* Introducing commit: [9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205](https://github.com/argoproj/argo-cd/commit/9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205) ([#15864](https://github.com/argoproj/argo-cd/pull/15864)), first released in v2.11.0
+* [Configure repositories with proxy](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#configure-repositories-with-proxy)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-j6cw-g6p4-7hch</guid>
+      <category>HIGH</category>
+      <category>go:github.com/argoproj/argo-cd/v2</category>
+      <pubDate>Fri, 09 Oct 2026 16:37:24 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] zammad/zammad — Local privilege escalation to root in DEB/RPM packages (packager.io) (CVE-2026-102490)</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-p97w-927q-8vxq</link>
@@ -86,67 +150,6 @@ The Argo CD team would like to thank @andrejtomci for responsibly disclosing thi
       <category>MEDIUM</category>
       <category>argoproj/argo-cd</category>
       <pubDate>Wed, 07 Oct 2026 15:58:49 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] argoproj/argo-cd — Command injection via a repository proxy URL on SSH Git repositories (CVE-2026-55797)</title>
-      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-j6cw-g6p4-7hch</link>
-      <description>CVE-2026-55797 · CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H) · CWE-78
-
-Affected:
-- go/github.com/argoproj/argo-cd/v2 &gt;= 2.11.0
-- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
-
----
-
-### Impact
-
-Argo CD runs a shell command in the repo-server when it clones or fetches an SSH Git repository that has a proxy URL. The proxy host and port are copied into an SSH `ProxyCommand`. A host that contains shell metacharacters breaks out of that command and runs in the repo-server.
-
-All versions from v2.11.0 onward are affected, including every currently supported release. v2.10.20 and earlier are not. The behavior was introduced in [9b27aeb1a4](https://github.com/argoproj/argo-cd/commit/9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205) (2024-01-09, [#15864](https://github.com/argoproj/argo-cd/pull/15864)), the change that added SOCKS5 proxy support for SSH Git URLs, and was first released in v2.11.0.
-
-The repository must use SSH. `http`, `https`, and `socks5` proxy URLs all take this path when they are set on an SSH repository. An HTTPS Git repository uses the proxy as an HTTP proxy and does not build this command.
-
-Anyone who can create or update a repository or a repository credential template can set the proxy. That includes a project-scoped repository permission, `argocd repo add --proxy`, and a repository Secret. A credential template applies its proxy to every matching SSH repository that does not have its own credentials. Argo CD runs the command when it tests the repository connection and on later fetches. The process can read other Git, Helm, and OCI credentials stored for the repo-server.
-
-### Patches
-
-A patch for this vulnerability has been released in the following Argo CD versions:
-
-* v3.6.0-rc2
-* v3.5.4
-* v3.4.10
-* v3.3.15
-
-The fix stops passing the proxy host and port through a shell.
-
-Argo CD 2.x and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release.
-
-### Workarounds
-
-There is no setting that keeps SSH repository proxies and removes the shell command.
-
-* Do not grant repository create or update to untrusted users, including project-scoped repository access. See [RBAC resources](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure) and [project-scoped repositories](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-scoped-repositories-and-clusters).
-* Do not set a proxy on an SSH repository or on a credential template that matches SSH repositories. The proxy field is documented in [Configure repositories with proxy](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#configure-repositories-with-proxy). Credential templates are documented in [Credential templates](https://argo-cd.readthedocs.io/en/stable/user-guide/private-repositories/#credential-templates). The `--proxy` flag is documented in [`argocd repo add`](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_repo_add/).
-
-An HTTPS Git repository with an HTTP proxy does not use this command. Review existing repository and credential-template Secrets for unexpected `proxy` values.
-
-### Credits
-
-The Argo CD team would like to thank @kamil-sawicki, @yuvalelarat, @cherez0ff, @McCaulay, @gehan-psbc, @ria-labs-security, @parameter-ai-security, and @zwindler for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
-
-### References
-
-* Introducing commit: [9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205](https://github.com/argoproj/argo-cd/commit/9b27aeb1a4fb15d11a0f01cad65dea1fdfc60205) ([#15864](https://github.com/argoproj/argo-cd/pull/15864)), first released in v2.11.0
-* [Configure repositories with proxy](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#configure-repositories-with-proxy)
-
-### For more information
-
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
-* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
-      <guid isPermaLink="false">GHSA-j6cw-g6p4-7hch</guid>
-      <category>HIGH</category>
-      <category>argoproj/argo-cd</category>
-      <pubDate>Wed, 07 Oct 2026 15:58:47 +0000</pubDate>
     </item>
     <item>
       <title>[MEDIUM] argoproj/argo-cd — Extension proxy RBAC ignores application namespace when applications-in-any-namespace is enabled</title>
