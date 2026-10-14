@@ -7,7 +7,45 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 13 Oct 2026 11:22:46 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 14 Oct 2026 09:15:19 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] espocrm/espocrm — Unauthenticated long body request loads CPU in the password-redaction regex, denying service</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-6pjq-v35w-jmjh</link>
+      <description>CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H)
+
+Affected:
+- php/EspoCRM &lt;=10.0.7 (patched: 10.0.8)
+
+---
+
+## Summary&#13;
+&#13;
+An unauthenticated attacker can send specially crafted API requests that trigger excessive CPU usage during error handling. By sending a small number of large requests concurrently, an attacker can exhaust available server workers, making EspoCRM slow or unavailable to legitimate users.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-6pjq-v35w-jmjh</guid>
+      <category>HIGH</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 13 Oct 2026 19:42:10 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm — PDF rendering allows users with edit access to PDF template scope to view image attachments with known ID they don't have access  to</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-r277-qh74-r86f</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-284, CWE-639
+
+Affected:
+- php/EspoCRM &lt;= 10.1.0 (patched: 10.1.0)
+
+---
+
+**Summary:**&#13;
+&#13;
+Users who can create or modify PDF templates may be able to access image attachments belonging to other users or records without proper authorization. By embedding a reference to an attachment in a template and generating a PDF, they can bypass the normal access restrictions and retrieve images they should not be allowed to view.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-r277-qh74-r86f</guid>
+      <category>MEDIUM</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 13 Oct 2026 19:35:04 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] go:github.com/argoproj/argo-cd/v2 — Argo CD repo-server command injection via crafted SSH repository SOCKS5 proxy URL (CVE-2026-55797)</title>
       <link>https://github.com/advisories/GHSA-j6cw-g6p4-7hch</link>
@@ -3836,42 +3874,6 @@ As a result, any logged-in user of an affected instance could read the stored ac
       <category>HIGH</category>
       <category>zammad/zammad</category>
       <pubDate>Tue, 25 Aug 2026 05:40:34 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Arbitrary object disclosure via Core Workflow perform endpoint</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-3ww3-89pm-g9x8</link>
-      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639, CWE-862
-
-Affected:
-- Zammad &lt;= 7.1.2 (patched: 7.1.3)
-
----
-
-A logged-in user with only agent or customer permissions could ask Zammad for the details of almost any single record in the system - for example configuration settings, other users' unsaved drafts, or their device and login information - simply by naming the record in a request. Zammad returned that data without checking whether the user was allowed to see it.&#13;
-&#13;
-Among the data that could be read were confidential configuration values such as the application secret, the monitoring access token, and third-party login credentials. Ticket data remained protected, and stored passwords were not exposed.</description>
-      <guid isPermaLink="false">GHSA-3ww3-89pm-g9x8</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 25 Aug 2026 05:40:23 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] zammad/zammad — AI error messages can be turned into clickable links due to incorrect escaping order</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-cq4j-rx79-345g</link>
-      <description>CVSS 2.0 (CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:A/VC:N/VI:N/VA:N/SC:L/SI:L/SA:N) · CWE-79, CWE-83, CWE-116
-
-Affected:
-- Zammad &lt;= 7.1.2 (patched: 7.1.3)
-
----
-
-When a Zammad AI feature (writing assistant or ticket summary) fails, the resulting error message is shown to the agent in the interface. Because of a flaw in how that message is escaped before display, an error message containing link-style text could be rendered as an actual clickable link in the agent's browser instead of being shown as harmless plain text. In unfavorable conditions this could be used to present misleading links or, depending on the browser and its security settings, inject unwanted content into the page.&#13;
-&#13;
-Exploitation requires an authenticated agent with AI features enabled and depends on an attacker being able to influence the AI error text, so real-world impact is limited.</description>
-      <guid isPermaLink="false">GHSA-cq4j-rx79-345g</guid>
-      <category>LOW</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 25 Aug 2026 05:40:13 +0000</pubDate>
     </item>
   </channel>
 </rss>
