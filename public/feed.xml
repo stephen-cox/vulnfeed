@@ -7,7 +7,49 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Sun, 18 Oct 2026 08:31:12 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 19 Oct 2026 09:33:02 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] open-webui/open-webui — Channel members can post messages shown as a webhook via client-supplied message metadata</title>
+      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3vvh-g22g-jq6r</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-290, CWE-345, CWE-863
+
+Affected:
+- pip/open-webui &gt;= 0.7.0, &lt; 0.12.2 (patched: 0.12.2)
+
+---
+
+# Channel members can post messages shown as a webhook via client-supplied message metadata&#13;
+&#13;
+## Summary&#13;
+Any member who can post in a channel can make their message appear as if a real webhook of that channel posted it. The server stored the metadata the client sent with a message without checking it. The channel then showed the message under the webhook's name and role, with no webhook token required.&#13;
+&#13;
+## Preconditions&#13;
+Channels are enabled (`ENABLE_CHANNELS`, default `False`). The channel has at least one webhook. The attacker is a member with write access to the channel. The attacker knows the webhook's id. Any member can read it from a message the webhook posted, so it is not a secret. Instances with channels disabled, or without channel webhooks, are not affected.&#13;
+&#13;
+## Impact&#13;
+A member can post, edit and pin messages that other members see as coming from a trusted webhook, such as an alerting or ops bot. That makes social engineering inside the channel easy. The stored author is still the attacker's account. The attacker cannot change the webhook's real messages, read anything new or act with the webhook's token.&#13;
+&#13;
+## Fix&#13;
+Fixed in #32421. The server now drops any message metadata sent by the client, both when a message is posted and when it is edited, so only the server sets it. Upgrading is enough.&#13;
+&#13;
+## Root cause&#13;
+Component: the channel message post and edit endpoints in `backend/open_webui/routers/channels.py`. Affected setup: every build with channel webhooks, from 0.7.0. The message form accepted an arbitrary metadata object from the client and stored it as is. The message list and the pinned list then trusted that metadata to decide who the message was from. A webhook id in the metadata was enough for the message to be shown as that webhook.&#13;
+&#13;
+## Proof of concept&#13;
+1. Admin creates a webhook "Ops Bot" in a channel, and the webhook posts a message.&#13;
+2. Alice, a channel member, reads the webhook id from that message.&#13;
+3. Alice posts a message with `meta.webhook = {"id": "&lt;webhook id&gt;", "name": "Ops Bot"}` and pins it.&#13;
+4. Bob opens the channel. The message and the pinned list show it as `Ops Bot` with role `webhook`, while the stored author is Alice.&#13;
+&#13;
+Run by the reporter on 0.11.3.&#13;
+&#13;
+## Credits&#13;
+@Tarekinh0 (reporter)</description>
+      <guid isPermaLink="false">GHSA-3vvh-g22g-jq6r</guid>
+      <category>MEDIUM</category>
+      <category>open-webui/open-webui</category>
+      <pubDate>Sun, 18 Oct 2026 19:50:50 +0000</pubDate>
+    </item>
     <item>
       <title>[CRITICAL] go:github.com/argoproj/argo-cd/v2 — Argo CD: AppProject destination-namespace and resource restrictions bypassed by PreDelete/PostDelete resource hooks (CVE-2026-77459)</title>
       <link>https://github.com/advisories/GHSA-fmxq-cgp8-87wp</link>
@@ -3858,25 +3900,6 @@ The impact is limited to the order and sorting in which ticket overviews are pre
       <category>MEDIUM</category>
       <category>zammad/zammad</category>
       <pubDate>Tue, 25 Aug 2026 05:40:45 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Disclosure of external data source credentials to non-admin users via object attribute metadata</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-g3cf-rfq7-j5cr</link>
-      <description>CVSS 8.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:H/SI:N/SA:N) · CWE-200, CWE-522
-
-Affected:
-- Zammad &lt;= 7.1.2 (patched: 7.1.3)
-
----
-
-Object attributes that look up their values from an external data source store the access data for that external system (user name, password or access token, and the request URL) as part of their configuration. This configuration was sent to every logged-in user, including agents and customers, instead of being kept on the server and restricted to administrators.&#13;
-&#13;
-As a result, any logged-in user of an affected instance could read the stored access data and use it to access the connected external system directly, outside of Zammad. Only instances that have configured an external data source attribute with access data are affected.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-g3cf-rfq7-j5cr</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 25 Aug 2026 05:40:34 +0000</pubDate>
     </item>
   </channel>
 </rss>
