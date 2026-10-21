@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 20 Oct 2026 09:05:35 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 21 Oct 2026 09:05:17 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Channel members can post messages shown as a webhook via client-supplied message metadata</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3vvh-g22g-jq6r</link>
@@ -423,9 +423,9 @@ The Argo CD team would like to thank @foussey and @shivamkumarcyber for responsi
       <pubDate>Wed, 07 Oct 2026 15:58:44 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] argoproj/argo-cd — A Jsonnet import can read files from the repo-server</title>
+      <title>[CRITICAL] argoproj/argo-cd — A Jsonnet import can read files from the repo-server (CVE-2026-113672)</title>
       <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-m3vr-7329-44ww</link>
-      <description>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
+      <description>CVE-2026-113672 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
 
 Affected:
 - go/github.com/argoproj/argo-cd &gt;= 0.9.0, &lt; 2.0.0
@@ -478,9 +478,9 @@ The Argo CD team would like to thank @hoang-prod, @arpitjain099, @key-moon, @Mop
       <pubDate>Wed, 07 Oct 2026 15:58:41 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] argoproj/argo-cd — A Kustomize Helm config home can run commands in the repo-server</title>
+      <title>[CRITICAL] argoproj/argo-cd — A Kustomize Helm config home can run commands in the repo-server (CVE-2026-113709)</title>
       <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-fw5c-w8rc-j7fx</link>
-      <description>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
+      <description>CVE-2026-113709 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
 
 Affected:
 - go/github.com/argoproj/argo-cd/v2 &gt;= 2.1.0
@@ -536,9 +536,9 @@ The Argo CD team would like to thank @hoang-prod for responsibly disclosing this
       <pubDate>Wed, 07 Oct 2026 15:58:40 +0000</pubDate>
     </item>
     <item>
-      <title>[CRITICAL] argoproj/argo-cd — A Kustomize remote ref can run commands in the repo-server</title>
+      <title>[CRITICAL] argoproj/argo-cd — A Kustomize remote ref can run commands in the repo-server (CVE-2026-113708)</title>
       <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-9v9p-x54c-58gc</link>
-      <description>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
+      <description>CVE-2026-113708 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
 
 Affected:
 - go/github.com/argoproj/argo-cd/v2 &gt;= 2.7.0
