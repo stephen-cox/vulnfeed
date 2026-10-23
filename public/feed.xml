@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 22 Oct 2026 09:07:43 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 23 Oct 2026 09:03:37 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Channel members can post messages shown as a webhook via client-supplied message metadata</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3vvh-g22g-jq6r</link>
@@ -1114,9 +1114,9 @@ Only instances whose sender format for outgoing email is configured to show the 
       <pubDate>Tue, 06 Oct 2026 05:58:33 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] espocrm/espocrm — IDOR allowing users with access to Import scope to extract data from attachments with known ID</title>
+      <title>[MEDIUM] espocrm/espocrm — IDOR allowing users with access to Import scope to extract data from attachments with known ID (CVE-2026-109957)</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-5729-xq64-4h22</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-862
+      <description>CVE-2026-109957 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-862
 
 Affected:
 - espocrm/espocrm &lt;= 10.0.6 (patched: 10.0.7)
@@ -1143,9 +1143,9 @@ This allows a low-privileged authenticated user to disclose contents of another 
       <pubDate>Tue, 29 Sep 2026 07:53:33 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] espocrm/espocrm — Address-book search does not check field-level access to emailAddress field</title>
+      <title>[MEDIUM] espocrm/espocrm — Address-book search does not check field-level access to emailAddress field (CVE-2026-109958)</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-2cr7-9g4f-8723</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
+      <description>CVE-2026-109958 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
 
 Affected:
 - other/espocrm/espocrm &lt;= 10.0.6 (patched: 10.0.7)
@@ -1169,9 +1169,9 @@ Wenhao Wu, Southeast University</description>
       <pubDate>Tue, 29 Sep 2026 07:50:46 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] espocrm/espocrm — Note read does not run ACL output filter against audit data exposing values of fields that are restricted with field-level security</title>
+      <title>[MEDIUM] espocrm/espocrm — Note read does not run ACL output filter against audit data exposing values of fields that are restricted with field-level security (CVE-2026-109959)</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-mr36-xx82-qf6h</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
+      <description>CVE-2026-109959 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
 
 Affected:
 - other/espocrm/espocrm &lt;= 10.0.6 (patched: 10.0.7)
@@ -2213,9 +2213,9 @@ Discovered and responsibly disclosed by [Robert Ressl](https://ressl.ch/).</desc
       <pubDate>Tue, 22 Sep 2026 13:57:27 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] espocrm/espocrm — IDOR allowing user with access to Email Account scope to steal another user's stored IMAP password from Email Account with known ID</title>
+      <title>[HIGH] espocrm/espocrm — IDOR allowing user with access to Email Account scope to steal another user's stored IMAP password from Email Account with known ID (CVE-2026-105833)</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-pj52-qx2q-4qfp</link>
-      <description>CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-522, CWE-639, CWE-862
+      <description>CVE-2026-105833 · CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-522, CWE-639, CWE-862
 
 Affected:
 - composer/espocrm/espocrm &lt;= 10.0.4 (patched: 10.0.5)
@@ -2235,9 +2235,9 @@ Researcher: skeletonsec (via GitHub PVR).</description>
       <pubDate>Mon, 21 Sep 2026 15:56:43 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] espocrm/espocrm — A login that stopped at the second factor is accepted on routes that do not require authentication</title>
+      <title>[MEDIUM] espocrm/espocrm — A login that stopped at the second factor is accepted on routes that do not require authentication (CVE-2026-105832)</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-ph8v-hvf5-wgp9</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-287, CWE-305
+      <description>CVE-2026-105832 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-287, CWE-305
 
 Affected:
 - espocrm/espocrm &lt;= 10.0.5 (patched: 10.0.6)
@@ -2254,9 +2254,9 @@ A login that stopped at the second factor is accepted on routes that do not requ
       <pubDate>Mon, 21 Sep 2026 15:55:19 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] espocrm/espocrm — Unauthenticated stored HTML injection via Lead Capture form</title>
+      <title>[MEDIUM] espocrm/espocrm — Unauthenticated stored HTML injection via Lead Capture form (CVE-2026-105831)</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-xfqv-j65r-qqgh</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N)
+      <description>CVE-2026-105831 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N)
 
 Affected:
 - composer/espocrm/espocrm &lt;= 10.0.5 (patched: 10.0.6)
