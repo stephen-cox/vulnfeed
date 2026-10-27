@@ -7,7 +7,378 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 26 Oct 2026 09:38:19 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 27 Oct 2026 09:33:43 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] espocrm/espocrm — Stored XSS in Knowledge Base articles letting run JS code on link click</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-j6q5-9jwj-9p8q</link>
+      <description>CVSS 7.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
+
+Affected:
+- EspoCRM &lt;= 10.0.8 (patched: 10.0.9)
+- EspoCRM &lt;= 9.3.10 (patched: 9.3.11)
+
+---
+
+## Summary&#13;
+&#13;
+A regular user with create or edit access to the Knowledge Base scope can attach a JavaScript file to a Knowledge Base article and add a crafted link to its body. When an administrator clicks that link, EspoCRM runs the script in their session. The script creates an administrator account with credentials chosen by the attacker.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-j6q5-9jwj-9p8q</guid>
+      <category>HIGH</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 27 Oct 2026 08:44:56 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] espocrm/espocrm — SVG attachment opened in browser turns one click into authenticated API  POST call</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-4qv5-q4g7-hp5r</link>
+      <description>CVSS 8.0 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H)
+
+Affected:
+- EspoCRM &lt;=10.0.7 (patched: 10.0.8)
+- EspoCRM &lt;= 9.3.10 (patched: 9.3.11)
+
+---
+
+## Summary&#13;
+&#13;
+A low-privileged user can craft a malicious uploaded SVG image that submits a POST request to an arbitrary backend endpoint when a user (including administrator) opens it in a separate browser tab and clicks the image. By tricking an administrator into opening a link and clicking on the image, an attacker can execute actions with administrator privileges, including elevating their own account to administrator.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-4qv5-q4g7-hp5r</guid>
+      <category>HIGH</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 27 Oct 2026 08:34:23 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Open Redirect in Form Submission (CVE-2026-115196)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-5mm3-3g7p-9868</link>
+      <description>CVE-2026-115196 · CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N) · CWE-601
+
+Affected:
+- composer/mautic/core &gt;= 1.0.0-beta, &lt; 5.2.12 (patched: 5.2.12)
+- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary
+An Open Redirect vulnerability exists in the public form submission endpoint (`/form/submit`) of Mautic. After a form is submitted, the application redirects the visitor to a return address supplied with the submission without verifying that it points to the Mautic instance or another trusted host. An unauthenticated attacker can exploit this to send visitors from a legitimate Mautic domain to an arbitrary external website. Exploitation requires the victim to submit a form prepared by the attacker.
+
+### Impact
+An attacker can abuse the trusted Mautic domain to redirect visitors to malicious websites, for example to phishing pages that imitate the original landing page or to sites that deliver malware. No authentication is required, and any Mautic instance with a published form is affected.
+
+### Patched Versions
+This security issue has been addressed in the following releases:
+* **7.2.2**
+* **6.0.10**
+* **5.2.12**
+
+*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*
+
+### Workarounds
+There are no official workarounds. To mitigate this vulnerability without upgrading, configure a reverse proxy or web application firewall rule that blocks redirect responses from `/form/submit` to hosts other than your Mautic instance and your own websites.
+</description>
+      <guid isPermaLink="false">GHSA-5mm3-3g7p-9868</guid>
+      <category>MEDIUM</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:56:51 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Broken Access Control in Stats API (CVE-2026-115195)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-7j28-9rg4-wg63</link>
+      <description>CVE-2026-115195 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-862
+
+Affected:
+- composer/mautic/core &gt;= 2.3.0, &lt; 5.2.12 (patched: 5.2.12)
+- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary&#13;
+A broken access control vulnerability exists in the Mautic Stats API (`/api/stats/{table}`). The endpoint did not enforce permissions for several internal tables: an intended administrator-only restriction was never applied, and tables without an explicit permission mapping were readable by default. As a result, any authenticated API user, including one whose role grants no permissions, could read data from these tables.&#13;
+&#13;
+### Impact&#13;
+A low-privileged authenticated user could read:&#13;
+* the application audit log, including actions performed by all users and change details that may contain contact personal data,&#13;
+* stored visitor IP addresses and their geolocation details,&#13;
+* tracked redirect URLs and their channel mappings.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following releases:&#13;
+* **7.2.2**&#13;
+* **6.0.10**&#13;
+* **5.2.12**&#13;
+&#13;
+*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, disable the API or restrict API access to trusted administrative users.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-7j28-9rg4-wg63</guid>
+      <category>MEDIUM</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:54:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] mautic/mautic — Arbitrary File Read via Path Traversal in Asset API (CVE-2026-115194)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-wfhm-289v-79vp</link>
+      <description>CVE-2026-115194 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-22
+
+Affected:
+- composer/mautic/core &gt;= 2.3.0, &lt; 5.2.12 (patched: 5.2.12)
+- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary&#13;
+A path traversal vulnerability exists in the Mautic Asset API. When creating a local asset through the API, the supplied file path is not restricted to the asset upload directory. An authenticated API user with permission to create assets can register any file that is readable by the web server process as a Mautic asset. When the asset is published, its public download URL serves the contents of that file without authentication.&#13;
+&#13;
+### Impact&#13;
+A low-privilege user with asset creation permissions can read arbitrary files from the server, including:&#13;
+* Mautic configuration files containing the database password, secret key, and mail (SMTP) credentials.&#13;
+* System files and any other file readable by the web server user.&#13;
+&#13;
+Exposed credentials can be used to access the database or other connected services. Because published asset download URLs are public, anyone with the URL can retrieve the file contents.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following releases:&#13;
+* **7.2.2**&#13;
+* **6.0.10**&#13;
+* **5.2.12**&#13;
+&#13;
+*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, disable API access or restrict asset creation permissions to trusted administrative users. Review existing local assets for file paths outside the asset upload directory.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-wfhm-289v-79vp</guid>
+      <category>MEDIUM</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:54:33 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Stored XSS in HTML-type Custom Contact Field on Contact Detail View (CVE-2026-115193)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-3295-vq3p-93rw</link>
+      <description>CVE-2026-115193 · CVSS 8.2 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:L/A:N) · CWE-79
+
+Affected:
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary&#13;
+A stored Cross-Site Scripting (XSS) vulnerability exists in the contact detail view of Mautic 7. Values of HTML-type custom contact fields are rendered without output sanitization. A user or integration able to write a value to such a field (for example, through contact editing, the contact API, or a form submission mapped to the field) can store a script payload in it.&#13;
+&#13;
+### Impact&#13;
+When another user, including an administrator, opens the affected contact's detail page, the injected script executes within the context of their active browser session. This could allow an attacker to perform administrative actions on behalf of the victim, such as creating new administrator accounts, altering system configuration, or accessing contact and campaign data.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following release:&#13;
+* **7.2.2**&#13;
+&#13;
+*Note: Mautic 6.x, 5.x, and 4.x escape HTML-type contact field values on the contact detail view and are not affected by this vulnerability.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, restrict contact create and edit permissions and API access to trusted users, and avoid mapping public form fields or publicly updatable settings to HTML-type contact fields.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-3295-vq3p-93rw</guid>
+      <category>HIGH</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:53:45 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — SQL Injection in Dashboard Widget API (CVE-2026-115192)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-qpmx-7pq3-5q2v</link>
+      <description>CVE-2026-115192 · CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:L) · CWE-89
+
+Affected:
+- composer/mautic/core &gt;= 2.8.1, &lt; 5.2.12 (patched: 5.2.12)
+- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary&#13;
+An SQL Injection vulnerability exists in the dashboard widget data API endpoint (`/api/data/{type}`). Chart filter parameters supplied by the client are not properly validated before they are used in the database queries that build dashboard chart data. An authenticated user with API access can exploit this to inject SQL into these reporting queries. Exploitation requires the Mautic API to be enabled.&#13;
+&#13;
+### Impact&#13;
+An attacker can use blind SQL injection techniques to read arbitrary data from the Mautic database, including:&#13;
+* Contact and other marketing data stored by Mautic.&#13;
+* User account data, including credentials (password hashes).&#13;
+&#13;
+The injected SQL can also be used to slow down database queries, which can have a limited impact on availability. Data modification is not possible through this vulnerability.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following releases:&#13;
+* **7.2.2**&#13;
+* **6.0.10**&#13;
+* **5.2.12**&#13;
+&#13;
+*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, disable the Mautic API if it is not needed, or restrict API access to trusted users only.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-qpmx-7pq3-5q2v</guid>
+      <category>HIGH</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:53:05 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — SQL Injection in Contact Lookup AJAX Endpoint (CVE-2026-115191)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-fj8v-c9c3-7q26</link>
+      <description>CVE-2026-115191 · CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:L) · CWE-89
+
+Affected:
+- composer/mautic/core &gt;= 2.1.0, &lt; 5.2.12 (patched: 5.2.12)
+- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary&#13;
+A SQL injection vulnerability exists in a contact lookup AJAX endpoint of the Mautic administration interface (`/s/ajax`). A request parameter that selects the contact field to search by is not properly validated before it is used in a database query. Any authenticated Mautic user can exploit this, regardless of the role or permissions assigned to the account.&#13;
+&#13;
+### Impact&#13;
+An attacker with any valid Mautic user account can run arbitrary SQL queries against the Mautic database, using blind (boolean-based or time-based) techniques. This allows the attacker to read any data the Mautic database user can access, including:&#13;
+* Mautic user accounts, including email addresses and password hashes.&#13;
+* Contact data.&#13;
+* Campaign and email content.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following releases:&#13;
+* **7.2.2**&#13;
+* **6.0.10**&#13;
+* **5.2.12**&#13;
+&#13;
+*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To reduce the risk without upgrading, limit Mautic user accounts to trusted users, deactivate unused accounts, and enforce strong passwords. Where possible, block requests to `/s/ajax` with the action `lead:getLeadIdsByFieldValue` at the web server or web application firewall level. This only disables the duplicate contact warning shown when editing unique identifier fields in the contact form.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-fj8v-c9c3-7q26</guid>
+      <category>HIGH</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:52:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Insecure Deserialization in Segment Filters and Custom Fields (CVE-2026-115190)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-5r63-8h35-j3mw</link>
+      <description>CVE-2026-115190 · CVSS 8.0 (CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:H/I:H/A:H) · CWE-502
+
+Affected:
+- composer/mautic/core &gt;= 2.15.2, &lt; 5.2.12 (patched: 5.2.12)
+- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.0 (patched: 7.2.0)
+
+---
+
+### Summary&#13;
+An insecure deserialization (PHP object injection) vulnerability exists in Mautic's handling of segment filters and custom field properties. Several code paths that read these stored values from the database deserialize them without restricting which PHP classes may be instantiated, instead of using Mautic's safe deserialization helper. An attacker who is able to store a crafted serialized value in these segment filter or custom field properties can cause arbitrary PHP objects to be instantiated when Mautic later processes the data, for example during segment evaluation, contact export, or custom field API requests. Exploitation requires high privileges or an existing ability to write to the affected stored data.&#13;
+&#13;
+### Impact&#13;
+Because arbitrary objects are instantiated, their magic methods run automatically. Combined with gadget chains available in Mautic's dependencies, this could allow an attacker to:&#13;
+* Execute arbitrary code on the server running Mautic.&#13;
+* Read, modify, or delete data stored in the Mautic instance, including contact data.&#13;
+* Affect the availability of the Mautic instance.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following releases:&#13;
+* **7.2.0**&#13;
+* **6.0.10**&#13;
+* **5.2.12**&#13;
+&#13;
+*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To reduce the risk without upgrading, restrict administrative access (including permissions to manage segments and custom fields, and API access) to trusted users, and make sure no untrusted party has write access to the Mautic database.&#13;
+&#13;
+</description>
+      <guid isPermaLink="false">GHSA-5r63-8h35-j3mw</guid>
+      <category>HIGH</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:52:08 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] mautic/mautic — Twig Sandbox Escape in Theme Templates (CVE-2026-115189)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-h7pm-79gc-8867</link>
+      <description>CVE-2026-115189 · CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H) · CWE-1336
+
+Affected:
+- composer/mautic/core &gt;= 1.3.0, &lt; 5.2.12 (patched: 5.2.12)
+- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary&#13;
+A server-side template injection vulnerability exists in the Twig theme rendering sandbox of Mautic. The sandbox introduced to restrict user-uploaded theme templates (the fix for GHSA-9fx4-7cmj-47vg) does not fully enforce its restrictions, allowing a crafted theme template to escape the sandbox. An authenticated user with the `core:themes:create` permission can upload a malicious theme whose template is later rendered, resulting in execution of arbitrary code on the server. This is an incomplete fix for GHSA-9fx4-7cmj-47vg.&#13;
+&#13;
+### Impact&#13;
+An attacker who can upload a theme can achieve remote code execution running as the web server process. This allows the attacker to:&#13;
+&#13;
+* Execute arbitrary operating system commands on the host.&#13;
+* Read server-side files, including configuration files and database credentials.&#13;
+* Write files to the filesystem where permissions allow.&#13;
+* Reach internal services and use the host for further attacks.&#13;
+&#13;
+In default installations the `core:themes:create` permission is granted to the Administrator role, and in multi-operator setups it may be delegated to other roles.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following releases:&#13;
+* **7.2.2**&#13;
+* **6.0.10**&#13;
+* **5.2.12**&#13;
+&#13;
+*Note: The fix for legacy Mautic 4.4 ships through [ELTS](https://mautic.org/extended-long-term-support-elts/), not a public release.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading, restrict the `core:themes:create` permission to trusted administrator accounts only and do not delegate theme creation to operator-level roles.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-h7pm-79gc-8867</guid>
+      <category>HIGH</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:51:22 +0000</pubDate>
+    </item>
+    <item>
+      <title>[CRITICAL] mautic/mautic — Remote Code Execution in Campaign Import (CVE-2026-115188)</title>
+      <link>https://github.com/mautic/mautic/security/advisories/GHSA-mxjf-pghx-h299</link>
+      <description>CVE-2026-115188 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H) · CWE-94, CWE-434
+
+Affected:
+- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
+
+---
+
+### Summary&#13;
+An unrestricted file upload vulnerability exists in the campaign import feature of Mautic 7. When processing an uploaded campaign archive, the application copies the bundled asset files into a publicly accessible media directory without restricting their file names or types. An authenticated user with permission to create campaign imports can exploit this through the user interface or the API (`/api/campaigns/import`) to place arbitrary files, including server-side scripts, in the web root. Administrator privileges are not required. On web servers that honor per-directory configuration, such as the default Apache setup of the official Mautic Docker image, this leads to remote code execution.&#13;
+&#13;
+### Impact&#13;
+An attacker with campaign import permission can:&#13;
+* Execute arbitrary code on the server with the privileges of the web server user.&#13;
+* Read the Mautic configuration and application secrets available to the web server user, such as database credentials.&#13;
+* Read and modify application data, including contact data.&#13;
+* Store persistent files in a publicly accessible web directory.&#13;
+&#13;
+On deployments where the web server does not execute scripts from the media directory, the impact is limited to writing arbitrary files into a publicly accessible web directory.&#13;
+&#13;
+### Patched Versions&#13;
+This security issue has been addressed in the following release:&#13;
+* **7.2.2**&#13;
+&#13;
+*Note: Mautic 6.x, 5.x, and 4.x branches are not affected by this vulnerability. For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
+&#13;
+### Workarounds&#13;
+There are no official workarounds. To mitigate this vulnerability without upgrading:&#13;
+* Remove the campaign import create permission from all users who do not strictly need it, and restrict it to trusted administrators.&#13;
+* Configure the web server at server or virtual-host level, so that it cannot be overridden by files in the application directory, to deny script execution in the `media/` directory.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-mxjf-pghx-h299</guid>
+      <category>CRITICAL</category>
+      <category>mautic/mautic</category>
+      <pubDate>Mon, 26 Oct 2026 10:49:27 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] open-webui/open-webui — Channel members can post messages shown as a webhook via client-supplied message metadata</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3vvh-g22g-jq6r</link>
@@ -2226,7 +2597,9 @@ Affected:
 
 ## Summary&#13;
 &#13;
-An IDOR in `PersonalAccount\Service` allows a user with access to the Email Account scope to steal another user's stored IMAP password from an Email Account with a known record ID. Note that obtaining the victim record ID usually is not trivial.&#13;
+An IDOR in `PersonalAccount\Service` allows a user with access to the Email Account scope to steal another user's stored IMAP password from an Email Account with a known record ID.&#13;
+&#13;
+Note that obtaining the victim record ID usually is not trivial.&#13;
 &#13;
 ## Credits&#13;
 &#13;
@@ -3433,475 +3806,6 @@ On 0.11.1 the same request deletes the knowledge base, the connection list still
       <category>HIGH</category>
       <category>open-webui/open-webui</category>
       <pubDate>Sun, 30 Aug 2026 16:54:04 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Any authenticated user can reach the Azure platform channel via server-side web fetch (CVE-2026-87999)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-34r3-9m95-vq73</link>
-      <description>CVE-2026-87999 · CVSS 7.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N) · CWE-918
-
-Affected:
-- pip/open-webui &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Any authenticated user can reach the Azure platform channel via server-side web fetch&#13;
-&#13;
-## Summary&#13;
-&#13;
-Open WebUI fetches user-supplied URLs on the server for RAG URL ingestion and web search, and screens the resolved addresses so internal destinations cannot be reached. That screen decided whether a destination was external by asking Python's standard library whether the address is globally routable. Several addresses reserved for internal use answer yes to that question, including 168.63.129.16, the Azure platform channel every Azure virtual machine can reach. Any authenticated user could therefore make the server issue requests to those addresses and read the responses back through the API.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- The affected paths are the server-side URL fetches: RAG URL ingestion and web search. Both require an authenticated, verified account. No administrator role and no special workspace permission are needed.&#13;
-- `ENABLE_LOCAL_WEB_FETCH` must be at its default of `false`. Setting it to `true` disables the address screen by design, and internal destinations are reachable on purpose.&#13;
-- `WEB_FETCH_FILTER_LIST` is empty by default in affected versions, so no operator-supplied block entry covered these addresses unless one was added by hand.&#13;
-- For the Azure platform channel specifically, the Open WebUI host must run on Azure (virtual machine, AKS, Container Apps or equivalent). That address is reachable from every Azure virtual machine regardless of network security group rules. On a host that is not on Azure the address routes nowhere and nothing is reachable through it.&#13;
-&#13;
-## Impact&#13;
-&#13;
-An authenticated user could direct the server to issue GET requests at addresses reserved for internal use and receive the response body back in the API response, which also lands in the RAG context. On Azure that includes the platform channel, an endpoint the operator never intended to expose to application users. The same gap applied to the IPv4-translated range and to deprecated IPv6 site-local space, which on a host that routes them would reach internal services the same way.&#13;
-&#13;
-What was observed is the reachability and the read-back. No specific credential or secret was retrieved from the Azure platform channel during this investigation, and this advisory does not claim one. Deployments not hosted on Azure are unaffected for the platform-channel address, and deployments running with local web fetch enabled were never protected by this screen in any version.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in https://github.com/open-webui/open-webui/pull/27823. Address screening no longer rests on the library's notion of a globally routable address alone: a default block list of reserved and internal-purpose ranges is applied to every resolved address, at URL validation and again at connection time on both HTTP transports, so it also covers redirect hops and DNS rebinding. Operators can extend the list through `WEB_FETCH_FILTER_LIST`, which is merged with the defaults and cannot remove them.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-- `backend/open_webui/retrieval/web/utils.py`: the shared address screen used by every server-side fetch.&#13;
-- `POST /api/v1/retrieval/process/web`: RAG URL ingestion, returns the fetched body to the caller.&#13;
-- `POST /api/v1/retrieval/process/web/search`: web search, fetches each result.&#13;
-&#13;
-The code ships in every build, so no optional component or feature flag limits which installations carry it.&#13;
-&#13;
-The screen answered one question, whether an address is globally routable, and treated that answer as a proxy for whether the destination is external. Those are two different questions. The library classifies by IANA special-purpose registry membership, and the Azure platform channel is allocated out of ordinary public IPv4 space, so the library correctly reports it as global while in practice it is an internal endpoint of the host's own platform. Earlier hardening (GHSA-8x5v-cpv7-8jjp) extended the screen to unwrap IPv6 addresses that carry an IPv4 address inside them. That closed the encoded-address bypasses and left the underlying test unchanged, so an address that is public by registry and internal by convention still passed.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-As any verified user:&#13;
-&#13;
-```&#13;
-POST /api/v1/retrieval/process/web&#13;
-{"url": "http://168.63.129.16/?comp=versions"}&#13;
-```&#13;
-&#13;
-On an affected version the address passes validation, the request is issued, and the response body is returned in the `content` field of the API response.&#13;
-&#13;
-The screening code of each released version was exercised directly:&#13;
-&#13;
-- 0.11.0: `168.63.129.16`, `::ffff:0:169.254.169.254` and `fec0::1` all pass validation.&#13;
-- 0.11.1: all three are rejected, along with every alternative spelling of the same address (IPv4-mapped, IPv4-compatible, IPv4-translated, 6to4 and both NAT64 prefixes) and the obfuscated decimal, octal and hexadecimal forms. Ordinary public addresses continue to pass.&#13;
-&#13;
-No request was issued to a live Azure platform channel. The read-back property was confirmed from the ingestion endpoint, which returns the fetched body to the caller in its response.&#13;
-&#13;
-## Credits&#13;
-&#13;
-@NaorYaa reported that the Azure platform channel remained reachable after the previous hardening, and demonstrated the same gap for the IPv4-translated and IPv6 site-local ranges.</description>
-      <guid isPermaLink="false">GHSA-34r3-9m95-vq73</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 30 Aug 2026 16:48:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] espocrm/espocrm — Field-level security bypass for email address field via meeting's attendees endpoint</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-hpgx-8qg3-5w7v</link>
-      <description>CWE-863
-
-Affected:
-- php/EspoCRM &lt;=10.0.3 (patched: 10.0.4)
-
----
-
-The impact is low. It is rare that a user who has access to a meeting should not have access to&#13;
-&#13;
-## Summary&#13;
- &#13;
-EspoCRM exposes attendee lists for meetings and calls through authenticated helper endpoints. The helper fetches related users, contacts, and leads with their `emailAddress` column selected. It then tries to mask hidden attendee emails — but the masking check uses the parent event scope (`Meeting` or `Call`) instead of the attendee entity's own scope (`Contact`, `Lead`, or `User`).&#13;
- &#13;
-A user explicitly forbidden from reading `Contact.emailAddress` can still recover hidden attendee emails through the meeting or call attendees helper, because the ACL check is performed against the wrong entity type.&#13;
-&#13;
-## Notes&#13;
-&#13;
-Impact is very low. Users who already have access to the meeting and have access to the attendee record by default have access to the email address. It is a rare case that access to the email address will be restricted.&#13;
- &#13;
-## Reporter&#13;
-&#13;
-**Yash Shendge (ashrexon)**&#13;
-2026-07-22</description>
-      <guid isPermaLink="false">GHSA-hpgx-8qg3-5w7v</guid>
-      <category>LOW</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Sat, 29 Aug 2026 15:27:27 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via message deletion in a cyclic chat tree (CVE-2026-88000)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3cgp-3cqx-j8w2</link>
-      <description>CVE-2026-88000 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
-
-Affected:
-- pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Any authenticated user can hang the server via message deletion in a cyclic chat tree&#13;
-&#13;
-## Summary&#13;
-Chat histories are stored as an unvalidated JSON object. After a message is deleted, the code that picks the chat's new current message walked down the `childrenIds` links without recording where it had already been. Any account with the default `user` role could store a chat whose messages list each other as children, then delete a message from it, and the walk would run forever. That walk runs on the server's request loop, so it blocks every other user's requests until the process is killed.&#13;
-&#13;
-## Preconditions&#13;
-One account with the default `user` role. No administrator rights, no additional permissions, no configuration change and no non-default setting: creating and deleting chats is available to every user out of the box. The attack runs entirely against the attacker's own chat, so no knowledge of any other user's data is needed. Versions before 0.10.0 are unaffected because neither the message-deletion endpoint nor the affected code existed.&#13;
-&#13;
-## Impact&#13;
-The walk is synchronous and runs on the asyncio event loop, so while it spins, every request from every user is blocked, including unauthenticated `/health` and administrator endpoints. External health checks and orchestrator liveness probes fail alongside the UI. This is a pure CPU pin with no list growth, so a worker consumes one full core with flat memory and has to be killed rather than being reclaimed by an out-of-memory kill. The work is not cancelled when the client disconnects, so a single fire-and-forget request is enough and the attacker can disconnect immediately. The malformed chat stays in the database, so the condition re-arms on the next deletion attempt against that chat. No data is disclosed, altered or deleted.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/commit/b933292d63d12be3fd1416fe55519ddc7aa336bc. The walk now records the ids it has already passed through, so it terminates after at most one step per stored message whatever the message contents are. Upgrading fully resolves the issue, including for chats stored while the deployment was on an affected version, which become harmless once the walk terminates.&#13;
-&#13;
-## Root cause&#13;
-Affected component: the chat-history message deletion helper in `backend/open_webui/models/chats.py`, reached from `DELETE /api/v1/chats/{id}/messages/{message_id}`. Affected setup: all builds from 0.10.0 up to and including 0.11.0.&#13;
-&#13;
-Resolving the chat's new current message after a deletion means descending to the deepest remaining child, and that descent had no notion of where it had already been, so two messages naming each other as children sent it back and forth indefinitely. The write path does not validate the structure of a chat's history, and the child-link rebuild that runs on other write paths does not apply when a chat is created, so a history whose `childrenIds` form a cycle was persisted exactly as submitted.&#13;
-&#13;
-## Proof of concept&#13;
-As a default-role user on a running instance, store one chat of roughly 300 bytes whose messages reference each other as children:&#13;
-&#13;
-```json&#13;
-{"chat":{"title":"poc","history":{"currentId":"C","messages":{&#13;
-  "A":{"id":"A","parentId":null,"role":"user","content":"a","childrenIds":["B","C"],"timestamp":1},&#13;
-  "B":{"id":"B","parentId":"A","role":"assistant","content":"b","childrenIds":["A"],"timestamp":2},&#13;
-  "C":{"id":"C","parentId":"A","role":"user","content":"c","childrenIds":[],"timestamp":3}}}}}&#13;
-```&#13;
-&#13;
-`POST /api/v1/chats/new` stores it verbatim, with the child links unchanged. A single `DELETE /api/v1/chats/{id}/messages/C` as the same user then never returns:&#13;
-&#13;
-```&#13;
-   unauthenticated GET /health -&gt; HTTP 000 after 10.007s&#13;
-   DELETE -&gt; HTTP 000 after 20.007s&#13;
-```&#13;
-&#13;
-Sampled during the hang, the worker had consumed 42.9 seconds of CPU on one fully occupied core with flat resident memory, and unauthenticated `GET /health` timed out for as long as the process lived, including after the attacker's connection closed.&#13;
-&#13;
-On 0.11.1 the same payload returns HTTP 200 in 0.011s, `/health` stays available throughout, and deleting a middle message from a well-formed four-message chain still resolves the current message correctly.&#13;
-&#13;
-## Credits&#13;
-@Classic298, who found the unguarded descent through the chat's child links, demonstrated the resulting server-wide outage end to end against a live instance, and supplied the fix.</description>
-      <guid isPermaLink="false">GHSA-3cgp-3cqx-j8w2</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sat, 29 Aug 2026 11:52:10 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Server-side fetches reach blocked and internal hosts via unvalidated HTTP redirect targets (CVE-2026-88001)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-5x7x-4c3c-qf5w</link>
-      <description>CVE-2026-88001 · CVSS 5.0 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:N/A:N) · CWE-918
-
-Affected:
-- pip/open-webui &gt;= 0.9.5, &lt;= 0.11.0 (patched: 0.11.1)
-
----
-
-# Server-side fetches reach blocked and internal hosts via unvalidated HTTP redirect targets&#13;
-&#13;
-## Summary&#13;
-&#13;
-Open WebUI protects server-side web fetches with two controls: the operator's list of excluded hosts, and a check that refuses private and internal addresses. Neither control was applied to the destination of an HTTP redirect. On a deployment where redirect following is enabled, any authenticated user who can cause the server to fetch a URL could submit a page that redirects, and the server would fetch the redirect destination without either control being applied to it. The server therefore connects to hosts the operator excluded, and to internal addresses including loopback, private networks and cloud metadata endpoints.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-`AIOHTTP_CLIENT_ALLOW_REDIRECTS` must be set to `true`. Its default is `false`, and on the default the affected fetch paths do not follow redirects at all, so a deployment that has not changed this setting is not affected.&#13;
-&#13;
-The attacker needs an authenticated account of any role, with access to any feature that causes the server to fetch a URL. Web search, ingesting a URL into a collection, the built-in page fetch tool and image URLs in chat all reach it. No internal hostnames need to be known, because the loopback and cloud metadata addresses are fixed and identical on every deployment.&#13;
-&#13;
-Neither `ENABLE_LOCAL_WEB_FETCH` at its default of `false` nor any set of entries in `WEB_FETCH_FILTER_LIST` prevents this.&#13;
-&#13;
-## Impact&#13;
-&#13;
-An authenticated user can make the server issue requests to hosts the operator deliberately excluded, and to addresses on the internal network including loopback, private ranges and the cloud metadata endpoints of the major providers.&#13;
-&#13;
-What reaches the attacker depends on which HTTP client the fetch path uses, and is stated here as verified rather than assumed. On the paths built on `requests`, the fetched body is returned to the caller, so the response of an excluded host is readable: the built-in page fetch tool hands it to the model, and the URL ingestion endpoint returns it in its response. Those paths kept a working private-address check at connection time, so what they reach is excluded public hosts and internal names, not private IP addresses. On the paths built on aiohttp, which are the ones that reach private addresses written as IP literals, fetched content reaches the web search response, a retrievable collection, or model input as base64 through chat image URLs. A path on that client returning an attacker-chosen response verbatim to the requester was not demonstrated.&#13;
-&#13;
-The operator has no configuration that prevents this. `169.254.169.254` ships in the default excluded list, so an operator reviewing their configuration would reasonably conclude the metadata endpoint is out of reach. The documentation for the redirect setting further recommends the excluded-host list as a compensating control when enabling redirects, and that is precisely the control the redirect path skipped.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/27823. The excluded-host list is now evaluated once per request on both HTTP clients, where the real destination is known and a reused connection cannot skip it, so it applies to every redirect hop. The private-address check stays at connection time and is now hooked where aiohttp resolves a host, which is also reached for hosts written as IP literals.&#13;
-&#13;
-One case is not resolved by the upgrade alone. Where the server reaches the internet through a forward proxy, the private-address check sees the proxy's address rather than the final destination, so it does not constrain where the proxy is asked to connect. The excluded-host list is still applied to the destination on that path. Operators who route outbound fetches through a proxy should enforce destination restrictions on the proxy itself.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-Affected components:&#13;
-&#13;
-- the web retrieval fetch paths, on both the aiohttp and `requests` clients&#13;
-- the built-in page fetch tool&#13;
-- the URL ingestion endpoint&#13;
-&#13;
-Affected setup: builds that carry the redirect-following setting, which was introduced in 0.9.5. Earlier builds have no such setting.&#13;
-&#13;
-The two controls sat at different layers, and each sat where only the originally submitted URL passes through. The excluded-host list was consulted inside URL validation, which runs once against what the user submitted, so a redirect destination never reached it on either client. The private-address check was placed inside the aiohttp resolver, and aiohttp answers a host written as an IP address itself without consulting a resolver, so for exactly those hosts the check never ran. Redirect following was added later as an option, and neither control was revisited at that point, so turning it on moved the real destination out of reach of both.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Both vectors were reproduced against the shipped code of 0.11.0 and confirmed closed against 0.11.1, with `AIOHTTP_CLIENT_ALLOW_REDIRECTS=true` in both runs. A local HTTP server serves a redirect and a body, DNS is stubbed so the test hostnames resolve to loopback, and the guards themselves are unmodified.&#13;
-&#13;
-Excluded-host list, redirect destination `203.0.113.1` excluded, submitted URL not excluded:&#13;
-&#13;
-```&#13;
-0.11.0  no check runs against the redirect destination, the server opens a connection to it&#13;
-0.11.1  blocked at the redirect hop before any connection is attempted&#13;
-```&#13;
-&#13;
-Private-address check, host written as an IP literal, with `ENABLE_LOCAL_WEB_FETCH` at its default of `false`:&#13;
-&#13;
-```&#13;
-0.11.0  fetch returned 'LOOPBACK-CONTENT-REACHED', no check ran&#13;
-0.11.1  blocked, non-global address 127.0.0.1&#13;
-```&#13;
-&#13;
-Instrumenting 0.11.1 on a redirect that is allowed shows both controls running against the redirect destination as well as the submitted URL, and an ordinary public fetch is unaffected.&#13;
-&#13;
-## Credits&#13;
-&#13;
-- @arpitjain099, original report: the excluded-host list is not re-applied to redirect destinations.&#13;
-- @Classic298: the private-address check is bypassed for redirect destinations written as IP literals, through aiohttp's resolver shortcut.</description>
-      <guid isPermaLink="false">GHSA-5x7x-4c3c-qf5w</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sat, 29 Aug 2026 11:49:13 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can hang the server via a cyclic chat message history (CVE-2026-88002)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jqhh-cjmq-vmv6</link>
-      <description>CVE-2026-88002 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-835
-
-Affected:
-- pip/open-webui &gt;= 0.5.0, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Any authenticated user can hang the server via a cyclic chat message history&#13;
-&#13;
-## Summary&#13;
-Chat histories are stored as an unvalidated JSON object. The walk that reconstructs a chat's message chain detected repeats using each message's own `id` field while moving through the history by map key, so a message that simply omitted `id` was never recorded as visited. A history whose messages referenced each other in a parent cycle therefore made the walk run forever. Any account with the default `user` role could store such a chat and trigger the walk, blocking the server for everyone.&#13;
-&#13;
-## Preconditions&#13;
-One account with the default `user` role. No administrator rights, no additional permissions, no configuration change and no non-default setting: creating a chat is available to every user out of the box. The attack runs entirely against the attacker's own chat, so no knowledge of any other user's data is needed. Instances where every account is trusted are affected in the sense that the fault is reachable, but require a user acting deliberately.&#13;
-&#13;
-## Impact&#13;
-The walk is synchronous and runs on the asyncio event loop, so while it spins, every request from every user is blocked, including unauthenticated `/health` and administrator endpoints. External health checks and orchestrator liveness probes fail alongside the UI. The list it appends to grows without bound, so a memory-capped deployment ends in an out-of-memory kill rather than a hang. The work is not cancelled when the client disconnects, so one fire-and-forget request is enough and the attacker can disconnect immediately. The malformed chat stays in the database, so restarting the process does not clear the condition: the next request that walks that chat hangs the new process, and recovery requires deleting the stored chat. No data is disclosed, altered or deleted.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/commit/5c79ccc9e5c9efc2bc024d8f0b9757652ece929a. The walk now records the map key it is currently positioned at instead of the message's self-reported `id`, so it terminates after at most one step per stored message whatever the message contents are. Upgrading fully resolves the issue, including for chats stored while the deployment was on an affected version, which become harmless once the walk terminates.&#13;
-&#13;
-## Root cause&#13;
-Affected component: the message-chain reconstruction helper in `backend/open_webui/utils/misc.py`, reached from every path that rebuilds a chat's history, including chat completion, per-chat statistics, context compaction, subagents and timers. Affected setup: all builds from 0.5.0 up to and including 0.11.0.&#13;
-&#13;
-The loop's visited set was keyed on the message body's `id` field while the loop itself advanced by looking the parent up as a key in the history map, so the two used different notions of identity. That `id` field is part of the stored chat object and is fully attacker-controlled, and the guard explicitly skipped recording it when absent, which left the exit condition unreachable for any message that omitted it. The write path does not validate the structure of a chat's history, so a history containing id-less messages in a parent cycle was persisted exactly as submitted.&#13;
-&#13;
-## Proof of concept&#13;
-As a default-role user on a running instance, store one chat of two messages that reference each other as parents, with the `id` field omitted:&#13;
-&#13;
-```json&#13;
-{"chat":{"title":"poc","history":{"currentId":"A","messages":{&#13;
-  "A":{"parentId":"B","role":"user","content":"a","childrenIds":[]},&#13;
-  "B":{"parentId":"A","role":"assistant","content":"b","childrenIds":[]}}}}}&#13;
-```&#13;
-&#13;
-`POST /api/v1/chats/new` stores it verbatim. A single subsequent `GET /api/v1/chats/stats/usage` as the same user then never returns. Sampled during the hang, the worker consumed one full CPU core and reached 1.86 GB resident within 60 seconds, still growing. Unauthenticated `GET /health` and administrator API calls both time out for as long as the process lives, and continue to do so after the attacker's connection closes. Restarting the server restores service until the first request that walks the stored chat, which hangs the new process the same way.&#13;
-&#13;
-On 0.11.1 the same payload returns promptly, `/health` stays available throughout, and a well-formed chat still resolves its full history.&#13;
-&#13;
-## Credits&#13;
-@YashvantHange, who reported the missing-`id` cycle in the message-chain walk, demonstrated the resulting server-wide outage end to end against a live instance, and showed that it survives both attacker disconnect and a process restart.</description>
-      <guid isPermaLink="false">GHSA-jqhh-cjmq-vmv6</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sat, 29 Aug 2026 10:57:26 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Users outside the OAuth domain allowlist can still sign in via token exchange (CVE-2026-88005)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4qg5-cxx4-g927</link>
-      <description>CVE-2026-88005 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.8.0, &lt; 0.9.0 (patched: 0.9.0)
-- docker/openwebui/open-webui &gt;= 0.8.0, &lt; 0.9.0 (patched: 0.9.0)
-
----
-
-# Users outside the OAuth domain allowlist can still sign in via token exchange&#13;
-&#13;
-## Summary&#13;
-Open WebUI's OAuth token exchange endpoint issues a session for a provider access token without applying the email domain allowlist that the normal OAuth login callback enforces. An account whose email domain the login callback would refuse could still obtain a working session through this endpoint.&#13;
-&#13;
-## Preconditions&#13;
-- `ENABLE_OAUTH_TOKEN_EXCHANGE=True`. It is disabled by default, so a default deployment is not affected.&#13;
-- `OAUTH_ALLOWED_DOMAINS` set to something other than `*`. Deployments without a domain allowlist are not affected.&#13;
-- A valid, unexpired access token on the configured provider.&#13;
-- An Open WebUI account already linked to that provider subject, or an account with a matching email when `OAUTH_MERGE_ACCOUNTS_BY_EMAIL` is enabled. This endpoint never creates accounts, so a token for a subject with no existing account is rejected.&#13;
-&#13;
-## Impact&#13;
-An admin who narrows the domain allowlist expects users outside it to lose access at their next sign-in. The login callback does deny them. Token exchange kept issuing sessions, so a user whose domain was removed retained working access as their existing account at its existing role. The endpoint cannot create an account and cannot raise anyone's role, so this grants continued access rather than new or elevated access.&#13;
-&#13;
-## Fix&#13;
-fb5ef978b, released in 0.9.0, adds the same domain allowlist check to the token exchange endpoint that the login callback runs, and denies the exchange with 403 when the email domain is not allowed. Upgrading restores the check with no further action.&#13;
-&#13;
-## Root cause&#13;
-The affected component is the OAuth token exchange endpoint in `backend/open_webui/routers/auths.py`, present in builds from 0.8.0 onward.&#13;
-&#13;
-The endpoint was added as a second entry point into the same session-issuing path the OAuth login callback uses, but it re-implemented only the identity lookup and not the policy checks surrounding it. The domain allowlist check lived inside the callback's own body rather than in shared code, so the second caller inherited none of it.&#13;
-&#13;
-## Credits&#13;
-@Classic298</description>
-      <guid isPermaLink="false">GHSA-4qg5-cxx4-g927</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sat, 29 Aug 2026 10:45:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] composer/composer — Composer arbitrary command execution via a malicious package's Perforce source URL (CVE-2026-84361)</title>
-      <link>https://github.com/composer/composer/security/advisories/GHSA-rvx4-ffvw-m9q3</link>
-      <description>CVE-2026-84361 · CVSS 7.7 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-78
-
-Affected:
-- composer/composer/composer &gt;= 2.3.0, &lt; 2.10.3 (patched: 2.10.3)
-- composer/composer/composer &gt;= 1.0, &lt; 2.2.30 (patched: 2.2.30)
-
----
-
-## Summary&#13;
-&#13;
-If the `p4` Perforce CLI client is installed, a malicious dependency package from a package repository allowing arbitrary perforce source URLs (packagist.org is safe) could execute arbitrary commands when running `composer install` or `composer update`. Composer passed a package's Perforce source address to the `p4` CLI client without validating it. The `p4` CLI client accepts addresses that mean "run this local command" instead of "connect to this server". This is remote code execution with the privileges of the user or CI account running Composer.&#13;
-&#13;
-## Am I affected?&#13;
-&#13;
-You are only affected if all of the following are true:&#13;
-&#13;
-- The Perforce `p4` command line client is installed and on the `PATH` of the machine running Composer.&#13;
-- An attacker can control a package metadata's `source` section with a perforce type. Packagist.org does not allow perforce source metadata, so you are only exploitable if you rely on another Composer repository (any custom `composer`-type repository, or an inline `package` repository entry), or a `composer.lock` file you obtained from somewhere you do not trust.&#13;
-- The package gets installed from source, either because it has no dist artifact or because source installs are selected (for example `--prefer-source`).&#13;
-&#13;
-Plainly not affected: anyone without the `p4` client installed, which is the large majority of Composer users. Perforce is an optional VCS integration. Also not affected: projects that only consume packages from Packagist.org, which does not allow Perforce source repositories and therefore cannot serve a package with a Perforce source address.&#13;
-&#13;
-Most realistic way to get hit: a developer workstation or CI image that has Perforce tooling installed, pulling packages from a private or third party Composer repository that an attacker has compromised.&#13;
-&#13;
-## Patched versions&#13;
-&#13;
-Composer now validates Perforce source addresses before handing them to the `p4` client, and accepts only real network endpoints (an optional `tcp`/`ssl` transport with a host and port). Addresses that make the client spawn a local process are rejected, and the package fails validation on both update and install, before any `p4` command runs. Fixed in Composer **2.10.3** and **2.2.30**.&#13;
-&#13;
-Note: If you legitimately use Perforce with an unusual `P4PORT` value that is not a plain host and port, Composer will now reject it.&#13;
-&#13;
-## Workarounds&#13;
-&#13;
-Upgrading is the only complete fix.&#13;
-&#13;
-Risk reduction short of upgrading:&#13;
-&#13;
-- Remove the `p4` client from the `PATH` of machines that run Composer but do not use Perforce. This fully blocks this specific attack, since the vulnerability depends on that client being present.&#13;
-- Restrict configured repositories to sources you control or trust, and treat lock files from untrusted sources as untrusted input.</description>
-      <guid isPermaLink="false">GHSA-rvx4-ffvw-m9q3</guid>
-      <category>HIGH</category>
-      <category>composer/composer</category>
-      <pubDate>Thu, 27 Aug 2026 11:41:24 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] composer/composer — Package bin path can escape the package directory, bypassing the GHSA-gjfg-22fp-rrxx fix (CVE-2026-59944)</title>
-      <link>https://github.com/composer/composer/security/advisories/GHSA-96h3-5x6v-m776</link>
-      <description>CVE-2026-59944 · CVSS 6.1 (CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:L/A:N) · CWE-22, CWE-59, CWE-732
-
-Affected:
-- composer/composer/composer &gt;= 2.3.0, &lt; 2.10.3 (patched: 2.10.3)
-- composer/composer/composer &gt;= 1.0, &lt; 2.2.30 (patched: 2.2.30)
-
----
-
-## Summary&#13;
-&#13;
-A malicious or compromised Composer package could, when installed as a dependency, cause Composer to change the permissions of a file outside that package's own directory and to register a runnable `vendor/bin` command that points at that outside file. This is a path traversal and link following issue. It is not remote code execution, the attacker gains no ability to read or receive your data directly. The risk is that a file which was readable only by its owner, but modifiable by Composer, can be made world readable and executable, which is enough to expose its contents on a shared or multi tenant host. The earlier hardening from GHSA-gjfg-22fp-rrxx can be bypassed, since it only rejected literal `..` path segments in a package's declared binaries, and was only applied in a single place during dependency resolution.&#13;
-&#13;
-## Am I affected?&#13;
-&#13;
-You can be affected if a malicious or compromised package, including a transitive dependency, is installed in your project, and either of the following is true:&#13;
-&#13;
-- The dependency package ships one of its declared binaries as a symbolic link that resolves to a location outside the package's own directory. Nothing beyond a normal install or update is required.&#13;
-- Or, the recorded metadata of your installed dependencies (`vendor/composer/installed.json`) declares a binary path that escapes the package's directory. Composer regenerates missing binaries from that recorded metadata at the end of an install, and uses this metadata for reinstalls of the same package. In both of these cases the validation applied during dependency resolution is skipped. This situation is only reachable when your `vendor` directory is not populated from the same install run, which performs validation. For example a vendor directory restored from a shared or untrusted CI cache, copied in from an earlier container build stage, carried over from a Composer older than 2.10.2 or 2.2.29, or writable by a lower trust build step, could contain such malicious data.&#13;
-&#13;
-The most realistic way to get hit is a `composer install` in a build or deploy step that reuses a `vendor` directory produced elsewhere, since the permission change is applied silently and with the privileges of the user running Composer.&#13;
-&#13;
-## Patched versions&#13;
-&#13;
-Composer now verifies that each declared binary resolves to a path inside the installing package's own directory before it touches the file, and skips any binary that resolves outside it with a warning. Update to the patched releases (2.10.3 and 2.2.30).&#13;
-&#13;
-## Workarounds&#13;
-&#13;
-Upgrading is the only complete fix. &#13;
-</description>
-      <guid isPermaLink="false">GHSA-96h3-5x6v-m776</guid>
-      <category>MEDIUM</category>
-      <category>composer/composer</category>
-      <pubDate>Thu, 27 Aug 2026 11:41:22 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Cross-tenant attachment disclosure via inline images in notification emails</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-49h2-vrqp-wwwf</link>
-      <description>CVSS 8.2 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-639, CWE-862
-
-Affected:
-- Zammad &lt;= 7.1.2 (patched: 7.1.3)
-
----
-
-Zammad could attach files belonging to unrelated tickets or knowledge base articles to outgoing notification emails.&#13;
-&#13;
-If a trigger or scheduler is configured to send a notification email that quotes the incoming message in HTML, anyone able to send an email to the system could craft a message that causes an arbitrary stored file from the instance to be included as an attachment in the reply they receive. No account or login is required.&#13;
-&#13;
-As a result, attachments from other customers' tickets or from internal knowledge base articles could be disclosed to an outside party.</description>
-      <guid isPermaLink="false">GHSA-49h2-vrqp-wwwf</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 25 Aug 2026 05:41:27 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Disclosure of group-restricted text modules to unauthorized agents</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-36hv-g4ch-ch33</link>
-      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-862
-
-Affected:
-- Zammad &lt;= 7.1.2 (patched: 7.1.3)
-
----
-
-Text modules (canned responses) can be limited to specific groups, or deactivated so they are no longer offered. Due to a missing permission check, any logged-in agent was able to retrieve a single text module directly and see its full content, even if it belonged to a group they have no access to.&#13;
-&#13;
-As a result, internal reply templates could become visible to agents who were not meant to see&#13;
-them. No ticket or customer data was affected, and the text modules could not be changed this way.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-36hv-g4ch-ch33</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 25 Aug 2026 05:41:13 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Improper access control allows agents to read and modify other users' overview ordering preferences</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-r4qw-cv8j-3wf6</link>
-      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-639, CWE-862
-
-Affected:
-- Zammad &lt;= 7.1.2 (patched: 7.1.3)
-
----
-
-Zammad did not check record ownership when handling requests to the personal overview ordering endpoints.&#13;
-&#13;
-Because of this, any logged-in agent was able to read, change or delete the overview ordering preferences of any other user, and to create such preferences on another user's behalf.&#13;
-&#13;
-The impact is limited to the order and sorting in which ticket overviews are presented to the affected users; no ticket content or other personal data was exposed through this.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-r4qw-cv8j-3wf6</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 25 Aug 2026 05:40:45 +0000</pubDate>
     </item>
   </channel>
 </rss>
