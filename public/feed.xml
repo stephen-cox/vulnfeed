@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 27 Oct 2026 09:33:43 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 28 Oct 2026 10:17:58 +0000</lastBuildDate>
     <item>
       <title>[HIGH] espocrm/espocrm — Stored XSS in Knowledge Base articles letting run JS code on link click</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-j6q5-9jwj-9p8q</link>
@@ -1625,7 +1625,7 @@ The victim's terminal container was removed. Rewriting a policy with an `env` va
     <item>
       <title>[MEDIUM] open-webui/open-webui — Other users' session tokens disclosed via OAuth-mode connections, tool servers and terminals</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gqfh-jxvw-74rp</link>
-      <description>CVSS 4.2 (CVSS:3.1/AV:N/AC:H/PR:H/UI:R/S:U/C:H/I:N/A:N) · CWE-200
+      <description>CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-200
 
 Affected:
 - pip/open-webui &gt;= 0.6.27, &lt; 0.11.4 (patched: 0.11.4)
@@ -1898,9 +1898,9 @@ Reported by @zyakir13. Fix by @Classic298.</description>
       <pubDate>Sun, 27 Sep 2026 19:45:25 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Directory structure of inaccessible knowledge bases disclosed via an unscoped directory id</title>
+      <title>[MEDIUM] open-webui/open-webui — Directory structure of inaccessible knowledge bases disclosed via an unscoped directory id (CVE-2026-109287)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jx3w-3pqq-7f3w</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-863
+      <description>CVE-2026-109287 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.9.6, &lt; 0.11.4 (patched: 0.11.4)
