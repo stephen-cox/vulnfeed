@@ -7,7 +7,264 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 28 Oct 2026 10:17:58 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 29 Oct 2026 10:41:37 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] composer/composer — Inline repository HTTP headers, such as API tokens, are written into composer.lock</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-fm2w-xgf2-f9fh</link>
+      <description>CVSS 5.3 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N) · CWE-200
+
+Affected:
+- composer/composer/composer &gt;= 2.3.0, &lt; 2.11.0 (patched: 2.11.0)
+- composer/composer/composer &gt;= 1.0, &lt; 2.2.31 (patched: 2.2.31)
+
+---
+
+## Summary
+
+When a Composer repository is configured with inline HTTP headers (the `options.http.header` setting of a `composer` type repository), Composer copied those headers into `composer.lock` for every package downloaded from that repository. Such headers usually carry an API token or another credential, and `composer.lock` is usually committed to version control, so the credential could end up stored in places it was never meant to be.
+
+This is an information disclosure issue. It cannot be triggered by a malicious package or a remote party. Whether a credential was actually exposed depends on who can read the lock file.
+
+## Am I affected?
+
+You are exposed if all of the following are true:
+
+- You use a `composer` type repository with `options.http.header` set (the "inline custom headers" authentication method).
+- That repository is defined outside the project's `composer.json`, typically in your global `config.json` (for example via `composer config --global`), so the project itself does not otherwise contain the credential.
+- Package archives are downloaded from under that repository's URL, which is common for private Composer repositories.
+- The generated `composer.lock` is shared with people or systems that should not have the credential, for example by committing it to a repository, publishing it as a build artifact or attaching it to a bug report.
+
+If the inline header is defined in the project's `composer.json`, it is also copied into `composer.lock`, but the credential is already in the committed `composer.json`, so the lock file adds no new exposure.
+
+You are **not** affected if your credentials are stored in `auth.json` or the `COMPOSER_AUTH` environment variable (`http-basic`, `bearer`, `custom-headers`, `github-oauth` and similar). Those were never written to `composer.lock`.
+
+The most likely way to be affected: a developer machine or CI worker has a private repository with a token header in its global `config.json`, runs `composer update`, and the resulting `composer.lock` is committed.
+
+## Patched versions
+
+Composer no longer writes repository HTTP headers into `composer.lock`. When installing from a lock file, headers are taken from the currently configured repositories instead, so header based authentication keeps working.
+
+Fixed in Composer 2.11.0 and 2.2.31 (LTS).
+
+Existing lock files keep any headers they already contain until they are rewritten. After upgrading, run `composer update --lock` (or any update) to rewrite the lock file without them.
+
+## Workarounds
+
+Upgrading is the fix. Until you can upgrade:
+
+- If your repository supports it, store the credential in `auth.json` instead of an inline header, for example as `bearer`, `http-basic`, or `custom-headers` on Composer versions that support it.
+- Check `composer.lock` for `header` entries under `transport-options` before committing or sharing it.
+
+## If you may have been affected
+
+Search your repositories' history for `composer.lock` files containing `header` entries under `transport-options`. If a credential appears in a lock file that was shared, revoke and rotate it. Removing it from the latest commit does not remove it from the history.
+</description>
+      <guid isPermaLink="false">GHSA-fm2w-xgf2-f9fh</guid>
+      <category>MEDIUM</category>
+      <category>composer/composer</category>
+      <pubDate>Thu, 29 Oct 2026 09:29:54 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Package names in vendor/composer/installed.json can escape the vendor directory during install and reinstall</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-c968-33g3-wh7p</link>
+      <description>CVSS 7.1 (CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:H/A:H) · CWE-22
+
+Affected:
+- composer/composer/composer &gt;= 2.3.0, &lt; 2.11.0 (patched: 2.11.0)
+- composer/composer/composer &gt;= 1.0, &lt; 2.2.31 (patched: 2.2.31)
+
+---
+
+## Summary&#13;
+&#13;
+Composer did not validate the package names recorded in `vendor/composer/installed.json`. A crafted entry whose name contains `..` path segments made Composer delete a directory outside of `vendor/` during `composer install`, and on `composer reinstall` also write the package's files there. Malicious names in `composer.lock` and in repository metadata were already rejected; only the locally recorded package list was trusted.&#13;
+&#13;
+This is arbitrary file deletion and file write with the privileges of the user running Composer. It is not exploitable remotely and cannot be triggered by publishing a package: the attacker has to be able to write to `vendor/composer/installed.json` on the machine running Composer.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You can only be exposed to this if the vendor directory (specifically `vendor/composer/installed.json`) was not produced by a trusted Composer run on this machine. For example it was restored from a shared or untrusted CI cache, copied in from another container build stage or artifact, or is writable by a lower-trust step of your build.&#13;
+&#13;
+You are not affected if your `vendor/` directory is only ever created and modified by Composer runs you trust, which is the case for most local development setups.&#13;
+&#13;
+The most realistic scenario is a CI pipeline that restores `vendor/` from a cache that untrusted jobs (for example pull requests from forks) can also write to.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Composer now validates locally installed packages the same way it validates resolved and locked packages, and aborts before performing any operation if an invalid package is found.&#13;
+&#13;
+Fixed in Composer 2.11.0 and 2.2.31 (LTS).&#13;
+</description>
+      <guid isPermaLink="false">GHSA-c968-33g3-wh7p</guid>
+      <category>HIGH</category>
+      <category>composer/composer</category>
+      <pubDate>Thu, 29 Oct 2026 09:29:51 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 — /v1/objects: supposedly inaccessible related objects can be accessed in filter expressions</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-2hhr-ccxm-x85p</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200
+
+Affected:
+- Icinga 2 &lt;= v2.16.5, &lt;= v2.15.6 (patched: v2.16.6, v2.15.7)
+
+---
+
+### Impact&#13;
+&#13;
+Authenticated API users with access to the `/v1/objects` API endpoint may, under certain conditions, access objects in filter expressions they are not otherwise permitted to access. The access is limited to objects related to objects the user is allowed to access, so for example, if an API user is granted only the `objects/query/Service` permission, they cannot retrieve information about other object types from the API. However, their filter expressions are executed in a scope that may have contained references to objects not accessible otherwise. This only grants access to related objects like the `Host` the `Service` belongs to or its `CheckCommand`, not arbitrary objects.&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.6, v2.15.7.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+This issue can only be mitigated by stopping malicious users from using filter expressions in `/v1/objects`, either by disabling access for untrusted `ApiUser` objects or by limiting their access by [enabling enforcement of the recently added `filter-expression`](https://icinga.com/docs/icinga-2/latest/doc/16-upgrading-icinga-2/#new-filter-expression-permission) permission and not granting it to untrusted `ApiUser` objects.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga-2-v2-16-6-and-icinga-web-v2-14-1/)&#13;
+* [PR with the patch](https://github.com/Icinga/icinga2/pull/11146)</description>
+      <guid isPermaLink="false">GHSA-2hhr-ccxm-x85p</guid>
+      <category>MEDIUM</category>
+      <category>icinga/icinga2</category>
+      <pubDate>Wed, 28 Oct 2026 11:54:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] icinga/icinga2 — ASLR bypass via addresses from API call exception stack trace</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-vwj4-g6h6-65gj</link>
+      <description>Affected:
+- Icinga 2 &gt;=v2.4, &lt;=v2.16.5, &lt;=v2.15.6 (patched: v2.16.6, v2.15.7)
+
+---
+
+### Impact&#13;
+&#13;
+Many API error responses contain stack traces and other information when the request is made with the `verbose` parameter, which contain address information that may be used to bypass or weaken ASLR.&#13;
+&#13;
+This is not exploitable on its own but requires additional exploits to make use of the information gained through exploiting this weakness.&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.6, v2.15.7.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Disable access for potentially compromised `ApiUser` objects.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga-2-v2-16-6-and-icinga-web-v2-14-1/)&#13;
+* [PR with the patch](https://github.com/Icinga/icinga2/pull/11145)</description>
+      <guid isPermaLink="false">GHSA-vwj4-g6h6-65gj</guid>
+      <category>LOW</category>
+      <category>icinga/icinga2</category>
+      <pubDate>Wed, 28 Oct 2026 11:53:59 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 — Multiple instances of log injections</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-hhxh-8qx6-pxc3</link>
+      <description>CVSS 5.3 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N) · CWE-117
+
+Affected:
+- Icinga 2 &lt;= v2.16.5, &lt;= v2.15.6 (patched: v2.16.6, v2.15.7)
+
+---
+
+### Impact&#13;
+&#13;
+There are multiple instances in Icinga 2 where values inserted into log messages are not properly sanitized, allowing an attacker to falsify logs. This mostly affects `FileLogger` and `CompatLogger`, but other loggers could be affected as well, depending on how downstream systems processing the log messages are configured. The injections can originate from values like certificate common names, command outputs, user comments, HTTP responses, and JSON-RPC inputs, some of which can be influenced by an unauthenticated attacker.&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.6, v2.15.7.&#13;
+&#13;
+The fixes are twofold: For the aforementioned values, explicit quoting and escaping of the values inserted is added. As a second line of defense, all log messages now undergo some basic sanitization escaping ASCII control characters and indenting all but the first line of multi-line messages, so that lines are clearly marked as a continuation of the previous line.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+Logging using a method that is able to handle multi-line messages natively (like for example systemd journald via [`JournaldLogger`](https://icinga.com/docs/icinga-2/latest/doc/09-object-types/#journaldlogger) prevents the injection of full log lines.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga-2-v2-16-6-and-icinga-web-v2-14-1/)&#13;
+* [PR with the patch](https://github.com/Icinga/icinga2/pull/11147)</description>
+      <guid isPermaLink="false">GHSA-hhxh-8qx6-pxc3</guid>
+      <category>MEDIUM</category>
+      <category>icinga/icinga2</category>
+      <pubDate>Wed, 28 Oct 2026 11:53:46 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 — Attacker-Controlled Comparator crashes Array#sort</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-33vf-h78f-99p3</link>
+      <description>Affected:
+- Icinga 2 &gt;=v2.3.0, &lt;=v2.16.5, &lt;=v2.15.6 (patched: v2.16.6, v2.15.7)
+
+---
+
+### Impact&#13;
+&#13;
+If an attacker can call the Icinga 2 DSL `Array#sort` function, they can provide a custom comparison function that does not follow a strict weak ordering. This can crash Icinga 2 with a segmentation fault.&#13;
+&#13;
+The most critical way to exploit this is via a crafted filter expression run against one of the API endpoints that supports the `filter` parameter, like `/v1/objects` or `/v1/actions`.&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.6, v2.15.7.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+This issue can only be mitigated by stopping malicious users from using filter expressions on any API endpoints by [enabling enforcement of the recently added `filter-expression`](https://icinga.com/docs/icinga-2/latest/doc/16-upgrading-icinga-2/#new-filter-expression-permission) permission and not granting it to untrusted `ApiUser` objects.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga-2-v2-16-6-and-icinga-web-v2-14-1/)&#13;
+* [PR with the patch](https://github.com/Icinga/icinga2/pull/11141)</description>
+      <guid isPermaLink="false">GHSA-33vf-h78f-99p3</guid>
+      <category>MEDIUM</category>
+      <category>icinga/icinga2</category>
+      <pubDate>Wed, 28 Oct 2026 11:53:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] icinga/icinga2 — The default email notification scripts may allow command injection from the recipient address</title>
+      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-chm5-8fg3-g6fw</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:N) · CWE-77
+
+Affected:
+- Icinga 2 &lt;= v2.16.5, &lt;= v2.15.6 (patched: v2.16.6, v2.15.7)
+
+---
+
+### Impact&#13;
+&#13;
+The default `mail-host-notification.sh` and `mail-service-notification.sh` notification scripts shipped with Icinga 2 did not sufficiently validate the argument for the recipient address, allowing an attacker to pass arbitrary command line flags to the `mail` binary on the system. The exact impact depends on the implementation of the `mail` binary used on the specific system, in the case of GNU mailutils, there are flags that can be used to execute arbitrary commands.&#13;
+&#13;
+In order to exploit this, an attacker needs to be able to specify the email address of a `User` object in the Icinga 2 config, for example because they have access to an `ApiUser` with the `objects/modify/User` permission. In that case, they can provide command line flags for the `mail` binary instead of or in addition to a recipient email address. For GNU mailutils, there exists the `--exec` command line flag that can be used to instruct it to execute an arbitrary command. With other `mail` implementations, there could be undesirable effects.&#13;
+&#13;
+### Patches&#13;
+&#13;
+The following versions of Icinga 2 include fixes for this vulnerability: v2.16.6, v2.15.7.&#13;
+&#13;
+**Important:** As the vulnerable script is located in `/etc/icinga2/scripts`, it is treated as a configuration files by package managers and may not be updated automatically if it was modified locally. After upgrading, please verify the fix has been applied (see Workarounds section below) and there are no `*.rpmnew` or `*.dpkg-dist` files in that directory, indicating a newer upstream version.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+The vulnerability exists in scripts shipped in the default configuration in `/etc/icinga2/scripts`, so the fix for this issue can be applied locally without having to upgrade the Icinga 2 packages. To do so, apply the changes from [TODO: link commit] to the files `mail-host-notification.sh` and `mail-service-notification.sh` in that directory.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Release Announcement](https://icinga.com/blog/icinga-2-v2-16-6-and-icinga-web-v2-14-1/)&#13;
+* [PR with the patch](https://github.com/Icinga/icinga2/pull/11144)&#13;
+&#13;
+### Acknowledgements&#13;
+&#13;
+This issue was reported by @PfiatDe.</description>
+      <guid isPermaLink="false">GHSA-chm5-8fg3-g6fw</guid>
+      <category>MEDIUM</category>
+      <category>icinga/icinga2</category>
+      <pubDate>Wed, 28 Oct 2026 11:53:18 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] espocrm/espocrm — Stored XSS in Knowledge Base articles letting run JS code on link click</title>
       <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-j6q5-9jwj-9p8q</link>
@@ -1565,9 +1822,9 @@ Wenhao Wu, Southeast University</description>
       <pubDate>Tue, 29 Sep 2026 07:50:21 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Terminal users can manage Terminals policies and other users' terminals via the terminal proxy</title>
+      <title>[HIGH] open-webui/open-webui — Terminal users can manage Terminals policies and other users' terminals via the terminal proxy (CVE-2026-109572)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-q46m-r89w-j74p</link>
-      <description>CVSS 7.6 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:L) · CWE-862
+      <description>CVE-2026-109572 · CVSS 7.6 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:L) · CWE-862
 
 Affected:
 - pip/open-webui &gt;= 0.8.6, &lt; 0.11.4 (patched: 0.11.4)
@@ -1623,9 +1880,9 @@ The victim's terminal container was removed. Rewriting a policy with an `env` va
       <pubDate>Mon, 28 Sep 2026 16:36:41 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Other users' session tokens disclosed via OAuth-mode connections, tool servers and terminals</title>
+      <title>[MEDIUM] open-webui/open-webui — Other users' session tokens disclosed via OAuth-mode connections, tool servers and terminals (CVE-2026-109292)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gqfh-jxvw-74rp</link>
-      <description>CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-200
+      <description>CVE-2026-109292 · CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-200
 
 Affected:
 - pip/open-webui &gt;= 0.6.27, &lt; 0.11.4 (patched: 0.11.4)
@@ -1666,9 +1923,9 @@ Confirmed during triage by running the connection header builder from 0.11.3 and
       <pubDate>Sun, 27 Sep 2026 19:55:15 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Instance-wide stall via automation recurrence rules that evade sub-daily frequency detection</title>
+      <title>[MEDIUM] open-webui/open-webui — Instance-wide stall via automation recurrence rules that evade sub-daily frequency detection (CVE-2026-109297)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-whgc-vpjx-m3qh</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-436
+      <description>CVE-2026-109297 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-436
 
 Affected:
 - pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
@@ -1725,9 +1982,9 @@ Submitting the first rule returned HTTP 200 after 191.59 seconds. A second clien
       <pubDate>Sun, 27 Sep 2026 19:53:56 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Viewer session token theft via javascript: URLs in chat message links</title>
+      <title>[MEDIUM] open-webui/open-webui — Viewer session token theft via javascript: URLs in chat message links (CVE-2026-109288)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wf9m-46cp-c6h6</link>
-      <description>CVSS 6.4 (CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
+      <description>CVE-2026-109288 · CVSS 6.4 (CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
 
 Affected:
 - pip/open-webui &lt; 0.11.4 (patched: 0.11.4)
@@ -1774,9 +2031,9 @@ Reproduced against the official v0.11.3 image with the default configuration, an
       <pubDate>Sun, 27 Sep 2026 19:51:36 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can exhaust server memory via a compressed remote image in a chat message</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can exhaust server memory via a compressed remote image in a chat message (CVE-2026-109294)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-w8j8-jv6j-3m47</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-409
+      <description>CVE-2026-109294 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-409
 
 Affected:
 - pip/open-webui &gt;= 0.6.42, &lt; 0.11.4 (patched: 0.11.4)
@@ -1823,9 +2080,9 @@ Measured on that run: 260,934 bytes left the attacker's host, the server decoded
       <pubDate>Sun, 27 Sep 2026 19:49:07 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Any website can steal a signed-in user's session token via the community stats message handler</title>
+      <title>[HIGH] open-webui/open-webui — Any website can steal a signed-in user's session token via the community stats message handler (CVE-2026-109286)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-vpq8-f445-hcq7</link>
-      <description>CVSS 8.1 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-346
+      <description>CVE-2026-109286 · CVSS 8.1 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-346
 
 Affected:
 - pip/open-webui &gt;= 0.7.0, &lt; 0.11.4 (patched: 0.11.4)
@@ -1861,9 +2118,9 @@ Reproduced against the vulnerable and fixed code in a two-origin browser harness
       <pubDate>Sun, 27 Sep 2026 19:47:06 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Viewer session token theft via a script link in a shared chat's citation</title>
+      <title>[HIGH] open-webui/open-webui — Viewer session token theft via a script link in a shared chat's citation (CVE-2026-109291)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-qpqv-xwg8-cqpj</link>
-      <description>CVSS 7.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
+      <description>CVE-2026-109291 · CVSS 7.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
 
 Affected:
 - pip/open-webui &gt;= 0.6.33, &lt; 0.11.4 (patched: 0.11.4)
@@ -1948,9 +2205,9 @@ On the fixed version, step 2 returns an empty `breadcrumbs` list and step 3 retu
       <pubDate>Sun, 27 Sep 2026 19:34:53 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can reach disabled model provider backends via an explicit backend index</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can reach disabled model provider backends via an explicit backend index (CVE-2026-109296)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-hm62-64q2-6gxw</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-862
+      <description>CVE-2026-109296 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-639, CWE-862
 
 Affected:
 - pip/open-webui &lt; 0.11.4 (patched: 0.11.4)
@@ -2009,9 +2266,9 @@ Reported by @ahkarl13.</description>
       <pubDate>Sun, 27 Sep 2026 19:33:41 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can exhaust worker memory via a nested-repetition knowledge-search pattern</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can exhaust worker memory via a nested-repetition knowledge-search pattern (CVE-2026-109298)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gww9-mhgj-pfqh</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-770
+      <description>CVE-2026-109298 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-770
 
 Affected:
 - pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
@@ -2069,9 +2326,9 @@ The pattern is 27 bytes at every row, so limiting the length of the input does n
       <pubDate>Sun, 27 Sep 2026 19:32:16 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can repeatedly stall a worker via file-search regex on the event loop</title>
+      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can repeatedly stall a worker via file-search regex on the event loop (CVE-2026-109295)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-gfjp-5hc9-852r</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-1333
+      <description>CVE-2026-109295 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-1333
 
 Affected:
 - pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
@@ -2129,9 +2386,9 @@ Measured by running the real tool functions of each release with a concurrent 50
       <pubDate>Sun, 27 Sep 2026 19:30:44 +0000</pubDate>
     </item>
     <item>
-      <title>[HIGH] open-webui/open-webui — Any authenticated user can steal another user's session token via script embedded in a DOCX preview</title>
+      <title>[HIGH] open-webui/open-webui — Any authenticated user can steal another user's session token via script embedded in a DOCX preview (CVE-2026-109290)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-f9xp-mfmq-x6cg</link>
-      <description>CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
+      <description>CVE-2026-109290 · CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
 
 Affected:
 - pip/open-webui &gt;= 0.11.1, &lt;= 0.11.3 (patched: 0.11.4)
@@ -2168,9 +2425,9 @@ A crafted `.docx` containing a body-level OOXML altChunk pointing to an internal
       <pubDate>Sun, 27 Sep 2026 19:29:00 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Stored XSS via user-authored tool-call embeds in the Markdown renderer</title>
+      <title>[MEDIUM] open-webui/open-webui — Stored XSS via user-authored tool-call embeds in the Markdown renderer (CVE-2026-109300)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-9wj4-mcm3-ppj6</link>
-      <description>CVSS 4.6 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N) · CWE-79
+      <description>CVE-2026-109300 · CVSS 4.6 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N) · CWE-79
 
 Affected:
 - pip/open-webui &gt;= 0.6.31, &lt; 0.11.4 (patched: 0.11.4)
@@ -2207,9 +2464,9 @@ Reproduced on stock 0.11.3 with default settings and Channels enabled. A non-adm
       <pubDate>Sun, 27 Sep 2026 19:27:08 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Knowledge base collaborators keep read and delete access to removed files via stale file metadata</title>
+      <title>[MEDIUM] open-webui/open-webui — Knowledge base collaborators keep read and delete access to removed files via stale file metadata (CVE-2026-109285)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-9cxp-636w-4997</link>
-      <description>CVSS 5.0 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-863
+      <description>CVE-2026-109285 · CVSS 5.0 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.6.0, &lt; 0.11.4 (patched: 0.11.4)
@@ -2259,9 +2516,9 @@ The reporter reproduced this over HTTP on a running instance. It was independent
       <pubDate>Sun, 27 Sep 2026 19:25:50 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Deactivated users keep terminal command execution via an already open terminal WebSocket</title>
+      <title>[MEDIUM] open-webui/open-webui — Deactivated users keep terminal command execution via an already open terminal WebSocket (CVE-2026-109289)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-6g45-8g27-fh8q</link>
-      <description>CVSS 6.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-613
+      <description>CVE-2026-109289 · CVSS 6.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L) · CWE-613
 
 Affected:
 - pip/open-webui &gt;= 0.8.8, &lt; 0.11.4 (patched: 0.11.4)
@@ -2310,9 +2567,9 @@ Independently confirmed on real 0.11.3 and 0.11.4 backends, with a stand-in echo
       <pubDate>Sun, 27 Sep 2026 19:22:59 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Read-only shared folder members can still add chats to the folder by forking</title>
+      <title>[MEDIUM] open-webui/open-webui — Read-only shared folder members can still add chats to the folder by forking (CVE-2026-109284)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-6fjc-5cg3-mgvh</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-862
+      <description>CVE-2026-109284 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-862
 
 Affected:
 - pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
@@ -2360,9 +2617,9 @@ Reproduced on running 0.11.3 and 0.11.4 instances with two accounts: an administ
       <pubDate>Sun, 27 Sep 2026 16:42:03 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Instance-wide stall via recurrence rules with no possible occurrence</title>
+      <title>[MEDIUM] open-webui/open-webui — Instance-wide stall via recurrence rules with no possible occurrence (CVE-2026-109299)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-5w58-mwmh-vf2m</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-834
+      <description>CVE-2026-109299 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H) · CWE-400, CWE-834
 
 Affected:
 - pip/open-webui &gt;= 0.9.0, &lt; 0.11.4 (patched: 0.11.4)
@@ -2420,9 +2677,9 @@ The measurements were taken at function level against the released validator, wi
       <pubDate>Sun, 27 Sep 2026 16:31:36 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Revoked users keep signing in via token exchange when roles are only in the ID token</title>
+      <title>[MEDIUM] open-webui/open-webui — Revoked users keep signing in via token exchange when roles are only in the ID token (CVE-2026-109283)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2rr4-q6pg-m5g3</link>
-      <description>CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N) · CWE-863
+      <description>CVE-2026-109283 · CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N) · CWE-863
 
 Affected:
 - pip/open-webui &gt;= 0.11.1, &lt; 0.11.4 (patched: 0.11.4)
@@ -2473,12 +2730,12 @@ Control: a user still holding an allowed role is allowed on both versions.&#13;
       <pubDate>Sun, 27 Sep 2026 16:14:42 +0000</pubDate>
     </item>
     <item>
-      <title>[MEDIUM] open-webui/open-webui — Tool source code disclosed to read-only users via the tool export endpoint</title>
+      <title>[MEDIUM] open-webui/open-webui — Tool source code disclosed to read-only users via the tool export endpoint (CVE-2026-109293)</title>
       <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2h26-836q-4jh2</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-200
+      <description>CVE-2026-109293 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-200
 
 Affected:
-- pip/open-webui &gt;= 0.6.37, &lt; 0.11.4 (patched: 0.11.4)
+- pip/open-webui &gt;= 0.11.0, &lt; 0.11.4 (patched: 0.11.4)
 
 ---
 
@@ -2501,7 +2758,7 @@ A non-admin with export rights obtains the server-side source of every tool shar
 Fixed in 0.11.4 by #29310. The export now returns only tools the caller owns or holds write access to, the same scope the per-tool export and the model export already used. Upgrading fully resolves the issue with no configuration change.&#13;
 &#13;
 ## Root cause&#13;
-Affected component: `GET /api/v1/tools/export` in `backend/open_webui/routers/tools.py`. Every release since 0.6.37, when tool export was opened to non-admins, carries it.&#13;
+Affected component: `GET /api/v1/tools/export` in `backend/open_webui/routers/tools.py`. Affected setup: releases 0.11.0 through 0.11.3. Tool export has been open to non-admins since 0.6.37, but before 0.11.0 a read-only recipient could already read a shared tool's source in its detail view, so the export disclosed nothing beyond that.&#13;
 &#13;
 The export response deliberately includes each tool's source, since exporting is how a writer takes a copy of their tools. The handler, however, built its list with the default read scope of the tool query, so every tool shared read-only with the caller was exported with its source. When 0.11.0 made source writer-only on the detail endpoint, the export path was left on the read scope and kept returning it.&#13;
 &#13;
@@ -3405,407 +3662,6 @@ Classic298, who reported the issue and demonstrated the cross-connection cookie 
       <category>MEDIUM</category>
       <category>open-webui/open-webui</category>
       <pubDate>Fri, 04 Sep 2026 11:47:12 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Sign-in as another user via wildcard characters in the OAuth subject claim on SQLite (CVE-2026-87016)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wpmr-8h3q-fwj7</link>
-      <description>CVE-2026-87016 · CVSS 8.1 (CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H) · CWE-155, CWE-287
-
-Affected:
-- pip/open-webui &gt;= 0.6.41, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Sign-in as another user via wildcard characters in the OAuth subject claim on SQLite&#13;
-&#13;
-## Summary&#13;
-&#13;
-On SQLite deployments, the lookup that maps an external identity to a local account does a substring match instead of an exact match. A subject value containing SQL wildcard characters therefore matches accounts the value was never issued for, and the sign-in binds to whichever account the database returns first, which can be an administrator. The same defect affects SCIM external-ID resolution. PostgreSQL deployments are not affected, because they take a separate and correct code path.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-* The database is SQLite. This is the default backend. PostgreSQL deployments are not affected at all.&#13;
-* OAuth or OIDC sign-in is configured, or SCIM provisioning is enabled. Both are off by default.&#13;
-* For an attacker to steer the match deliberately, they must control the value of the claim Open WebUI uses as the subject. That value is normally assigned by the identity provider and is not attacker-controlled: the shipped GitHub and Feishu configurations use provider-assigned numeric identifiers, and a standard OIDC `sub` is provider-assigned. The deliberate case therefore requires an operator to have pointed `OAUTH_SUB_CLAIM` at a claim the end user can set at the identity provider, such as a username or email claim, or an identity provider that lets a user choose their own subject value.&#13;
-* No attacker and no misconfiguration are needed for the accidental case. A legitimate subject value that happens to contain an underscore matches other accounts as well, and which account is returned depends on database row order.&#13;
-* For the SCIM path, the caller must already hold the SCIM bearer token, which is a privileged credential.&#13;
-&#13;
-## Impact&#13;
-&#13;
-A sign-in can be bound to an account other than the one the identity provider authenticated. Where the operator has made the subject claim user-settable, an attacker who registers at that provider can choose a value that matches an existing account and receive a session for it, including an administrator account, which is a full compromise of the instance. Where the subject claim is provider-assigned, the deliberate attack is not available, and what remains is a correctness failure in which an ordinary subject value containing an underscore can resolve to the wrong account and hand one user another user's session non-deterministically.&#13;
-&#13;
-The defect is in the identity match itself, so it is not mitigated by any downstream permission check: by the time a session is issued the wrong account has already been selected. It does not allow account creation, and it does not affect password sign-in, PostgreSQL deployments, or any deployment with OAuth, OIDC and SCIM all disabled.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28624. The two identity lookups now compare the nested JSON value directly through SQLAlchemy's JSON subscript operator, which emits an exact match on both supported databases, instead of going through the column-level `contains()` operator that degraded to a substring comparison on SQLite. The hand-written per-dialect branching is removed, since the operator already handles both backends.&#13;
-&#13;
-Upgrading fully resolves it and no configuration change is required. Existing stored identities are unaffected, as the stored format does not change.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-* `backend/open_webui/models/users.py` — `get_user_by_oauth_sub`, resolves an OAuth or OIDC identity to a local account.&#13;
-* `backend/open_webui/models/users.py` — `get_user_by_scim_external_id`, the same pattern for SCIM.&#13;
-* Reached from the OAuth callback handler and the OAuth token-exchange handler, and from the SCIM user routes.&#13;
-* Affects builds running on SQLite, which is the default database.&#13;
-&#13;
-The `oauth` and `scim` columns are declared with SQLAlchemy's generic `JSON` type. That type does not implement a containment comparator, so a `contains()` call against it falls back to the generic string operator and compiles to a `LIKE` with the operand wrapped in `%` on both sides. The intent was a JSON containment test; what was emitted was a substring test against the serialized JSON, in which `%` and `_` carry their usual `LIKE` meaning. The PostgreSQL branch was written separately against `JSONB` with an equality comparison and is correct, which is why the defect is confined to the default backend and why it survived review: the two branches look symmetrical and only one of them does what it appears to do.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Against a SQLite instance with an OIDC provider configured, two accounts exist: an administrator whose stored subject is `admin_sub_9999`, and an ordinary user whose stored subject is `bob_sub_1234`. Both rows were seeded directly rather than created through a live provider sign-in; the lookup under test was then called as the application calls it.&#13;
-&#13;
-Resolving the subject value `%` returns the administrator account. Resolving `admin_sub_%` likewise returns the administrator account. Resolving the correct full values returns the correct accounts, and resolving an unknown value returns nothing, so the failure is visible only when the supplied value contains a wildcard character. A subsequent check with an ordinary subject value containing an underscore showed it matching more than one account, with the returned account determined by row order.&#13;
-&#13;
-## Credits&#13;
-&#13;
-Reported by @Classic298.</description>
-      <guid isPermaLink="false">GHSA-wpmr-8h3q-fwj7</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Fri, 04 Sep 2026 11:43:51 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends (CVE-2026-87017)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-pcvc-8vrv-8q6w</link>
-      <description>CVE-2026-87017 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-200, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.7.0, &lt;= 0.11.0 (patched: 0.11.1)
-
----
-
-# Inaccessible knowledge bases are exposed through the built-in knowledge tool on most vector backends&#13;
-&#13;
-## Summary&#13;
-The built-in knowledge search tool returns knowledge bases the calling user has no access to. The tool works out which knowledge bases the caller may read and hands that set to the vector store as a search filter, and that filter is the only access control on the path. Most of the shipped vector backends accept the filter argument on their search method and never apply it, so the search returns matches from every knowledge base in the shared collection. The sibling query method on those same backends does apply a filter, which is why the omission is invisible from the calling code.&#13;
-&#13;
-## Preconditions&#13;
-- The deployment must use one of the affected vector backends, selected with `VECTOR_DB`, which defaults to `chroma`. Chroma applies the filter, so a default deployment is not affected.&#13;
-- Eleven of the fifteen shipped backends ignore the filter: both Qdrant clients, Elasticsearch, OpenSearch, both Milvus clients, openGauss, Oracle 23ai, Pinecone, S3 Vectors and Weaviate. Chroma, pgvector, MariaDB and Valkey apply it and were never affected.&#13;
-- The caller needs a model that can call tools, with the knowledge built-in tools left enabled, which is the default, and with no knowledge attached to the model itself. No elevated role or permission is required.&#13;
-- At least one knowledge base must exist that the caller cannot otherwise read.&#13;
-&#13;
-## Impact&#13;
-A user receives the identifier, name and description of knowledge bases that were never shared with them, and chooses how many results to ask for, so the set can be enumerated by varying the query. The affected collection stores one entry per knowledge base whose text is its name and description, so where those values are themselves sensitive, for example when they name a customer, a project or an investigation, that disclosure is the loss.&#13;
-&#13;
-The exposure is confined to that metadata. Document text lives in separate per-knowledge-base collections reached by a different call that is scoped by collection rather than by this filter, so stored documents are not returned by this path, and no write access is gained. Because the default backend is unaffected, the population at risk is operators who deliberately moved to an external vector store, which in practice means larger deployments.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by 1d6d4e6e6. Every affected backend now applies the caller-supplied filter in its search method, combined with the collection or tenant scoping that method already performed. Where a backend's filter builder could express only single-value equality it was extended to express set membership, since that is the form the knowledge tool sends, and a filter using any other operator is now rejected rather than dropped. Upgrading is sufficient and no configuration change is required. Deployments on Chroma, pgvector, MariaDB or Valkey were never affected and need no action.&#13;
-&#13;
-## Root cause&#13;
-- The search method of each affected vector client, which declares a filter parameter and never references it.&#13;
-- The built-in knowledge search tool, which relies on that filter as its only access check.&#13;
-- Present from 0.7.0, the release that introduced the tool, through 0.11.0.&#13;
-&#13;
-Each client exposes a search method and a query method that appear interchangeable from the calling side and differ in whether the caller's filter survives. Search built its request with collection or tenant scoping only, so it was correctly scoped to the collection and entirely unscoped within it. The knowledge tool resolves the caller's readable knowledge bases correctly and passes them down, then reads the results without rechecking them, on the reasonable assumption that a filter handed to a vector store is applied. Because the access decision was delegated wholly to a parameter that most implementations discarded, the caller had no way to observe that it received more than it asked for.&#13;
-&#13;
-That the same omission repeated across most backends points at the shared interface rather than at any one client: the base class defines the parameter without obliging an implementation to honour it, and each backend was written against the interface independently.&#13;
-&#13;
-## Proof of concept&#13;
-Run against the shipped client classes taken from the 0.11.0 and 0.11.3 release tags, with a real Qdrant engine behind them. Two entries were inserted into the shared knowledge base collection, one readable and one not, mirroring the payload the application writes. The entries were inserted directly rather than created through the application.&#13;
-&#13;
-On 0.11.0, search given a filter naming only the readable knowledge base returned both, and the same call with no filter returned an identical result set, confirming the filter had no effect:&#13;
-&#13;
-```&#13;
-search(filter={'knowledge_base_id': {'$in': ['kb-allowed']}})  -&gt;  ['kb-allowed', 'kb-secret']&#13;
-search(filter=None)                                            -&gt;  ['kb-allowed', 'kb-secret']&#13;
-```&#13;
-&#13;
-On 0.11.3 the same filter returned only the readable entry, while the unfiltered control still returned both, confirming the collection held both and the filter is what excluded the second:&#13;
-&#13;
-```&#13;
-search(filter={'knowledge_base_id': {'$in': ['kb-allowed']}})  -&gt;  ['kb-allowed']&#13;
-search(filter=None)                                            -&gt;  ['kb-allowed', 'kb-secret']&#13;
-```&#13;
-&#13;
-The Chroma client, run the same way on both tags, returned only the readable entry in every case, which is the default backend being unaffected. The S3 Vectors client was additionally run against a stub that answers every query with the whole index regardless of the filter it is sent: on 0.11.0 it returned both entries, and on 0.11.3 it returned only the readable one.&#13;
-&#13;
-The remaining backends were checked by driving each patched filter builder with the exact filter the knowledge tool sends and confirming the request it produces restricts to the readable knowledge base.&#13;
-&#13;
-## Credits&#13;
-Reported by @Classic298.</description>
-      <guid isPermaLink="false">GHSA-pcvc-8vrv-8q6w</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 31 Aug 2026 16:13:50 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Channel members can overwrite another member's message via the chat completions endpoint (CVE-2026-87994)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-fmqh-xp37-5hr8</link>
-      <description>CVE-2026-87994 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
-
-Affected:
-- pip/open-webui &gt;= 0.9.5, &lt; 0.11.1 (patched: &gt;= 0.11.1)
-
----
-
-# Channel members can overwrite another member's message via the chat completions endpoint&#13;
-&#13;
-## Summary&#13;
-Any member of a channel who can post to it could also replace the text of a message written by a different member. The channel branch of the chat completions endpoint checked that the caller may write to the channel, and that the targeted message belongs to that channel, but never checked that the caller actually wrote the message being edited. The message kept its original author, so the replacement text was displayed and stored as though the victim had written it. The dedicated channel message edit route performed the authorship check correctly and refused the same edit, so the two paths disagreed about who may modify a message.&#13;
-&#13;
-## Preconditions&#13;
-- Channels must be enabled. `ENABLE_CHANNELS` defaults to `False`, so a default deployment is not affected until an administrator turns channels on.&#13;
-- The attacker must be an approved user holding write access to the target channel, which is the ordinary state for any participant. No elevated role, group membership or additional permission is needed, and the attacker does not need to be the channel owner.&#13;
-- The attacker must know the id of the targeted message. That id is returned to every member who reads the channel, so it requires no further access.&#13;
-- Channels the attacker cannot post to are not affected, and neither are deployments with channels disabled.&#13;
-&#13;
-## Impact&#13;
-An attacker can rewrite what another member said, under that member's name, in a shared channel. The stored record and every later reader show the victim as the author of text they never wrote, so this is a loss of both integrity and non-repudiation: the victim cannot point to the record to show what they actually said. A conversation can be silently altered after the fact rather than only appended to.&#13;
-&#13;
-How much control the attacker has over the replacement text depends on the configured model, because the text is produced by generating a completion into the victim's message. Reducing a message to unrelated or empty content works regardless of the model, while reproducing an exact attacker-chosen string requires a model that returns the supplied prompt closely enough. The attack grants no new role or permission, does not reach channels the attacker cannot already post to, and exposes no message content they could not already read.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by commit `7d392bedc` (#28631). The gate on the channel branch now also compares the targeted message's author against the calling user and refuses when they differ, which is the condition the dedicated channel message update route already applied. Administrators retain the ability to edit any message, on both paths, as before. Upgrading to 0.11.1 fully resolves this, and no configuration change is required.&#13;
-&#13;
-## Root cause&#13;
-Affected components:&#13;
-- the channel branch of the chat completions handler, which resolves a client-supplied message id for editing&#13;
-- the channel event emitter, which re-checks the message before persisting the update&#13;
-&#13;
-Not affected: the dedicated channel message update route, which already held the correct check.&#13;
-&#13;
-The channel branch was written to answer the question of whether the caller may write into this channel and whether the message belongs to it. Both of those checks were present and effective. The question it never asked was whether the caller wrote the message. Ownership of a channel message is carried by the message record rather than by the channel, so channel-level write access was treated as sufficient authority over every message inside it. The dedicated edit route grew the authorship comparison because editing is its only purpose, while the completions path reached the same operation through a general-purpose entry point and inherited only the coarser channel check.&#13;
-&#13;
-## Proof of concept&#13;
-Reproduced against a running instance built from the development branch, with channels enabled and an OpenAI-compatible upstream that echoes the submitted prompt so the replacement text is deterministic.&#13;
-&#13;
-Setup, entirely through the ordinary API: an administrator creates two further accounts, Alice and Mallory, both with the plain user role and no additional permissions, creates a channel, and grants both accounts read and write access. Alice posts a message reading `ALICE ORIGINAL MESSAGE`. Nothing is written directly to the database.&#13;
-&#13;
-Control, through the dedicated route:&#13;
-&#13;
-```&#13;
-POST /api/v1/channels/&lt;channel_id&gt;/messages/&lt;alice_message_id&gt;/update&#13;
-Authorization: Bearer &lt;mallory_token&gt;&#13;
-{"content": "PWNED_BY_MALLORY"}&#13;
--&gt; 403&#13;
-```&#13;
-&#13;
-Attack, submitting the same target id to the completions endpoint:&#13;
-&#13;
-```&#13;
-POST /api/chat/completions&#13;
-Authorization: Bearer &lt;mallory_token&gt;&#13;
-{"model": "&lt;model&gt;", "stream": true,&#13;
- "chat_id": "channel:&lt;channel_id&gt;",&#13;
- "id": "&lt;alice_message_id&gt;",&#13;
- "messages": [{"role": "user", "content": "PWNED_BY_MALLORY"}]}&#13;
--&gt; 200&#13;
-```&#13;
-&#13;
-Reading the channel back afterwards shows the targeted message content replaced with the attacker's string while its recorded author is still Alice.&#13;
-&#13;
-## Credits&#13;
-- **@Classic298** — identified that the completions path and the dedicated edit route disagreed on message authorship, and reproduced the cross-member overwrite end to end.</description>
-      <guid isPermaLink="false">GHSA-fmqh-xp37-5hr8</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 31 Aug 2026 15:48:12 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Same-origin XSS to account takeover via terminal port-preview iframe hardcoding allow-same-origin (CVE-2026-87995)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-jmc6-2wr8-h3wj</link>
-      <description>CVE-2026-87995 · CVSS 8.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:N) · CWE-79, CWE-1021
-
-Affected:
-- pip/open-webui &gt;= 0.8.11, &lt;= 0.11.0 (patched: 0.11.1)
-
----
-
-# Same-origin XSS to account takeover via terminal port-preview iframe hardcoding allow-same-origin&#13;
-&#13;
-## Summary&#13;
-Any authenticated user with access to a shared terminal server could get script of their choosing to run in the Open WebUI origin itself. The in-app port preview rendered the content of a previewed port in an iframe whose sandbox always granted `allow-same-origin` alongside `allow-scripts`, and that content is served from a path on the application's own origin, so the sandbox provided no isolation at all. Script served on a previewed port could read the victim's session token and take over the account.&#13;
-&#13;
-## Preconditions&#13;
-- At least one terminal server configured by an admin (`TERMINAL_SERVER_CONNECTIONS`, empty by default) and reachable by both the attacker and the victim. Deployments with no terminal server configured are not affected.&#13;
-- The attacker needs a normal authenticated account with access to that terminal connection, no admin rights, plus the ability to start a process listening on a port there.&#13;
-- Personal terminals a user configures for themselves are not affected. Those carry an external URL, so the previewed document is cross-origin and the sandbox held.&#13;
-- The victim has to open the port list and click the attacker's port.&#13;
-- `TERMINAL_PROXY_HEADERS` unset and no `CONTENT_SECURITY_POLICY` set, which are the defaults. An operator who had already set a restrictive Content-Security-Policy through either was not exposed, since those headers apply to the proxied response.&#13;
-- The `iframeSandboxAllowSameOrigin` user setting is off by default, but the affected branch ignored it entirely.&#13;
-&#13;
-## Impact&#13;
-The previewed page runs in the application origin, so it can reach the parent window, read the session token out of `localStorage` and exfiltrate it, which is full account takeover of the victim. If the victim is an admin, or any user holding `workspace.functions`, that takeover extends to server-side code execution through Functions. Serving the page costs the attacker nothing beyond the terminal access they already hold, so the only real barrier is getting the victim to open that port. Instances with no terminal server configured were never affected, and neither were personal terminals pointed at an external URL.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by 54d7a2237. The port preview now gates `allow-same-origin` behind a `terminalPreviewAllowSameOrigin` user setting that is off by default, so the preview loads at an opaque origin and cannot reach the parent context. Upgrading is sufficient and no configuration change is required. Previews of pages that need same-origin access still work if a user turns that setting on, and doing so re-enables the behaviour described here for that user.&#13;
-&#13;
-## Root cause&#13;
-- `src/lib/components/chat/FileNav/PortPreview.svelte`, the preview iframe, reached by clicking a port in the file navigator's port list.&#13;
-- Present from 0.8.11, the first release containing the component, through 0.11.0.&#13;
-&#13;
-Every other iframe in the application had already been moved to an opt-in same-origin setting. The port preview kept a static sandbox string with `allow-same-origin` baked into it, and it was missed when the equivalent problem was fixed in the file preview for 0.11.0. Because the terminal proxy is mounted under the application's own origin and forwards the upstream response and its content type without adding a Content-Security-Policy of its own unless the operator configured one, and no global CSP is set, the sandbox was the only isolation boundary left, and it was granting precisely the permission that dissolved it.&#13;
-&#13;
-## Proof of concept&#13;
-On a terminal server the victim can also reach, serve an HTML page containing a script that reads `window.parent.localStorage.token` and sends it to a host the attacker controls. The victim opens the file navigator, switches to the port list and clicks that port. The preview opens, the script executes at the application origin, and the token is exfiltrated.&#13;
-&#13;
-## Credits&#13;
-Reported by @manus-use (researcher zx / Jace).</description>
-      <guid isPermaLink="false">GHSA-jmc6-2wr8-h3wj</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 31 Aug 2026 15:43:57 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — SSRF into internal services via DNS rebinding in the Playwright web loader (CVE-2026-87996)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-4v28-j6q3-5m4r</link>
-      <description>CVE-2026-87996 · CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-367, CWE-918
-
-Affected:
-- pip/open-webui &gt;= 0.9.6, &lt; 0.11.1 (patched: &gt;= 0.11.1)
-
----
-
-# SSRF into internal services via DNS rebinding in the Playwright web loader&#13;
-&#13;
-## Summary&#13;
-With the Playwright web loader enabled, Open WebUI checks the address behind a user-submitted URL before allowing the request, then handed the request to the browser to perform. The browser resolved the hostname a second time, on its own, and that answer was never checked. An attacker who controls the authoritative DNS for a hostname they submit can answer the first lookup with a public address and the second with an internal one, so the browser connects to an address the check exists to block. The connection-layer pinning that protects the other fetch paths could not apply here, because the request ran inside the browser rather than through our own HTTP clients.&#13;
-&#13;
-## Preconditions&#13;
-- `WEB_LOADER_ENGINE=playwright`. This is not the default, and deployments on the default web loader are unaffected.&#13;
-- A reachable Playwright browser, either local or via `PLAYWRIGHT_WS_URL`.&#13;
-- Any authenticated user who can submit a URL for ingestion or trigger a web search. No administrator role is required.&#13;
-- Control of the authoritative DNS for a hostname the attacker submits, serving a short TTL and alternating answers. No timing race is needed, because the two lookups are separate queries the attacker answers differently.&#13;
-- Internal services the browser process can actually reach. A deployment whose browser has no route to internal addresses loses nothing here.&#13;
-&#13;
-## Impact&#13;
-An authenticated user can make the server read HTTP responses from addresses only it can reach: cloud instance metadata, loopback-bound admin APIs, and internal services on the same network. The response body is fulfilled back into the page, and the loader returns that page as the document, so the content lands in the web-search or ingestion result the user receives. On a cloud host with IMDSv1 reachable, that is enough to take instance IAM credentials.&#13;
-&#13;
-Because the intercepted request forwards the original method and headers, a page the attacker controls can also drive requests that need a header or a non-GET method, which covers the header-gated metadata endpoints. This is a read primitive; no modification of Open WebUI data and no availability impact was demonstrated. Deployments on the default web loader are not affected at all.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by commit `27402ff21` (#28634). The interceptor no longer asks the browser to perform the request. It issues the request from the SSRF-safe HTTP client instead, which resolves the hostname once and connects to that same validated address, re-validates every redirect hop, and then fulfils the browser with the response it received. Upgrading to 0.11.1 fully resolves this, and no configuration change is required.&#13;
-&#13;
-## Root cause&#13;
-Affected component: `SafePlaywrightURLLoader` in `backend/open_webui/retrieval/web/utils.py`, in both the sync and async request interceptors. Affected setup: only builds running the Playwright loader engine.&#13;
-&#13;
-The address check and the connection were performed by two different resolvers in two different processes. Validation resolved the hostname in Python and inspected the result, then the request was handed to the browser, which resolved the name again and connected to whatever it got. Playwright's request-fetch API offers no way to pin a connection to an already-validated address, so the fix that had been applied to the other fetch paths, resolving once and connecting to that same address, could not reach this one. The check was therefore an opinion about an earlier lookup rather than a constraint on the connection that followed.&#13;
-&#13;
-## Proof of concept&#13;
-Reproduced against the real implementation: the validation and interception code was taken unmodified, with only the module-level configuration constants stubbed at their documented defaults, and driven against a real Chromium instance inside an unprivileged network namespace with an authoritative DNS server answering the first lookup public and the second internal. Instance metadata and a loopback service were both reached, with the response body returned through the page. A second run showed an attacker-controlled page driving the header-gated metadata sequence to completion. The path from the HTTP endpoint to the loader was traced in source rather than driven end to end.&#13;
-&#13;
-## Credits&#13;
-- **@baeseungwon1010** — identified that the address check and the browser's own resolution are two separate lookups, so the check cannot constrain where the browser connects.</description>
-      <guid isPermaLink="false">GHSA-4v28-j6q3-5m4r</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Mon, 31 Aug 2026 15:42:38 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can inject chats into another user's folder via chat completions (CVE-2026-87997)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3pf7-q2g3-wj28</link>
-      <description>CVE-2026-87997 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N) · CWE-639, CWE-862
-
-Affected:
-- pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Any authenticated user can inject chats into another user's folder via chat completions&#13;
-&#13;
-## Summary&#13;
-The chat-completions endpoint reads a folder id out of the request body and saves the newly created chat into that folder without checking that the caller is allowed to write there. Any authenticated user who knows a folder's id can put a chat of their own into another user's folder, including a shared folder where they hold read-only access and a folder they have no access to at all. The chat then shows up in that folder for everyone who can read it, under a title and with content the attacker controls. The dedicated chat-creation and chat-move endpoints already enforced this check, the chat-completions path did not.&#13;
-&#13;
-## Preconditions&#13;
-- An authenticated account of any role. No elevated permission, no admin involvement.&#13;
-- Folders enabled, which is the default (`ENABLE_FOLDERS=true`, `USER_PERMISSIONS_FEATURES_FOLDERS=true`).&#13;
-- The attacker needs the target folder's id. A member of a shared folder gets it from the shared-folder listing. Sharing a folder with named users is available to ordinary users by default; only wildcard public sharing is gated. A folder that was never shared has an id the attacker cannot obtain through any endpoint available to them, so those folders are not practically reachable.&#13;
-- Releases before 0.10.0 contain the same missing check but have no read path that lists a folder's chats across owners, so the injected row was never visible to anyone.&#13;
-&#13;
-## Impact&#13;
-The integrity of folder contents. An attacker who cannot write to a folder can place chats into it, and every member with read access, the owner included, sees the entry with the attacker's display name and a title the attacker can change to arbitrary text at any time. Members can also open the injected chat and read its messages. In a workspace where a shared folder is treated as trusted, that is a usable surface for planting misleading or phishing content under another team's nose.&#13;
-&#13;
-Nothing is disclosed to the attacker and nothing existing is altered. Writing into a folder grants no read access to it, so the attacker still cannot list or open the folder's other chats, and no data belonging to other users can be modified or deleted through this path. Availability is unaffected.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28366. Chat creation, chat moves and the chat-completions creation path now share a single folder write-access check, so a folder id the caller cannot write to is rejected everywhere a chat's folder can be set. Upgrading to 0.11.1 resolves it completely, with no configuration change required.&#13;
-&#13;
-## Root cause&#13;
-Affected component: the chat-completions handler in `backend/open_webui/main.py`, reached through `POST /api/chat/completions` and `POST /api/v1/chat/completions`. Affected setup: every deployment on 0.10.0 through 0.11.0 with folders enabled.&#13;
-&#13;
-The completions handler gained its own chat-creation branch, which copied the client-supplied folder id into the chat it saved. The ownership and shared-write check lived as duplicated inline code inside the two chat routers rather than in one shared helper, so a third place that learned to set a folder id inherited none of it. Separately, folder listings had been changed to return a folder's chats across all owners so that shared folders work at all, which turned a write that used to be invisible to everyone into one the whole folder can see.&#13;
-&#13;
-## Proof of concept&#13;
-Reproduced on a running instance at 0.11.0 with three accounts: one administrator and two ordinary users, one acting as victim and one as attacker.&#13;
-&#13;
-1. The victim creates a folder. The attacker is given no access to it: reading the folder returns 404 and listing its chats returns 403.&#13;
-2. The attacker sends `POST /api/v1/chats/new` with the victim's folder id. Rejected with 404, which is the pre-existing guard working.&#13;
-3. The attacker sends `POST /api/chat/completions` with `parent_id: null`, no chat id, and the victim's folder id in the body. Accepted.&#13;
-4. The victim lists their own folder and sees a chat owned by "Attacker". The victim can open it and read its messages. The attacker then renames their own chat and the new title appears verbatim in the victim's folder listing.&#13;
-&#13;
-Repeating step 3 with the attacker granted read-only access to a shared folder also succeeds on 0.11.0. On 0.11.1 both variants are rejected with 404 and the folder stays empty, while a member holding write access can still create chats there as intended.&#13;
-&#13;
-The three accounts and the folder were created through the normal API. Nothing was written directly to the database.&#13;
-&#13;
-## Credits&#13;
-whyiug, for reporting the missing folder write-access check on the chat-completions creation path.</description>
-      <guid isPermaLink="false">GHSA-3pf7-q2g3-wj28</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 30 Aug 2026 17:00:13 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Non-admin users can delete admin-owned external knowledge connections via knowledge base deletion (CVE-2026-87998)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-2724-6cpj-gf3v</link>
-      <description>CVE-2026-87998 · CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L) · CWE-269, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.10.0, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Non-admin users can delete admin-owned external knowledge connections via knowledge base deletion&#13;
-&#13;
-## Summary&#13;
-External knowledge connections are created and owned by administrators, and are shared by every external knowledge base bound to them. Deleting an external knowledge base also removed that connection from the instance configuration, with no check on the caller's role and no check for other knowledge bases still using it. Any authenticated user holding a write grant on a single external knowledge base could therefore wipe a shared connection that other knowledge bases depend on, and the dedicated administrator route for deleting a connection explicitly refuses that same operation while the connection is still in use.&#13;
-&#13;
-## Preconditions&#13;
-The deployment uses external knowledge bases, backed by the qdrant, milvus or pgvector external providers. Instances with only local knowledge bases are not affected.&#13;
-&#13;
-An administrator created at least one external connection and at least one external knowledge base bound to it. Both of those actions are admin-only.&#13;
-&#13;
-The attacker is an ordinary authenticated user holding a write grant on one of those external knowledge bases. A read grant is not enough, and an unrelated user cannot reach the route at all.&#13;
-&#13;
-The damage scales with sharing. It is worst when one connection backs several knowledge bases, because deleting a single knowledge base destroys the connection for all of them.&#13;
-&#13;
-## Impact&#13;
-An ordinary user removes instance-wide configuration that only administrators can create or manage. Every other external knowledge base bound to the deleted connection keeps its stored connection id and stops working: retrieval against it fails with "External knowledge connection not found", so those knowledge bases return nothing in chat until an administrator recreates the connection by hand. The stored credential goes with it, and connection API responses strip credentials, so an administrator who did not keep the key elsewhere cannot restore the connection without obtaining it again.&#13;
-&#13;
-Nothing is disclosed to the attacker and the external vector store itself is untouched. What is lost is Open WebUI's own connection configuration, and the availability of the knowledge bases that depend on it.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28113. Deleting an external knowledge base now clears its connection only when the caller is an administrator and the knowledge base being deleted is the last one referencing that connection, matching the dedicated connection delete route. Upgrading resolves the issue with no configuration change required.&#13;
-&#13;
-## Root cause&#13;
-Affected component: the knowledge base delete handler in backend/open_webui/routers/knowledge.py, reached through DELETE /api/v1/knowledge/{id}/delete.&#13;
-&#13;
-Affected setup: every release from 0.10.0, where external knowledge connections were introduced, up to and including 0.11.0.&#13;
-&#13;
-The handler authorized the caller against the knowledge base, which a write grant satisfies, and then performed a second, unrelated operation against global configuration in the same request. That second step carried no authorization of its own. It neither required the administrator role that creating a connection requires, nor counted the other knowledge bases still bound to the connection. The dedicated route DELETE /api/v1/knowledge/external/connections/{id} already performed both checks, so an outcome an administrator was blocked from was reachable by a non-administrator through the knowledge base route.&#13;
-&#13;
-## Proof of concept&#13;
-Reproduced against a local instance on 0.11.0 with default settings, and against 0.11.1 for comparison.&#13;
-&#13;
-An administrator created one external connection and two external knowledge bases bound to it, then granted a plain user write access on the first knowledge base. As that user:&#13;
-&#13;
-```&#13;
-DELETE /api/v1/knowledge/{KB_A}/delete&#13;
-Authorization: Bearer &lt;user token&gt;&#13;
-```&#13;
-&#13;
-On 0.11.0 the request returns 200 true. The administrator connection list then returns zero connections, the second knowledge base still carries the deleted connection id, and retrieving from it raises "External knowledge connection not found".&#13;
-&#13;
-On 0.11.1 the same request deletes the knowledge base, the connection list still returns the connection, and the second knowledge base is unaffected. An administrator deleting the last remaining knowledge base on that connection still clears it, so the intended cleanup is preserved.&#13;
-&#13;
-## Credits&#13;
-@Bellingham-max, for reporting the missing authorization on the shared connection teardown.</description>
-      <guid isPermaLink="false">GHSA-2724-6cpj-gf3v</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Sun, 30 Aug 2026 16:54:04 +0000</pubDate>
     </item>
   </channel>
 </rss>
