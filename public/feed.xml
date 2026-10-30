@@ -7,7 +7,355 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Thu, 29 Oct 2026 10:41:37 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 30 Oct 2026 10:41:58 +0000</lastBuildDate>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — A race condition during core updates that could lead to remote code execution</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-4w3m-c66w-69mg</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+- other/WordPress 6.3.0 - 6.3.13 (patched: 6.3.14)
+- other/WordPress 6.2.0 - 6.2.14 (patched: 6.2.15)
+- other/WordPress 6.1.0 - 6.1.15 (patched: 6.1.16)
+- other/WordPress 6.0.0 - 6.0.17 (patched: 6.0.18)
+- other/WordPress 5.9.0 - 5.9.19 (patched: 5.9.20)
+- other/WordPress 5.8.0 - 5.8.18 (patched: 5.8.19)
+- other/WordPress 5.7.0 - 5.7.20 (patched: 5.7.21)
+- other/WordPress 5.6.0 - 5.6.22 (patched: 5.6.23)
+- other/WordPress 5.5.0 - 5.5.23 (patched: 5.5.24)
+- other/WordPress 5.4.0 - 5.4.24 (patched: 5.4.25)
+- other/WordPress 5.3.0 - 5.3.26 (patched: 5.3.27)
+- other/WordPress 5.2.0 - 5.2.29 (patched: 5.2.30)
+- other/WordPress 5.1.0 - 5.1.27 (patched: 5.1.28)
+- other/WordPress 5.0.0 - 5.0.30 (patched: 5.0.31)
+- other/WordPress 4.9.0 - 4.9.34 (patched: 4.9.35)
+- other/WordPress 4.8.0 - 4.8.33 (patched: 4.8.34)
+- other/WordPress 4.7.0 - 4.7.38 (patched: 4.7.39)
+
+---
+
+During a core update that uses a complete package, WordPress extracted the new files to a predictable directory inside the web-served upgrade folder. An unauthenticated attacker who wins a race against that extraction could reach remote code execution.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
+&#13;
+Discovered and responsibly disclosed by [Umut Bayram](https://www.picussecurity.com/resource/author/umut-bayram).</description>
+      <guid isPermaLink="false">GHSA-4w3m-c66w-69mg</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:12:01 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — An information disclosure issue exposing unpublished Customizer changes to unauthenticated visitors</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-p2r6-rwjp-phv3</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+- other/WordPress 6.3.0 - 6.3.13 (patched: 6.3.14)
+- other/WordPress 6.2.0 - 6.2.14 (patched: 6.2.15)
+- other/WordPress 6.1.0 - 6.1.15 (patched: 6.1.16)
+- other/WordPress 6.0.0 - 6.0.17 (patched: 6.0.18)
+- other/WordPress 5.9.0 - 5.9.19 (patched: 5.9.20)
+- other/WordPress 5.8.0 - 5.8.18 (patched: 5.8.19)
+- other/WordPress 5.7.0 - 5.7.20 (patched: 5.7.21)
+- other/WordPress 5.6.0 - 5.6.22 (patched: 5.6.23)
+- other/WordPress 5.5.0 - 5.5.23 (patched: 5.5.24)
+- other/WordPress 5.4.0 - 5.4.24 (patched: 5.4.25)
+- other/WordPress 5.3.0 - 5.3.26 (patched: 5.3.27)
+- other/WordPress 5.2.0 - 5.2.29 (patched: 5.2.30)
+- other/WordPress 5.1.0 - 5.1.27 (patched: 5.1.28)
+- other/WordPress 5.0.0 - 5.0.30 (patched: 5.0.31)
+- other/WordPress 4.9.0 - 4.9.34 (patched: 4.9.35)
+
+---
+
+An unauthenticated visitor can load the newest unpublished Customizer changeset in a front-end preview without knowing its UUID, which exposes unpublished changes.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.9.&#13;
+&#13;
+Discovered and responsibly disclosed by [Antonio Lorensius Silaban](https://www.linkedin.com/in/antoniolorensius/).</description>
+      <guid isPermaLink="false">GHSA-p2r6-rwjp-phv3</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:10:17 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — A permissions issue letting custom roles that moderate comments read, edit and delete notes on posts they can't edit</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-vchg-92fx-636p</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+
+---
+
+A custom role that holds `moderate_comments` but can't edit a post can read, modify and delete the notes on that post through the update and delete endpoints. No default role is affected.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 6.9.&#13;
+&#13;
+Discovered and responsibly disclosed by Ramon of the WordPress Security Team.</description>
+      <guid isPermaLink="false">GHSA-vchg-92fx-636p</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:08:53 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — An Editor+ stored cross-site scripting (XSS) issue in the personal data erasure requests screen</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-mqjw-vvgg-xfvf</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+- other/WordPress 6.3.0 - 6.3.13 (patched: 6.3.14)
+- other/WordPress 6.2.0 - 6.2.14 (patched: 6.2.15)
+- other/WordPress 6.1.0 - 6.1.15 (patched: 6.1.16)
+- other/WordPress 6.0.0 - 6.0.17 (patched: 6.0.18)
+- other/WordPress 5.9.0 - 5.9.19 (patched: 5.9.20)
+- other/WordPress 5.8.0 - 5.8.18 (patched: 5.8.19)
+- other/WordPress 5.7.0 - 5.7.20 (patched: 5.7.21)
+- other/WordPress 5.6.0 - 5.6.22 (patched: 5.6.23)
+- other/WordPress 5.5.0 - 5.5.23 (patched: 5.5.24)
+- other/WordPress 5.4.0 - 5.4.24 (patched: 5.4.25)
+- other/WordPress 5.3.0 - 5.3.26 (patched: 5.3.27)
+- other/WordPress 5.2.0 - 5.2.29 (patched: 5.2.30)
+- other/WordPress 5.1.0 - 5.1.27 (patched: 5.1.28)
+- other/WordPress 5.0.0 - 5.0.30 (patched: 5.0.31)
+- other/WordPress 4.9.0 - 4.9.34 (patched: 4.9.35)
+
+---
+
+A user with the Editor role or above can create a personal data erasure request through XML-RPC whose email field contains a script, which runs when an Administrator views the Erase Personal Data screen.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.9.&#13;
+&#13;
+Discovered and responsibly disclosed by Anthropic.</description>
+      <guid isPermaLink="false">GHSA-mqjw-vvgg-xfvf</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:08:30 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — Unescaped usernames on the multisite Network Users screens, fixed as a hardening measure</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-j3rg-rwgx-7wx7</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+- other/WordPress 6.3.0 - 6.3.13 (patched: 6.3.14)
+- other/WordPress 6.2.0 - 6.2.14 (patched: 6.2.15)
+- other/WordPress 6.1.0 - 6.1.15 (patched: 6.1.16)
+- other/WordPress 6.0.0 - 6.0.17 (patched: 6.0.18)
+- other/WordPress 5.9.0 - 5.9.19 (patched: 5.9.20)
+- other/WordPress 5.8.0 - 5.8.18 (patched: 5.8.19)
+- other/WordPress 5.7.0 - 5.7.20 (patched: 5.7.21)
+- other/WordPress 5.6.0 - 5.6.22 (patched: 5.6.23)
+- other/WordPress 5.5.0 - 5.5.23 (patched: 5.5.24)
+- other/WordPress 5.4.0 - 5.4.24 (patched: 5.4.25)
+- other/WordPress 5.3.0 - 5.3.26 (patched: 5.3.27)
+- other/WordPress 5.2.0 - 5.2.29 (patched: 5.2.30)
+- other/WordPress 5.1.0 - 5.1.27 (patched: 5.1.28)
+- other/WordPress 5.0.0 - 5.0.30 (patched: 5.0.31)
+- other/WordPress 4.9.0 - 4.9.34 (patched: 4.9.35)
+- other/WordPress 4.8.0 - 4.8.33 (patched: 4.8.34)
+- other/WordPress 4.7.0 - 4.7.38 (patched: 4.7.39)
+
+---
+
+Usernames were output without escaping on the multisite Network Users screens. Normal WordPress flows can't store an unsafe username, so exploiting this needs direct database access. There is no direct vulnerability as a result of this, but the issue is being fixed as a hardening measure.&#13;
+&#13;
+WordPress 7.1.4 has been released containing hardening, and as a courtesy to users on older branches the hardening has been backported to all branches back to 4.7.&#13;
+&#13;
+Discovered and responsibly disclosed by Anthropic.</description>
+      <guid isPermaLink="false">GHSA-j3rg-rwgx-7wx7</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:08:09 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — A Contributor+ stored cross-site scripting (XSS) issue in Customizer selective refresh</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-9vrg-x932-q57q</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+- other/WordPress 6.3.0 - 6.3.13 (patched: 6.3.14)
+- other/WordPress 6.2.0 - 6.2.14 (patched: 6.2.15)
+- other/WordPress 6.1.0 - 6.1.15 (patched: 6.1.16)
+- other/WordPress 6.0.0 - 6.0.17 (patched: 6.0.18)
+- other/WordPress 5.9.0 - 5.9.19 (patched: 5.9.20)
+- other/WordPress 5.8.0 - 5.8.18 (patched: 5.8.19)
+- other/WordPress 5.7.0 - 5.7.20 (patched: 5.7.21)
+- other/WordPress 5.6.0 - 5.6.22 (patched: 5.6.23)
+- other/WordPress 5.5.0 - 5.5.23 (patched: 5.5.24)
+- other/WordPress 5.4.0 - 5.4.24 (patched: 5.4.25)
+- other/WordPress 5.3.0 - 5.3.26 (patched: 5.3.27)
+- other/WordPress 5.2.0 - 5.2.29 (patched: 5.2.30)
+- other/WordPress 5.1.0 - 5.1.27 (patched: 5.1.28)
+- other/WordPress 5.0.0 - 5.0.30 (patched: 5.0.31)
+
+---
+
+A user with the Contributor role or above can store markup in post content that Customizer selective refresh treats as HTML, which runs a script in an Administrator's Customizer preview.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.0.&#13;
+&#13;
+Discovered and responsibly disclosed by [Rafie Muhammad](https://www.linkedin.com/in/rafiemuhammad/) (Awesome Motive, Inc.)</description>
+      <guid isPermaLink="false">GHSA-9vrg-x932-q57q</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:05:06 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — A Contributor+ stored cross-site scripting (XSS) issue in the labels of the Comments Pagination and Post Navigation Link blocks</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-j255-3x8q-7q7g</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+- other/WordPress 6.3.0 - 6.3.13 (patched: 6.3.14)
+- other/WordPress 6.2.0 - 6.2.14 (patched: 6.2.15)
+- other/WordPress 6.1.0 - 6.1.15 (patched: 6.1.16)
+- other/WordPress 6.0.0 - 6.0.17 (patched: 6.0.18)
+- other/WordPress 5.9.0 - 5.9.19 (patched: 5.9.20)
+
+---
+
+The Comments Pagination Next, Comments Pagination Previous and Post Navigation Link blocks output their label without escaping, so a user with the Contributor role or above can store script in post content.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.9.&#13;
+&#13;
+Discovered and responsibly disclosed by Alex Concha of the WordPress Security Team.</description>
+      <guid isPermaLink="false">GHSA-j255-3x8q-7q7g</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:03:53 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — An issue allowing post content to shadow Script Module data with a matching element ID</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-wjwj-p342-9fq7</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+
+---
+
+Post content can include an element whose ID matches a Script Module's data script, so a post author can replace the data that the module reads.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 6.6.&#13;
+&#13;
+Discovered and responsibly disclosed by Weston Ruter.</description>
+      <guid isPermaLink="false">GHSA-wjwj-p342-9fq7</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:03:31 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — A cross-site scripting (XSS) issue in the Categories block via format string injection</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-7q86-3j97-744j</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+
+---
+
+The Categories block passes a user-controlled string to `sprintf()` as its format string, which allows cross-site scripting.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 6.7.&#13;
+&#13;
+Discovered and responsibly disclosed by Ben Bidner.</description>
+      <guid isPermaLink="false">GHSA-7q86-3j97-744j</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:02:55 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — A hardening fix for unsafe preg_replace() replacements in the Image and Playlist blocks</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-2p22-wv7j-cvfv</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+
+---
+
+The Image and Playlist blocks built markup with `preg_replace()` using replacement strings that include block attributes, so backreferences such as `$1` in those values were expanded into the output. The blocks now use `preg_replace_callback()`.&#13;
+&#13;
+WordPress 7.1.4 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 6.4.&#13;
+&#13;
+Discovered and responsibly disclosed by Ben Bidner of the WordPress Security Team.</description>
+      <guid isPermaLink="false">GHSA-2p22-wv7j-cvfv</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:02:35 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop — Contributor+ stored cross-site scripting (XSS) and denial of service issues in Interactivity API bindings</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-83c2-c4pc-wmp3</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.3 (patched: 7.1.4)
+- other/WordPress 7.0.0 - 7.0.7 (patched: 7.0.8)
+- other/WordPress 6.9.0 - 6.9.10 (patched: 6.9.11)
+- other/WordPress 6.8.0 - 6.8.11 (patched: 6.8.12)
+- other/WordPress 6.7.0 - 6.7.10 (patched: 6.7.11)
+- other/WordPress 6.6.0 - 6.6.10 (patched: 6.6.11)
+- other/WordPress 6.5.0 - 6.5.13 (patched: 6.5.14)
+- other/WordPress 6.4.0 - 6.4.13 (patched: 6.4.14)
+
+---
+
+Several Interactivity API binding issues let a user with the Contributor role or above store cross-site scripting or a denial of service in post content: inherited property lookups that reach `innerHTML`, `__proto__` as a directive name, bindings to internal props or inherited methods, and `data-wp-style` writing into any resolved object.&#13;
+&#13;
+WordPress 7.1.4 has been released containing fixes for these vulnerabilities, and as a courtesy to users on older branches the fixes have been backported to all branches back to 6.4.&#13;
+&#13;
+Discovered and responsibly disclosed by rekter0, Marcel Karlsson (whoismarcel), Jon Surrell and Alex Concha of the WordPress Security Team.</description>
+      <guid isPermaLink="false">GHSA-83c2-c4pc-wmp3</guid>
+      <category>HIGH</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Thu, 29 Oct 2026 19:00:39 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] composer/composer — Inline repository HTTP headers, such as API tokens, are written into composer.lock</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-fm2w-xgf2-f9fh</link>
@@ -3137,531 +3485,6 @@ Discovered and responsibly disclosed by Anthropic.</description>
       <category>MEDIUM</category>
       <category>WordPress/wordpress-develop</category>
       <pubDate>Fri, 18 Sep 2026 17:59:19 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] WordPress/wordpress-develop — Stored cross-site scripting in `wpautop()` allows an unauthenticated visitor to inject script</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-qg7r-fjh2-wvx8</link>
-      <description>Affected:
-- other/WordPress 7.1.0 - 7.1 (patched: 7.1.1)
-- other/WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- other/WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- other/WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- other/WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- other/WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- other/WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- other/WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- other/WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- other/WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- other/WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- other/WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- other/WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-- other/WordPress 5.8.0 - 5.8.15 (patched: 5.8.16)
-- other/WordPress 5.7.0 - 5.7.17 (patched: 5.7.18)
-- other/WordPress 5.6.0 - 5.6.19 (patched: 5.6.20)
-- other/WordPress 5.5.0 - 5.5.20 (patched: 5.5.21)
-- other/WordPress 5.4.0 - 5.4.21 (patched: 5.4.22)
-- other/WordPress 5.3.0 - 5.3.23 (patched: 5.3.24)
-- other/WordPress 5.2.0 - 5.2.26 (patched: 5.2.27)
-- other/WordPress 5.1.0 - 5.1.24 (patched: 5.1.25)
-- other/WordPress 5.0.0 - 5.0.27 (patched: 5.0.28)
-- other/WordPress 4.9.0 - 4.9.31 (patched: 4.9.32)
-- other/WordPress 4.8.0 - 4.8.30 (patched: 4.8.31)
-- other/WordPress 4.7.0 - 4.7.35 (patched: 4.7.36)
-
----
-
-An unauthenticated visitor can post a comment containing a KSES-legal element whose attribute value holds a newline. `wpautop()` treats that newline as a paragraph boundary and rewrites a `&lt;p&gt;` inside the element, ultimately resulting in a live event-handler attribute being rendered on the page.&#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.9.&#13;
-&#13;
-Discovered and responsibly disclosed by [Rafie Muhammad](https://www.linkedin.com/in/rafiemuhammad/) (Awesome Motive, Inc.)</description>
-      <guid isPermaLink="false">GHSA-qg7r-fjh2-wvx8</guid>
-      <category>HIGH</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:58:59 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] WordPress/wordpress-develop — Missing Authorization leads to Draft/Pending Post Slug Disclosure by Contributor+</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-f522-h982-63mg</link>
-      <description>Affected:
-- other/WordPress 7.1.0 - 7.1 (patched: 7.1.1)
-- other/WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- other/WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- other/WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- other/WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- other/WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- other/WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- other/WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- other/WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- other/WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- other/WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- other/WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- other/WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-- other/WordPress 5.8.0 - 5.8.15 (patched: 5.8.16)
-- other/WordPress 5.7.0 - 5.7.17 (patched: 5.7.18)
-- other/WordPress 5.6.0 - 5.6.19 (patched: 5.6.20)
-- other/WordPress 5.5.0 - 5.5.20 (patched: 5.5.21)
-- other/WordPress 5.4.0 - 5.4.21 (patched: 5.4.22)
-- other/WordPress 5.3.0 - 5.3.23 (patched: 5.3.24)
-- other/WordPress 5.2.0 - 5.2.26 (patched: 5.2.27)
-- other/WordPress 5.1.0 - 5.1.24 (patched: 5.1.25)
-- other/WordPress 5.0.0 - 5.0.27 (patched: 5.0.28)
-- other/WordPress 4.9.0 - 4.9.31 (patched: 4.9.32)
-- other/WordPress 4.8.0 - 4.8.30 (patched: 4.8.31)
-- other/WordPress 4.7.0 - 4.7.35 (patched: 4.7.36)
-
----
-
-A Contributor-level user can discover the URL slugs of draft and pending posts from other users.&#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
-&#13;
-Discovered and responsibly disclosed by Jakub Herman.</description>
-      <guid isPermaLink="false">GHSA-f522-h982-63mg</guid>
-      <category>LOW</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:58:47 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] WordPress/wordpress-develop — Missing `read_post` check in `attachment_submitbox_metadata()` leaks a private parent-post title</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-cjfg-q57r-mq45</link>
-      <description>CVSS 5.3 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N) · CWE-862
-
-Affected:
-- other/WordPress 7.1.0 - 7.1 (patched: 7.1.1)
-- other/WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- other/WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- other/WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- other/WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- other/WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- other/WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- other/WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- other/WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- other/WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- other/WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- other/WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- other/WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-- other/WordPress 5.8.0 - 5.8.15 (patched: 5.8.16)
-- other/WordPress 5.7.0 - 5.7.17 (patched: 5.7.18)
-- other/WordPress 5.6.0 - 5.6.19 (patched: 5.6.20)
-
----
-
-The attachment edit screen renders the parent post's title without a `read_post` check, so a&#13;
-low-privilege Author can be shown the title of a private or draft parent post that they cannot otherwise read.&#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.6.&#13;
-&#13;
-Discovered and responsibly disclosed by [HDWSec](https://hdwsec.fr).</description>
-      <guid isPermaLink="false">GHSA-cjfg-q57r-mq45</guid>
-      <category>MEDIUM</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:57:32 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] WordPress/wordpress-develop — Contributor+ Arbitrary Post Overwrite</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-33wf-p63q-w25f</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N)
-
-Affected:
-- other/WordPress 7.1.0 - 7.1 (patched: 7.1.1)
-- other/WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- other/WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- other/WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- other/WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- other/WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- other/WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- other/WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- other/WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- other/WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- other/WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- other/WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- other/WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-- other/WordPress 5.8.0 - 5.8.15 (patched: 5.8.16)
-- other/WordPress 5.7.0 - 5.7.17 (patched: 5.7.18)
-- other/WordPress 5.6.0 - 5.6.19 (patched: 5.6.20)
-- other/WordPress 5.5.0 - 5.5.20 (patched: 5.5.21)
-- other/WordPress 5.4.0 - 5.4.21 (patched: 5.4.22)
-- other/WordPress 5.3.0 - 5.3.23 (patched: 5.3.24)
-- other/WordPress 5.2.0 - 5.2.26 (patched: 5.2.27)
-- other/WordPress 5.1.0 - 5.1.24 (patched: 5.1.25)
-- other/WordPress 5.0.0 - 5.0.27 (patched: 5.0.28)
-- other/WordPress 4.9.0 - 4.9.31 (patched: 4.9.32)
-- other/WordPress 4.8.0 - 4.8.30 (patched: 4.8.31)
-- other/WordPress 4.7.0 - 4.7.35 (patched: 4.7.36)
-
----
-
-A Contributor can overwrite the title, content, and author of a published post by sending a specially crafted request to `wp-admin/post.php`&#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
-&#13;
-Discovered and responsibly disclosed by Anthropic.</description>
-      <guid isPermaLink="false">GHSA-33wf-p63q-w25f</guid>
-      <category>MEDIUM</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:57:08 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] WordPress/wordpress-develop — Comments, including notes, can be reparented by any authenticated user</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-32m5-wc28-ghrr</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N)
-
-Affected:
-- other/WordPress 7.1.0 - 7.1 (patched: 7.1.1)
-- other/WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- other/WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- other/WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- other/WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- other/WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- other/WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- other/WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- other/WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- other/WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- other/WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- other/WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- other/WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-- other/WordPress 5.8.0 - 5.8.15 (patched: 5.8.16)
-- other/WordPress 5.7.0 - 5.7.17 (patched: 5.7.18)
-- other/WordPress 5.6.0 - 5.6.19 (patched: 5.6.20)
-- other/WordPress 5.5.0 - 5.5.20 (patched: 5.5.21)
-- other/WordPress 5.4.0 - 5.4.21 (patched: 5.4.22)
-- other/WordPress 5.3.0 - 5.3.23 (patched: 5.3.24)
-
----
-
-An authenticated user (Author role suffices) who created a comment on their own post can send a request that reparents it onto a post they cannot edit.&#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.3.&#13;
-&#13;
-Discovered and responsibly disclosed by Justin Hart, Viridis Security.</description>
-      <guid isPermaLink="false">GHSA-32m5-wc28-ghrr</guid>
-      <category>MEDIUM</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:56:14 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Users denied by the OAuth role policy can still sign in via token exchange (CVE-2026-88006)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wvm9-9g5j-623f</link>
-      <description>CVE-2026-88006 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N) · CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
-- docker/openwebui/open-webui &gt;= 0.8.0, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Users denied by the OAuth role policy can still sign in via token exchange&#13;
-&#13;
-## Summary&#13;
-Open WebUI's OAuth token exchange endpoint issues a session for a provider access token without running the OAuth role management that the normal OAuth login callback runs. A user whose provider roles the login callback would refuse, or would demote, could still obtain a working session at their existing role through this endpoint.&#13;
-&#13;
-## Preconditions&#13;
-- `ENABLE_OAUTH_TOKEN_EXCHANGE=True`. It is disabled by default, so a default deployment is not affected.&#13;
-- `ENABLE_OAUTH_ROLE_MANAGEMENT=True` together with `OAUTH_ALLOWED_ROLES` or `OAUTH_ADMIN_ROLES`. Role management is off by default, and deployments not using it are not affected.&#13;
-- A valid, unexpired access token on the configured provider.&#13;
-- An Open WebUI account already linked to that provider subject, or an account with a matching email when `OAUTH_MERGE_ACCOUNTS_BY_EMAIL` is enabled. This endpoint never creates accounts, so a token for a subject with no existing account is rejected.&#13;
-&#13;
-## Impact&#13;
-An admin who relies on OAuth role management expects a user to lose access, or lose admin, as soon as the identity provider stops reporting the required role. The login callback does enforce this on the next sign-in. Token exchange kept issuing sessions and never re-evaluated the role, so the user retained working access as their existing account at its existing role, including an admin role the provider had already revoked. The endpoint cannot create an account and cannot raise anyone's role, so this grants continued access rather than new or elevated access.&#13;
-&#13;
-## Fix&#13;
-d799e81ed, released in 0.11.1, runs the same role evaluation on the provider's response that the login callback runs. The exchange is denied with 403 when the reported roles match no allowed or admin role, and the account's role is updated to match the provider otherwise. Upgrading restores the check with no further action.&#13;
-&#13;
-## Root cause&#13;
-The affected component is the OAuth token exchange endpoint in `backend/open_webui/routers/auths.py`, present in builds from 0.8.0 onward.&#13;
-&#13;
-The endpoint was added as a second entry point into the same session-issuing path the OAuth login callback uses, but it re-implemented only the identity lookup and not the policy checks surrounding it. Role evaluation lived inside the callback's own body rather than in shared code, so the second caller inherited none of it.&#13;
-&#13;
-## Credits&#13;
-@Classic298</description>
-      <guid isPermaLink="false">GHSA-wvm9-9g5j-623f</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Wed, 09 Sep 2026 21:59:45 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] open-webui/open-webui — Unauthenticated requests can stall the server via uncached OIDC fetches in back-channel logout (CVE-2026-87011)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-3g9q-v48f-hh9w</link>
-      <description>CVE-2026-87011 · CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H) · CWE-405, CWE-770
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt;= 0.11.0 (patched: 0.11.1)
-
----
-
-# Unauthenticated requests can stall the server via uncached OIDC fetches in back-channel logout&#13;
-&#13;
-## Summary&#13;
-&#13;
-The OIDC back-channel logout endpoint is unauthenticated by design, because the identity provider calls it without a browser session. Before checking whether the submitted logout token was genuine, the handler fetched the provider's discovery document and its signing keys over the network, and repeated both fetches on every request because nothing was cached. The signing-key fetch also ran as a blocking call inside the async event loop. A small number of requests carrying a worthless token was therefore enough to make the whole instance stop answering.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- `ENABLE_OAUTH_BACKCHANNEL_LOGOUT=true`. The default is `False`, so a stock deployment is not affected. This setting is recommended in the Open WebUI hardening documentation, which is why the issue is treated as in scope.&#13;
-- At least one OIDC provider configured (`OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OPENID_PROVIDER_URL`).&#13;
-- No account, credential, session or secret identifier is required. The attacker needs network access to the instance and the configured issuer string, which is published in the provider's own discovery document.&#13;
-&#13;
-## Impact&#13;
-&#13;
-Against 0.11.0, with the identity provider answering in 150 ms, 60 concurrent requests carrying a token whose signature was four characters long stalled the async event loop for 8.3 seconds, measured against an idle baseline of 10.8 ms. For the length of that stall the process answers nothing: no chat requests, no API calls, no health check. Open WebUI runs a single worker by default, so the effect is instance-wide rather than per-connection, and no rate limit sits in front of the endpoint.&#13;
-&#13;
-The same traffic is also amplified outward: 20 sequential requests produced 20 discovery fetches and 40 key-set fetches at the identity provider, so an attacker can drive load onto the provider through the instance.&#13;
-&#13;
-No data is read, modified or exposed, and the forged token is still rejected. The cost is paid before the rejection.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in 0.11.1. The handler now resolves both the discovery document and the signing keys through the already-configured OAuth client, so each is fetched once per provider and reused afterwards, and both fetches are asynchronous rather than blocking the event loop. A token carrying no `kid` header is rejected before any key lookup happens. Upgrading is sufficient, and no configuration change is required.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-Affected component: the OIDC back-channel logout handler in `backend/open_webui/utils/oauth.py`, reached through `POST /oauth/backchannel-logout`. Affected setups: releases 0.9.0 through 0.11.0 with back-channel logout enabled and an OIDC provider configured.&#13;
-&#13;
-The handler treated its network work as cheap preparation rather than as work worth protecting. For every request it opened a new HTTP session per configured provider to re-read the discovery document, then constructed a fresh JWKS client, whose own cache consequently started empty each time, and asked that client for the signing key through a synchronous call issued directly on the event loop. All of this ran before the token signature was verified, so an attacker unable to produce a valid token still cost the server two network round trips and a blocked loop per request. Both fetches used the library default timeout of five minutes.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Reproduced by running the unmodified handler from the 0.11.0 and 0.11.1 backends against a loopback identity provider that counted every inbound request and could answer with a configured delay. The submitted token carried a valid issuer and audience, a `kid` naming a key the provider does not hold, and `AAAA` as its signature.&#13;
-&#13;
-20 sequential requests, provider answering immediately:&#13;
-&#13;
-| Version | Discovery fetches | Key-set fetches | Response |&#13;
-| --- | --- | --- | --- |&#13;
-| 0.11.0 | 20 | 40 | 400 |&#13;
-| 0.11.1 | 1 | 1 | 400 |&#13;
-&#13;
-60 concurrent requests, provider answering in 150 ms:&#13;
-&#13;
-| Version | Wall time | Discovery fetches | Key-set fetches | Worst event-loop stall |&#13;
-| --- | --- | --- | --- | --- |&#13;
-| 0.11.0 | 18.6 s | 60 | 120 | 8255 ms |&#13;
-| 0.11.1 | under 0.01 s | 0 | 0 | none measurable |&#13;
-&#13;
-Idle event-loop stall was 10.8 ms in both cases. On 0.11.1 the first request an instance receives warms both caches, and every request after that reaches the signature check without any outbound network call.&#13;
-&#13;
-## Credits&#13;
-&#13;
-@galanko, for reporting the issue and identifying both the missing caching and the blocking call.</description>
-      <guid isPermaLink="false">GHSA-3g9q-v48f-hh9w</guid>
-      <category>HIGH</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Fri, 04 Sep 2026 12:08:59 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can suppress calendar alerts instance-wide via a non-numeric alert value (CVE-2026-87012)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-v39v-59xw-j98g</link>
-      <description>CVE-2026-87012 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-754, CWE-1287
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Any authenticated user can suppress calendar alerts instance-wide via a non-numeric alert value&#13;
-&#13;
-## Summary&#13;
-&#13;
-Calendar events carry a free-form `meta` object that is stored exactly as submitted, with no validation of the values inside it. The scheduler reads the per-event alert offset out of that object in a single pass that covers every user's upcoming events, and compares it numerically without checking that it is a number. Any verified user could store a text value there, which made the comparison raise and abort the whole pass, so no calendar reminder fired for anyone on the instance while that event stayed inside the lookahead window.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-- Calendar is enabled (`ENABLE_CALENDAR` / `calendar.enable`, default `True`).&#13;
-- The attacker is a verified user (role `user` or `admin`) holding the `calendar` feature permission, which is granted to all users by default (`USER_PERMISSIONS_FEATURES_CALENDAR`, default `True`).&#13;
-- The event's start time falls inside the scheduler's one hour lookahead window, so the shared alert pass selects it.&#13;
-&#13;
-No admin access, no shared calendar, no recurrence rule and no open registration are required, an invited account is enough. Deployments running with the calendar disabled, or with the calendar feature permission removed from regular users, are not affected.&#13;
-&#13;
-## Impact&#13;
-&#13;
-Availability loss on one feature, affecting every user on the instance. While a single event carrying a non-numeric alert value sat in the upcoming window, the shared alert pass raised before emitting anything, so no user received calendar alerts and no event was recorded as alerted. The same events were selected again on the next poll, so the suppression lasted as long as the event stayed in the window, roughly one hour per event, and could be sustained by storing a new one. Every user on a default deployment holds the permission needed to do this.&#13;
-&#13;
-Chat, timers, automations and the HTTP API kept working throughout, and authenticated calendar reads continued to succeed. There is no crash, no code execution, and no access to other users' data. Alerts resumed on their own once the event left the window or was deleted.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in https://github.com/open-webui/open-webui/pull/28790, released in 0.11.1. The scheduler now treats any non-numeric alert value as unset and falls back to the default alert offset, so a stored text value can no longer interrupt the pass. Upgrading is sufficient and no configuration change is required. Events already holding a bad value simply revert to the default alert timing.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-Affected component: the upcoming-event lookup in the calendar event model, which the scheduler's alert pass calls every poll. Affected setup: every build carrying the calendar feature, which was introduced in 0.9.0.&#13;
-&#13;
-Event `meta` is an untyped dictionary and was written to the database exactly as submitted, so nothing on the write path guaranteed that the alert offset was a number. The alert pass then read that value back and compared it numerically on the assumption that the write path had already constrained it, and the loop had no per-event error handling. Because a single background pass serves the whole instance rather than one user at a time, one unusable value from one user aborted the pass for everyone.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Reported with a scripted reproduction against 0.11.0 (`ghcr.io/open-webui/open-webui:latest`) with the calendar enabled and two ordinary user accounts. The first account created an upcoming event with the alert offset stored as the text `"5"`, the second created a normal upcoming event with a numeric offset. Across several scheduler polls the second user's event was never marked as alerted and no alert was delivered, while the server logged a type error from the alert pass on each poll. Health checks and authenticated calendar reads returned normally during the fault. After the first account's event was deleted, the second user's event was marked as alerted on the next poll and alerting resumed.&#13;
-&#13;
-## Credits&#13;
-&#13;
-Binbin Xu​ of Tencent YUNDING LAB CodeBuddy Security.</description>
-      <guid isPermaLink="false">GHSA-v39v-59xw-j98g</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Fri, 04 Sep 2026 12:05:52 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Any authenticated user can start a non-terminating request via a folder parent cycle (CVE-2026-87013)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-8r35-5x5r-hv74</link>
-      <description>CVE-2026-87013 · CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L) · CWE-835
-
-Affected:
-- pip/open-webui &gt;= 0.10.0, &lt;= 0.11.0 (patched: 0.11.1)
-
----
-
-# Any authenticated user can start a non-terminating request via a folder parent cycle&#13;
-&#13;
-## Summary&#13;
-Any authenticated user can move one of their own folders under itself, leaving a loop in their folder tree. The re-parent endpoint performed no check that the new parent was not the folder itself or one of its own subfolders, and the folder tree walks did not track which folders they had already visited. A single request against a folder in a loop therefore never finishes.&#13;
-&#13;
-## Preconditions&#13;
-Folders must be enabled (`ENABLE_FOLDERS`, default true) and the acting user's role must hold the folders feature permission (`USER_PERMISSIONS_FEATURES_FOLDERS`, default true). Both are on in a default install. Any authenticated account is sufficient: no administrator, no second user, no shared folder and no victim interaction. Deployments that disable folders, or withhold the folders feature permission from non-admin roles, are not affected.&#13;
-&#13;
-## Impact&#13;
-A single request that never returns. It keeps running after the client disconnects, holds a CPU core and grows its in-memory folder list at roughly 0.6 GB per hour until the process is restarted. The folder stays in the looping state in the database, so any later request touching that folder starts the loop again.&#13;
-&#13;
-The instance stays responsive while this happens. Each step of the walk waits on a database query, so other users continue to be served normally; measured on a default install, two concurrent instances of this request left unrelated users unaffected, and roughly 900 concurrent requests were needed before anyone else saw a slowdown. Nothing is denied to any other party at the time of the attack, and an unattended instance degrades over hours rather than immediately. No user data is exposed and no data belonging to another user is modified.&#13;
-&#13;
-## Fix&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28748. Moving a folder into itself or into one of its own subfolders is now rejected with a 400, every folder tree walk skips ids it has already visited, and a folder whose parent chain loops is returned to the root the next time the folder list is requested. An instance that already holds folders in this state recovers on upgrade with no operator action.&#13;
-&#13;
-## Root cause&#13;
-Affected components: the folder re-parent handler `POST /api/v1/folders/{id}/update/parent`, the subtree walk in the folder model that expands a folder into its descendants, and the two endpoints that call it, `DELETE /api/v1/folders/{id}` and `POST /api/v1/folders/{id}/read`. Affected setup: the subtree walk was introduced in 0.10.0, so no earlier release carries the code.&#13;
-&#13;
-The folder hierarchy is stored as a plain parent reference per folder, with the acyclic property assumed rather than enforced. The write path never validated that assumption, and the read paths were written as if it always held, so nothing on either side would notice or stop a loop.&#13;
-&#13;
-## Proof of concept&#13;
-Reproduced against a default 0.11.0 install. As an ordinary authenticated user:&#13;
-&#13;
-1. Create a folder and note its id.&#13;
-2. `POST /api/v1/folders/{id}/update/parent` with `parent_id` set to that same id. The request is accepted.&#13;
-3. `DELETE /api/v1/folders/{id}` (or `POST /api/v1/folders/{id}/read`). The request never returns, and the worker continues running after the client disconnects.&#13;
-&#13;
-No data was seeded directly into the database. Every step ran through the public API.&#13;
-&#13;
-## Credits&#13;
-@luida-ikura, who reported the folder parent cycle and the non-terminating subtree walk it reaches.</description>
-      <guid isPermaLink="false">GHSA-8r35-5x5r-hv74</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Fri, 04 Sep 2026 11:49:34 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — Admin demoted through SSO role sync keeps read and write access to all users' notes (CVE-2026-87014)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-wjwr-xfp9-r66p</link>
-      <description>CVE-2026-87014 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:N) · CWE-613, CWE-863
-
-Affected:
-- pip/open-webui &gt;= 0.9.0, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# Admin demoted through SSO role sync keeps read and write access to all users' notes&#13;
-&#13;
-## Summary&#13;
-&#13;
-A user who is demoted from admin by an identity provider keeps admin-level read and write access to every user's notes, over any Socket.IO connection that was already open when the demotion happened. Open WebUI caches the user's role on the socket at connection time, and the two SSO role-sync paths, the reverse-proxy trusted role header and OAuth role mapping, changed the role in the database without tearing that cached session down. Only the admin user-management endpoints invalidated sessions, so a demotion driven by the identity provider left the old privileges live on the socket.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-A role-sync SSO mode has to be enabled. Either trusted-header authentication with `WEBUI_AUTH_TRUSTED_ROLE_HEADER` set, which is unset by default, or OAuth with role mapping enabled, which is off by default. Deployments that change roles only through the admin panel are not affected, because that path already invalidated the user's sockets.&#13;
-&#13;
-The account has to be an admin at the moment it opens a Socket.IO connection, has to keep that connection open across the demotion, and has to be demoted through the SSO path rather than through the admin panel. Signing out, reloading the page, or any network interruption ends the exposure, because the reconnect reads a fresh role from the database.&#13;
-&#13;
-## Impact&#13;
-&#13;
-Until the socket closes, the demoted account can open and edit any user's note through the collaborative-notes socket handlers, which grant admins access to every note. That is read and write access to other users' private notes, held by someone the operator has already removed from the admin role.&#13;
-&#13;
-The rest of the product is not affected. Every HTTP endpoint reads the role fresh from the database on each request, so the demoted account has no admin access to the REST API, no user management, no settings and no model or connection configuration. The exposure ends the moment the connection drops, and the account controls that only by keeping the browser tab open.&#13;
-&#13;
-The realistic case is off-boarding or a least-privilege downgrade performed in the identity provider, which is a normal administrative action rather than a misconfiguration.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in 0.11.1 by commit `ce3c175e260709f359d7e6cbb3132f0572098b95`. Role changes and user deletions now publish an internal event, and a session handler tears down that user's Socket.IO connections whenever the event fires, so every path that can change a role invalidates cached sessions instead of only the admin endpoints. Upgrading is sufficient, no configuration change is needed.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-Affected components:&#13;
-&#13;
-- `backend/open_webui/routers/auths.py`, the trusted-header role sync in the sign-in handler.&#13;
-- `backend/open_webui/utils/oauth.py`, the OAuth role sync run on login.&#13;
-- `backend/open_webui/socket/main.py`, which caches the user record on the socket and authorizes the collaborative-notes handlers against that cached copy.&#13;
-&#13;
-Session invalidation on role change was added as an explicit call, made at the call sites that changed a role rather than inside the role-change itself. The admin user-management endpoints made that call, the two SSO sync paths did not, and nothing else refreshed the role cached on an open socket. The socket keep-alive rewrites the cached record to reset the idle timer and preserves the stale role while doing so, so a connection that stays active is never reaped. Because the notes handlers grant full access to any note when the cached role reads admin, the gap turned into read and write access over all notes for as long as the connection lived.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Deploy Open WebUI with trusted-header authentication and `WEBUI_AUTH_TRUSTED_ROLE_HEADER` set, or with OAuth role mapping enabled. Sign in as an admin and leave the browser open on a page holding a Socket.IO connection. Demote the account through the identity provider, meaning the next sign-in carries the role header set to `user`, or the account's group is changed at the OAuth provider. The database role is now `user`.&#13;
-&#13;
-Over the connection that is still open, join and edit another user's note by its id. Both are granted, because the role cached on that socket still reads admin. Performing the same demotion through the admin panel instead drops the connection and revokes the access, which is the behaviour the SSO paths were missing.&#13;
-&#13;
-This was established by source inspection against 0.11.0 rather than by an executed exploit.&#13;
-&#13;
-## Credits&#13;
-&#13;
-Reported by @mtholmquist.</description>
-      <guid isPermaLink="false">GHSA-wjwr-xfp9-r66p</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Fri, 04 Sep 2026 11:48:27 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] open-webui/open-webui — A user's session cookies are sent to tool servers configured for bearer authentication (CVE-2026-87015)</title>
-      <link>https://github.com/open-webui/open-webui/security/advisories/GHSA-p78m-89r6-pgf7</link>
-      <description>CVE-2026-87015 · CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N) · CWE-201
-
-Affected:
-- pip/open-webui &gt;= 0.6.27, &lt; 0.11.1 (patched: 0.11.1)
-
----
-
-# A user's session cookies are sent to tool servers configured for bearer authentication&#13;
-&#13;
-## Summary&#13;
-&#13;
-When more than one external tool server is reachable in the same request, a tool call to a server configured for bearer authentication can arrive carrying the calling user's Open WebUI session cookies alongside that server's own key. The cookie jar is built per connection, but the callable that performs the request reads it late instead of per connection, so every tool callable built in the same pass sends the cookies belonging to whichever connection was processed last. An administrator who configures a server with its own API key has not chosen to send that server anything else, and the operator of that server receives a live session credential for the user who triggered the call.&#13;
-&#13;
-## Preconditions&#13;
-&#13;
-At least two external tool servers must be attached to the same request, and at least one of them must be set to session or system OAuth authentication, since no cookie jar is assembled otherwise. The connection using that authentication mode must be the one processed last, which follows the order of the tool servers attached to the request rather than anything the receiving party controls.&#13;
-&#13;
-A deployment with no tool servers, with only one tool server, or where no attached server uses session or system OAuth authentication, is not affected. Tool servers are not configured by default.&#13;
-&#13;
-## Impact&#13;
-&#13;
-The operator of a tool server that was configured with only its own API key receives the session token of every user whose tool call reaches it. That token authenticates as the user against the whole application, so the receiving party can act as that user for the lifetime of the token, which is a full account takeover of anyone whose request lands on that server. Where the affected user is an administrator, the receiving party gains administrative access.&#13;
-&#13;
-The receiving party is the operator of a server the administrator deliberately registered, so this is a disclosure of user credentials to a partially trusted third party rather than to an arbitrary attacker. It nonetheless crosses a boundary the administrator set, because selecting bearer authentication for a connection states that the connection is authenticated by its own key alone. The leak does not depend on the tool server behaving maliciously to obtain the token, only on it receiving and retaining ordinary request data.&#13;
-&#13;
-## Fix&#13;
-&#13;
-Fixed in 0.11.1 by https://github.com/open-webui/open-webui/pull/28630. The tool callable now takes its own connection's cookie jar as a parameter, in the same way it already took that connection's headers, so each request carries only what its own connection was configured to send. Upgrading resolves the issue with no configuration change.&#13;
-&#13;
-## Root cause&#13;
-&#13;
-Affected component: the tool loading routine in `backend/open_webui/utils/tools.py`, which builds one callable per tool across all attached connections; the header and cookie builder in the same module, which populates a cookie jar only for session and system OAuth connections; and the tool server request function, which places the supplied jar on the outgoing request.&#13;
-&#13;
-Headers were passed into the callable factory as an argument and were therefore fixed per connection, while the cookie jar was left as a variable in the enclosing scope and was read only when the tool was finally invoked. By then both loops had completed and the variable held the last value assigned to it. The two values are produced together by the same builder and were plainly intended to travel together, so this is an oversight in how one of them was captured rather than a forwarding decision. The equivalent code path for terminal tool servers in the same module binds both values per connection and does not carry the defect.&#13;
-&#13;
-## Proof of concept&#13;
-&#13;
-Two tool servers were registered: one using bearer authentication with its own key, and one using session authentication, with the session connection processed last. A tool call was driven to an operation belonging to the bearer server, and that server recorded the incoming request.&#13;
-&#13;
-The bearer server received its own key in the authorization header, together with the calling user's `token` and `oauth_session_id` cookies. The received token matched the calling user's session token.&#13;
-&#13;
-Control: with the session connection removed and only the bearer server registered, the same tool call arrived with no cookies at all, confirming that the leak depends on a session connection being present and processed last.&#13;
-&#13;
-Reproduced against a running instance built from the affected snapshot, with the receiving tool servers replaced by recording servers.&#13;
-&#13;
-## Credits&#13;
-&#13;
-Classic298, who reported the issue and demonstrated the cross-connection cookie leak against a running instance.</description>
-      <guid isPermaLink="false">GHSA-p78m-89r6-pgf7</guid>
-      <category>MEDIUM</category>
-      <category>open-webui/open-webui</category>
-      <pubDate>Fri, 04 Sep 2026 11:47:12 +0000</pubDate>
     </item>
   </channel>
 </rss>
