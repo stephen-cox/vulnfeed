@@ -7,7 +7,129 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 09 Nov 2026 12:29:19 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 10 Nov 2026 12:03:32 +0000</lastBuildDate>
+    <item>
+      <title>[MEDIUM] composer/composer — Inline repository HTTP credentials sent to attacker controlled dist mirrors supplied in `composer.lock` / `installed.json`</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-x82q-x274-r6pq</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N) · CWE-200, CWE-522
+
+Affected:
+- composer/composer/composer &gt;= 2.11.0, &lt; 2.11.2 (patched: 2.11.2)
+- composer/composer/composer &gt;= 2.2.31, &lt; 2.2.32 (patched: 2.2.32)
+
+---
+
+## Summary&#13;
+&#13;
+For projects that authenticate to a Composer repository using an inline HTTP header credential, a crafted `composer.lock` or `vendor/composer/installed.json` could cause that credential to be sent to a download mirror on an attacker-controlled host during `composer install`. This is an information disclosure issue limited to that repository credential. There is no code execution and no file modification.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You are affected if all of the following hold:&#13;
+&#13;
+- You run Composer 2.11.0, 2.11.1, or 2.2.31.&#13;
+- You configure a Composer repository with an inline HTTP header that carries a secret, for example an `Authorization` bearer token or an API key set in the repository's options (common with Private Packagist and Satis-style setups).&#13;
+- An attacker can influence your `composer.lock` or `vendor/composer/installed.json`, for example through a pull request that edits the lock file, a committed lock in a shared project, or a poisoned CI cache.&#13;
+&#13;
+When those hold, a crafted entry can add a preferred download mirror pointing at a host the attacker controls, and the repository credential is then sent to that host.&#13;
+&#13;
+You are plainly not affected if your repositories do not use an inline header credential, or if you are on a release that does not re-attach repository headers at load time (any version other than 2.11.0, 2.11.1, and 2.2.31).&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Fixed in 2.11.2 and 2.2.32.&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+The only complete fix is upgrading.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-x82q-x274-r6pq</guid>
+      <category>MEDIUM</category>
+      <category>composer/composer</category>
+      <pubDate>Tue, 10 Nov 2026 09:13:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Arbitrary file write outside the package directory via symlinked zip entries and the `unzip` to `ZipArchive` extraction fallback</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-w6hj-6587-3jh5</link>
+      <description>CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H) · CWE-22, CWE-59
+
+Affected:
+- composer/composer/composer &gt;= 2.3.0, &lt; 2.11.2 (patched: 2.11.2)
+- composer/composer/composer &gt;= 1.0, &lt; 2.2.32 (patched: 2.2.32)
+
+---
+
+## Summary&#13;
+&#13;
+A malicious package archive could cause Composer to write a file outside the intended package directory during `composer install`, `composer update`, or `composer require`. Because the written file can be an application entry point or another file that later gets executed, this can lead to code execution. It is arbitrary file write, not a flaw triggered by normal Packagist-hosted packages, which do not carry the kind of archive entries required.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You are affected if all of the following hold:&#13;
+&#13;
+- You run Composer 1.0.0 through 2.11.1.&#13;
+- You install packages whose distribution archive (zip) an attacker can control. In practice this means untrusted third-party Composer repositories, private or self-hosted repositories, artifact mirrors, or any attacker-controlled dist URL.&#13;
+- Your system has the `unzip` command available (standard on Linux and macOS) together with the PHP zip extension.&#13;
+&#13;
+When those hold, a crafted archive can redirect one of its entries so the content lands outside the package directory, for example overwriting a front controller in the project root, which yields code execution on the next request or command.&#13;
+&#13;
+You are plainly not affected if every package you install comes from a trusted source. Packagist.org-hosted archives generally do not contain the archive entries this relies on, so typical Packagist.org-only installs are not a realistic vector.&#13;
+&#13;
+The single most realistic way to get hit: adding or updating a package served by an untrusted or attacker-controlled repository or mirror.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Fixed in 2.11.2 and 2.2.32.&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+The only complete fix is upgrading.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-w6hj-6587-3jh5</guid>
+      <category>HIGH</category>
+      <category>composer/composer</category>
+      <pubDate>Tue, 10 Nov 2026 09:13:22 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] composer/composer — Arbitrary command execution via `transport-options.prevent_url_access_callable` loaded from `composer.lock` / `installed.json`</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-jhfp-4ppm-crmm</link>
+      <description>CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H) · CWE-78, CWE-470
+
+Affected:
+- composer/composer/composer &gt;= 2.10.0, &lt; 2.11.2 (patched: 2.11.2)
+
+---
+
+## Summary&#13;
+&#13;
+A crafted `composer.lock` or `vendor/composer/installed.json` could cause Composer to run an arbitrary system command while resolving downloads during `composer install` or `composer update`. This is data-driven arbitrary command execution: it does not require a malicious package to be installed or any package code to run, only the ability to influence those two files, and the command runs before any checksum or integrity check. It is not a flaw in how trusted package code executes.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You are affected if all of the following hold:&#13;
+&#13;
+- You run Composer 2.10.0 through 2.11.1.&#13;
+- You run `composer install` or `composer update` against a `composer.lock` or `vendor/composer/installed.json` whose contents an attacker could influence.&#13;
+&#13;
+Realistic ways that file becomes attacker-influenced include a pull request that only edits `composer.lock`, a shared or scaffolded project template that ships a lock file, a compromised dependency-update bot, or a CI cache that restores a poisoned lock or installed file.&#13;
+&#13;
+You are plainly not affected if nothing untrusted can modify your lock or installed-packages files, or if you are on the 2.2 LTS line (or any release before 2.10.0), which never had the affected option handling.&#13;
+&#13;
+The single most realistic way to get hit: automated CI that checks out a branch and runs `composer install` without a human reviewing the lock-file change. `--no-scripts` and `--no-plugins` do not prevent it.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Fixed in 2.11.2. The fix makes Composer ignore these download-time callback options when they come from the lock or installed-packages file, and only honor them when they are set programmatically.&#13;
+&#13;
+## Workarounds&#13;
+&#13;
+The only complete fix is upgrading. To reduce risk until then, do not run `composer install`/`update` on lock or installed files from untrusted sources (unreviewed pull requests outside of CI running sandboxed, third-party templates, shared caches).&#13;
+</description>
+      <guid isPermaLink="false">GHSA-jhfp-4ppm-crmm</guid>
+      <category>HIGH</category>
+      <category>composer/composer</category>
+      <pubDate>Tue, 10 Nov 2026 09:13:18 +0000</pubDate>
+    </item>
     <item>
       <title>[LOW] WordPress/wordpress-develop — A race condition during core updates that could lead to remote code execution</title>
       <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-4w3m-c66w-69mg</link>
@@ -3369,122 +3491,6 @@ Discovered and responsibly disclosed by Paulos Yibelo and [pwn.ai](https://pwn.a
       <category>MEDIUM</category>
       <category>WordPress/wordpress-develop</category>
       <pubDate>Fri, 18 Sep 2026 17:59:48 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] WordPress/wordpress-develop — A theme that supports custom-header and does not register an admin-preview-callback is vulnerable to stored XSS</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-mgvw-845h-9qgq</link>
-      <description>Affected:
-- WordPress 7.1.0 (patched: 7.1.1)
-- WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-- WordPress 5.8.0 - 5.8.15 (patched: 5.8.16)
-- WordPress 5.7.0 - 5.7.17 (patched: 5.7.18)
-- WordPress 5.6.0 - 5.6.19 (patched: 5.6.20)
-- WordPress 5.5.0 - 5.5.20 (patched: 5.5.21)
-- WordPress 5.4.0 - 5.4.21 (patched: 5.4.22)
-- WordPress 5.3.0 - 5.3.23 (patched: 5.3.24)
-- WordPress 5.2.0 - 5.2.26 (patched: 5.2.27)
-- WordPress 5.1.0 - 5.1.24 (patched: 5.1.25)
-- WordPress 5.0.0 - 5.0.27 (patched: 5.0.28)
-- WordPress 4.9.0 - 4.9.31 (patched: 4.9.32)
-- WordPress 4.8.0 - 4.8.30 (patched: 4.8.31)
-- WordPress 4.7.0 - 4.7.35 (patched: 4.7.36)
-
----
-
-A user with `edit_theme_options` can store information about a custom header which on some themes can be used to create a stored XSS. &#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
-&#13;
-Discovered and responsibly disclosed by Jeremy Felt of the WordPress Security Team.</description>
-      <guid isPermaLink="false">GHSA-mgvw-845h-9qgq</guid>
-      <category>LOW</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:59:36 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] WordPress/wordpress-develop — XML-RPC can be used to publish `customize_changeset` posts that bypass checks for `edit_css`</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-xhp5-863h-rhfr</link>
-      <description>Affected:
-- other/WordPress 7.1.0 - 7.1 (patched: 7.1.1)
-- other/WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- other/WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- other/WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- other/WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- other/WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- other/WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- other/WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- other/WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- other/WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- other/WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- other/WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- other/WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-- other/WordPress 5.8.0 - 5.8.15 (patched: 5.8.16)
-- other/WordPress 5.7.0 - 5.7.17 (patched: 5.7.18)
-- other/WordPress 5.6.0 - 5.6.19 (patched: 5.6.20)
-- other/WordPress 5.5.0 - 5.5.20 (patched: 5.5.21)
-- other/WordPress 5.4.0 - 5.4.21 (patched: 5.4.22)
-- other/WordPress 5.3.0 - 5.3.23 (patched: 5.3.24)
-- other/WordPress 5.2.0 - 5.2.26 (patched: 5.2.27)
-- other/WordPress 5.1.0 - 5.1.24 (patched: 5.1.25)
-- other/WordPress 5.0.0 - 5.0.27 (patched: 5.0.28)
-- other/WordPress 4.9.0 - 4.9.31 (patched: 4.9.32)
-- other/WordPress 4.8.0 - 4.8.30 (patched: 4.8.31)
-- other/WordPress 4.7.0 - 4.7.35 (patched: 4.7.36)
-
----
-
-The generic XML-RPC `wp.newPost` path accepts caller-selected registered post types. A non-Super-Admin site administrator can therefore publish a raw `customize_changeset` post through XML-RPC that contains custom CSS that bypasses the expected check that usually ensures a user can `edit_css`.&#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.&#13;
-&#13;
-Discovered and responsibly disclosed by Alex Concha of the WordPress Security Team.</description>
-      <guid isPermaLink="false">GHSA-xhp5-863h-rhfr</guid>
-      <category>MEDIUM</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:59:30 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] WordPress/wordpress-develop — Authenticated Path Traversal in WP REST Templates Controller</title>
-      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-w57f-v787-qhpf</link>
-      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N)
-
-Affected:
-- other/WordPress 7.1.0 - 7.1 (patched: 7.1.1)
-- other/WordPress 7.0.0 - 7.0.4 (patched: 7.0.5)
-- other/WordPress 6.9.0 - 6.9.7 (patched: 6.9.8)
-- other/WordPress 6.8.0 - 6.8.8 (patched: 6.8.9)
-- other/WordPress 6.7.0 - 6.7.7 (patched: 6.7.8)
-- other/WordPress 6.6.0 - 6.6.7 (patched: 6.6.8)
-- other/WordPress 6.5.0 - 6.5.10 (patched: 6.5.11)
-- other/WordPress 6.4.0 - 6.4.10 (patched: 6.4.11)
-- other/WordPress 6.3.0 - 6.3.10 (patched: 6.3.11)
-- other/WordPress 6.2.0 - 6.2.11 (patched: 6.2.12)
-- other/WordPress 6.1.0 - 6.1.12 (patched: 6.1.13)
-- other/WordPress 6.0.0 - 6.0.14 (patched: 6.0.15)
-- other/WordPress 5.9.0 - 5.9.16 (patched: 5.9.17)
-
----
-
-The REST templates endpoint accepts template IDs whose slug regex can result in an unbound filesystem path. An authenticated Author can read any .html file on the server.&#13;
-&#13;
-WordPress 7.1.1 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.9.&#13;
-&#13;
-Discovered and responsibly disclosed by Anthropic.</description>
-      <guid isPermaLink="false">GHSA-w57f-v787-qhpf</guid>
-      <category>MEDIUM</category>
-      <category>WordPress/wordpress-develop</category>
-      <pubDate>Fri, 18 Sep 2026 17:59:19 +0000</pubDate>
     </item>
   </channel>
 </rss>
