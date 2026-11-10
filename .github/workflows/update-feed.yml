@@ -142,4 +142,4 @@ jobs:
       # checked out main and pulled, racing the commit it was meant to publish.
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
