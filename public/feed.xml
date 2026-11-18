@@ -7,7 +7,7 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 17 Nov 2026 12:44:26 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 18 Nov 2026 12:36:28 +0000</lastBuildDate>
     <item>
       <title>[MEDIUM] zammad/zammad — Organization list disclosure to customers without organization</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-wpj3-v2hg-8vf7</link>
@@ -1574,7 +1574,7 @@ The following versions of Icinga 2 include fixes for this vulnerability: v2.16.6
 &#13;
 ### Workarounds&#13;
 &#13;
-The vulnerability exists in scripts shipped in the default configuration in `/etc/icinga2/scripts`, so the fix for this issue can be applied locally without having to upgrade the Icinga 2 packages. To do so, apply the changes from [TODO: link commit] to the files `mail-host-notification.sh` and `mail-service-notification.sh` in that directory.&#13;
+The vulnerability exists in scripts shipped in the default configuration in `/etc/icinga2/scripts`, so the fix for this issue can be applied locally without having to upgrade the Icinga 2 packages. To do so, apply the changes from https://github.com/Icinga/icinga2/pull/11144/commits/446de50a2ba0aa730602f29895e538cab5534692 to the files `mail-host-notification.sh` and `mail-service-notification.sh` in that directory.&#13;
 &#13;
 ### References&#13;
 &#13;
