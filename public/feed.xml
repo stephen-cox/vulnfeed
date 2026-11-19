@@ -7,7 +7,716 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Wed, 18 Nov 2026 12:36:28 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 19 Nov 2026 12:27:01 +0000</lastBuildDate>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — A cross-site scripting (XSS) issue in wp_interactivity_data_wp_context() via the store namespace</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-2frv-jg59-g699</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+
+---
+
+`wp_interactivity_data_wp_context()` didn't escape the store namespace for use in an HTML attribute. A plugin or theme that passes an untrusted namespace to the function can allow cross-site scripting.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 6.5.
+
+Discovered and responsibly disclosed by jrfnl.</description>
+      <guid isPermaLink="false">GHSA-2frv-jg59-g699</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:51:50 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — A malformed regular expression that broadened JSON media type matching, fixed as a hardening measure</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-6955-723v-xvmm</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+
+---
+
+`wp_is_json_media_type()` used a regular expression with an unescaped hyphen, so it accepted malformed media types such as `application/foo/bar+json` as JSON. That content-type confusion can make it easier for requests to get past upstream firewall filters. There is no direct vulnerability as a result of this, but the issue is being fixed as a hardening measure.
+
+WordPress 7.1.5 has been released containing hardening, and as a courtesy to users on older branches the hardening has been backported to all branches back to 5.6.
+
+Discovered and responsibly disclosed by Mo Jangda.</description>
+      <guid isPermaLink="false">GHSA-6955-723v-xvmm</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:51:41 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — An SQL injection issue in WP_Meta_Query via nested relation values</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-xc9c-4hg4-h4jg</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+`WP_Meta_Query` didn't sanitize the `relation` value of some nested clauses, so it went directly into the generated SQL. A plugin or theme that passes untrusted nested `meta_query` input can allow read access to the database.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by cswiers.</description>
+      <guid isPermaLink="false">GHSA-xc9c-4hg4-h4jg</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:51:34 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop — A reflected cross-site scripting (XSS) issue in the legacy media library popup</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-gm52-6h3w-97v4</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+An attacker can craft a link to the legacy media library popup that makes a REST API error print their markup into an HTML page. When a logged-in user who can upload files opens the link, the script runs in the admin.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by Anthropic.</description>
+      <guid isPermaLink="false">GHSA-gm52-6h3w-97v4</guid>
+      <category>HIGH</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:51:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop — A multisite privilege escalation issue letting a site Administrator take over a Super Admin account via Customizer menu previews</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-mwj7-xhp9-7773</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+On multisite, a site Administrator could replay a Customizer widget hash as the signature for nav menu selective refresh arguments. That let them run a callback of their choice and take over a Super Admin account. The site needs a classic theme with widgets enabled.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by yuvalmiller.</description>
+      <guid isPermaLink="false">GHSA-mwj7-xhp9-7773</guid>
+      <category>HIGH</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:51:19 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — An unauthenticated information disclosure issue exposing private taxonomy terms via the REST API search endpoint</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-rcr3-43fx-wqfv</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+
+---
+
+An unauthenticated visitor could pair the term search type with a post subtype in the REST API search endpoint, which returned terms from every taxonomy, including private ones such as navigation menus.&#13;
+&#13;
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.6.&#13;
+&#13;
+Discovered and responsibly disclosed by Anthropic.</description>
+      <guid isPermaLink="false">GHSA-rcr3-43fx-wqfv</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:51:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — An Author+ information disclosure issue exposing user email addresses via the REST API comments endpoint</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-jq8m-j7jq-c53m</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+A user with the Author role or above could make an existing user the author of a comment on their own post through the REST API comments endpoint, which exposed that user's email address. On multisite, a site Administrator could do the same for any user on the network.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by Ben Bidner.</description>
+      <guid isPermaLink="false">GHSA-jq8m-j7jq-c53m</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:51:04 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — A Contributor+ stored cross-site scripting (XSS) issue in the Comment Date block via its date format</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-h24f-q5c7-c33g</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+
+---
+
+A user with the Contributor role or above could inject markup through the Comment Date block's date format, because the block output the formatted date without escaping it.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 6.0.
+
+Discovered and responsibly disclosed by Weston Ruter and Jeremy Felt.</description>
+      <guid isPermaLink="false">GHSA-h24f-q5c7-c33g</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:57 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop — An unauthenticated privilege escalation issue via Template Part block attributes that could lead to remote code execution</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-pmp8-6cv8-q323</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+
+---
+
+A Template Part block's theme and slug attributes could make an Administrator's editor send requests to another URL on the same site. A user with the Author role or above could set them in a post, and an unauthenticated attacker could send an Administrator a crafted editor link or redirect them to one. When the Administrator opened it, this could create an Administrator account for the attacker, which allows code execution through plugin upload.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 5.9.
+
+Discovered and responsibly disclosed by logansec.</description>
+      <guid isPermaLink="false">GHSA-pmp8-6cv8-q323</guid>
+      <category>HIGH</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:49 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop — A cross-site scripting (XSS) issue in the block editor via Openverse image metadata</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-jmhp-hg7w-w9c5</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+
+---
+
+The block editor added Openverse creator metadata to an inserted image's caption without escaping it. Someone with no account on the site could set that metadata so a script runs in the browser of a user who inserts their image from the editor's Openverse search.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 6.2.
+
+Discovered and responsibly disclosed by kq5y.</description>
+      <guid isPermaLink="false">GHSA-jmhp-hg7w-w9c5</guid>
+      <category>HIGH</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:42 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — An SQL injection issue via the front page setting in Customizer changeset previews</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-mcv9-c2pg-6m4v</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+A front page value previewed through the Customizer reached the main query without being cast to an integer, which allowed SQL injection. Creating the changeset requires the `manage_options` capability. On multisite, a site Administrator could use it to read the shared database, including network tables such as users.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by Rudy Faile.</description>
+      <guid isPermaLink="false">GHSA-mcv9-c2pg-6m4v</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:35 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — A Contributor+ cross-site scripting (XSS) issue via scripts in oEmbed provider responses</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-86p8-2wq3-x387</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+
+---
+
+A user with the Contributor role or higher could embed content from an untrusted oEmbed provider whose response included scripts. Those scripts could run in the editor with the privileges of an Administrator who opened the post.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.8.
+
+Discovered and responsibly disclosed by vvh1te3zz.</description>
+      <guid isPermaLink="false">GHSA-86p8-2wq3-x387</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:27 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] WordPress/wordpress-develop — An unauthenticated stored cross-site scripting (XSS) issue via shortcode attributes in comments</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-cr2m-2j4r-3v3x</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+An unauthenticated visitor could post a comment containing a shortcode whose escaped attribute value decoded into HTML after the comment was sanitized. Where a Comments or Latest Comments block was placed in post content, that markup was rendered under the post allowlist, which allowed stored cross-site scripting.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by rafiem.</description>
+      <guid isPermaLink="false">GHSA-cr2m-2j4r-3v3x</guid>
+      <category>HIGH</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:20 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — An unauthenticated denial of service issue via batched XML-RPC pingbacks</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-56j2-5mp6-wr3x</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+An unauthenticated request could batch many pingback calls through the XML-RPC system.multicall method. Each pingback paused the request for one second and made an outbound HTTP request, so a single request could tie up a PHP worker for a long time.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by giovannicintolo.</description>
+      <guid isPermaLink="false">GHSA-56j2-5mp6-wr3x</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:11 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — An Editor+ information disclosure issue via post and template author assignment in the REST API</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-v7qc-72mg-wgpc</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+On a multisite network, a user who could change a post's or template's author through the REST API could assign it to a user who was not a member of the site. That exposed the other user's details to the site's editors.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by Jarda Snajdr.</description>
+      <guid isPermaLink="false">GHSA-v7qc-72mg-wgpc</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:50:04 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — An Administrator stored cross-site scripting (XSS) issue via Customizer previews</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-wx6p-jg9m-c5mj</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+Option values changed in the Customizer were not sanitized until the changes were published. A user who could customize the site but lacked the unfiltered_html capability, such as a site Administrator on a multisite network, could save a draft that ran script in the browser of another user who opened its preview.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by Weston Ruter.</description>
+      <guid isPermaLink="false">GHSA-wx6p-jg9m-c5mj</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:49:55 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — An Author+ authorization bypass issue via comment editing in the admin</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-qq5q-rw6p-gv4j</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+A user who could edit comments on their own posts, such as an Author, could use the comment editing screen to move a comment to another post they could not read or edit, or to turn an ordinary comment into a note.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by buffer1024.</description>
+      <guid isPermaLink="false">GHSA-qq5q-rw6p-gv4j</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:49:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] WordPress/wordpress-develop — A Subscriber+ information disclosure issue via XML-RPC `wp.getComments`</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-p9x8-m3q4-9wg6</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+- other/WordPress 5.8.0 - 5.8.19 (patched: 5.8.20)
+- other/WordPress 5.7.0 - 5.7.21 (patched: 5.7.22)
+- other/WordPress 5.6.0 - 5.6.23 (patched: 5.6.24)
+- other/WordPress 5.5.0 - 5.5.24 (patched: 5.5.25)
+- other/WordPress 5.4.0 - 5.4.25 (patched: 5.4.26)
+- other/WordPress 5.3.0 - 5.3.27 (patched: 5.3.28)
+- other/WordPress 5.2.0 - 5.2.30 (patched: 5.2.31)
+- other/WordPress 5.1.0 - 5.1.28 (patched: 5.1.29)
+- other/WordPress 5.0.0 - 5.0.31 (patched: 5.0.32)
+- other/WordPress 4.9.0 - 4.9.35 (patched: 4.9.36)
+- other/WordPress 4.8.0 - 4.8.34 (patched: 4.8.35)
+- other/WordPress 4.7.0 - 4.7.39 (patched: 4.7.40)
+
+---
+
+The XML-RPC `wp.getComments` method returned approved comments without checking whether the user could read each one. Any logged-in user, such as a Subscriber, could read commenters' email and IP addresses, and comments on private posts, including the post title.
+
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all branches back to 4.7.
+
+Discovered and responsibly disclosed by grze0.</description>
+      <guid isPermaLink="false">GHSA-p9x8-m3q4-9wg6</guid>
+      <category>MEDIUM</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:49:32 +0000</pubDate>
+    </item>
+    <item>
+      <title>[LOW] WordPress/wordpress-develop — A Contributor+ stored cross-site scripting (XSS) issue in the block editor via media filenames</title>
+      <link>https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-g2r4-3wmg-48f7</link>
+      <description>Affected:
+- other/WordPress 7.1.0 - 7.1.4 (patched: 7.1.5)
+- other/WordPress 7.0.0 - 7.0.8 (patched: 7.0.9)
+- other/WordPress 6.9.0 - 6.9.11 (patched: 6.9.12)
+- other/WordPress 6.8.0 - 6.8.12 (patched: 6.8.13)
+- other/WordPress 6.7.0 - 6.7.11 (patched: 6.7.12)
+- other/WordPress 6.6.0 - 6.6.11 (patched: 6.6.12)
+- other/WordPress 6.5.0 - 6.5.14 (patched: 6.5.15)
+- other/WordPress 6.4.0 - 6.4.14 (patched: 6.4.15)
+- other/WordPress 6.3.0 - 6.3.14 (patched: 6.3.15)
+- other/WordPress 6.2.0 - 6.2.15 (patched: 6.2.16)
+- other/WordPress 6.1.0 - 6.1.16 (patched: 6.1.17)
+- other/WordPress 6.0.0 - 6.0.18 (patched: 6.0.19)
+- other/WordPress 5.9.0 - 5.9.20 (patched: 5.9.21)
+
+---
+
+Converting an Image, Audio or Video block to a File block used the file name from the media URL as the File block's formatted text. A Contributor could save a post with a crafted media URL. When an Editor or Administrator converted that block to a File block, script ran in their session.&#13;
+&#13;
+WordPress 7.1.5 has been released containing a fix for the vulnerability, and as a courtesy to users on older branches the fix has been backported to all affected branches back to 5.9.&#13;
+&#13;
+Discovered and responsibly disclosed by CryptoFox.</description>
+      <guid isPermaLink="false">GHSA-g2r4-3wmg-48f7</guid>
+      <category>LOW</category>
+      <category>WordPress/wordpress-develop</category>
+      <pubDate>Wed, 18 Nov 2026 23:48:52 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] zammad/zammad — Organization list disclosure to customers without organization</title>
       <link>https://github.com/zammad/zammad/security/advisories/GHSA-wpj3-v2hg-8vf7</link>
@@ -2185,618 +2894,6 @@ Credit: The Dutch Institute for Vulnerability Disclosure Foundation (DIVD)</desc
       <category>HIGH</category>
       <category>zammad/zammad</category>
       <pubDate>Thu, 08 Oct 2026 10:19:43 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] argoproj/argo-cd — An oversized OCI manifest can exhaust repo-server memory</title>
-      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-w996-f2wq-x9c6</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H)
-
-Affected:
-- go/github.com/argoproj/argo-cd/v3 &gt;= 3.1.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
-
----
-
-### Impact
-
-Argo CD reads an OCI image manifest into memory with no size limit. A registry can return a manifest large enough to exhaust the repo-server. Kubernetes then kills the process, and manifest generation stops for every Application until the pod restarts. The same request can be sent again after the restart.
-
-All versions from v3.1.0 onward are affected, including every currently supported release. v3.0.23 and earlier are not. The behavior was introduced in [18c4d9d568](https://github.com/argoproj/argo-cd/commit/18c4d9d56869531f7ae017d610d4e79aaa5525c3) (2025-06-06, [#18646](https://github.com/argoproj/argo-cd/pull/18646)), the change that added OCI as an application source, and was first released in v3.1.0.
-
-Argo CD downloads the manifest when it renders an Application whose source is an OCI registry, and when it loads that source's metadata. Resolving a tag to a digest does not download the manifest. The `--oci-manifest-max-extracted-size` flag (default 1G) limits the unpacked image archive. It does not limit the manifest document. See [argocd-repo-server](https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-repo-server/).
-
-Someone who can make Argo CD pull from a registry they control can trigger this. That includes creating an Application with an `oci://` source, which the `default` project's `sourceRepos: ['*']` allows. See [OCI](https://argo-cd.readthedocs.io/en/stable/user-guide/oci/) and [the default project](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#the-default-project). A person who can push to a registry an Application already uses can do the same. This is the OCI counterpart of the Helm index limit in [GHSA-jhwx-mhww-rgc3](https://github.com/argoproj/argo-cd/security/advisories/GHSA-jhwx-mhww-rgc3).
-
-### Patches
-
-A patch for this vulnerability has been released in the following Argo CD versions:
-
-* v3.6.0-rc2
-* v3.5.4
-* v3.4.10
-* v3.3.15
-
-The fix rejects an OCI manifest larger than 4 MiB.
-
-Argo CD 3.1 and 3.2 are affected and out of support. They will not receive a patch. Upgrade to a patched 3.3 or newer release.
-
-### Workarounds
-
-There is no setting that caps the OCI manifest document.
-
-* Allow only registries you trust in the AppProject `sourceRepos` list. The `default` project allows every source until that list is changed. See [Projects](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/).
-* Do not grant untrusted users permission to create Applications or repositories that point at other registries. See [RBAC resources](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure).
-
-A user who can push to a registry already listed in `sourceRepos` can still publish an oversized manifest.
-
-### Credits
-
-The Argo CD team would like to thank @andrejtomci for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
-
-### References
-
-* Introducing commit: [18c4d9d56869531f7ae017d610d4e79aaa5525c3](https://github.com/argoproj/argo-cd/commit/18c4d9d56869531f7ae017d610d4e79aaa5525c3) ([#18646](https://github.com/argoproj/argo-cd/pull/18646)), first released in v3.1.0
-* [OCI](https://argo-cd.readthedocs.io/en/stable/user-guide/oci/)
-* [GHSA-jhwx-mhww-rgc3](https://github.com/argoproj/argo-cd/security/advisories/GHSA-jhwx-mhww-rgc3), the Helm index size limit
-
-### For more information
-
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
-* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
-      <guid isPermaLink="false">GHSA-w996-f2wq-x9c6</guid>
-      <category>MEDIUM</category>
-      <category>argoproj/argo-cd</category>
-      <pubDate>Wed, 07 Oct 2026 15:58:49 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] argoproj/argo-cd — Extension proxy RBAC ignores application namespace when applications-in-any-namespace is enabled</title>
-      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-g3ff-q88g-chrj</link>
-      <description>CVSS 4.9 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:L/I:L/A:N) · CWE-284, CWE-863
-
-Affected:
-- go/github.com/argoproj/argo-cd/v2 &gt;= 2.7.0
-- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
-
----
-
-### Impact
-
-Argo CD's proxy extension checks Application `get` before it forwards a request to an extension backend. When applications in any namespace are enabled, that check uses the wrong application name. The namespace is left out, so the policy object is `project/name` instead of `project/namespace/name`. The Application API still uses the three-part name.
-
-All versions from v2.7.0 onward are affected, including every currently supported release. v2.6.15 and earlier do not include this check. The behavior was introduced in [974c2de168](https://github.com/argoproj/argo-cd/commit/974c2de1686521437fa755a180b8d0593e9c0533) (2023-02-15, [#11694](https://github.com/argoproj/argo-cd/pull/11694)), the change that added authorization to proxy extensions, and was first released in v2.7.0.
-
-Both features have to be turned on. Proxy extensions are off unless `server.enable.proxy.extension` is set. Applications in any namespace are off unless the API server and application controller are started with the extra application namespaces. An install that keeps every Application in the Argo CD namespace is not affected.
-
-An authenticated user who can invoke a proxy extension, and who has Application `get` on `project/name` or on a wildcard such as `project/*`, can invoke that extension against an Application of the same name in another namespace of the same project. A deny rule written as `project/namespace/name` is not evaluated on this path. The Application API still returns a denial for that Application. The extension backend receives the request, the destination cluster name and URL, and the caller's identity.
-
-### Patches
-
-A patch for this vulnerability has been released in the following Argo CD versions:
-
-* v3.6.0-rc2
-* v3.5.4
-* v3.4.10
-* v3.3.15
-
-The fix checks the extension request with the Argo CD namespace as the default, which is how the Application API builds the policy object.
-
-Argo CD 2.x and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release.
-
-### Workarounds
-
-There is no setting that restores the three-part application check while proxy extensions and applications in any namespace both stay enabled.
-
-* Leave proxy extensions disabled. They are off by default. To turn them off, do not set `server.enable.proxy.extension` to `true` in `argocd-cmd-params-cm`, and remove `extension.config` from `argocd-cm`. See [Proxy extension configuration](https://argo-cd.readthedocs.io/en/stable/developer-guide/extensions/proxy-extensions/#configuration).
-* Do not enable [applications in any namespace](https://argo-cd.readthedocs.io/en/stable/operator-manual/app-any-namespace/). With every Application in the Argo CD namespace, `project/name` is the policy object the rest of the API uses. Namespace-scoped rules are documented in [Application in any namespaces](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#application-in-any-namespaces).
-* Limit who can invoke an extension. That does not fix the application check. See [The extensions resource](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#the-extensions-resource).
-
-### Credits
-
-The Argo CD team would like to thank @komyunghan, @Nadav0077, @akshatgit, @rexpository, @LHeiakim, @edwardav970, @dhki, @arbor-s, and @ninthlife-tools for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
-
-### References
-
-* Introducing commit: [974c2de1686521437fa755a180b8d0593e9c0533](https://github.com/argoproj/argo-cd/commit/974c2de1686521437fa755a180b8d0593e9c0533) ([#11694](https://github.com/argoproj/argo-cd/pull/11694)), first released in v2.7.0
-* [Applications in any namespace](https://argo-cd.readthedocs.io/en/stable/operator-manual/app-any-namespace/)
-* [Proxy extensions](https://argo-cd.readthedocs.io/en/stable/developer-guide/extensions/proxy-extensions/)
-* [Application in any namespaces](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#application-in-any-namespaces)
-
-### For more information
-
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
-* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
-      <guid isPermaLink="false">GHSA-g3ff-q88g-chrj</guid>
-      <category>MEDIUM</category>
-      <category>argoproj/argo-cd</category>
-      <pubDate>Wed, 07 Oct 2026 15:58:46 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] argoproj/argo-cd — Login failure rate limit can be bypassed via concurrent requests (CVE-2025-61560)</title>
-      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-4439-h7jw-5cjj</link>
-      <description>CVE-2025-61560 · CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N) · CWE-307, CWE-362
-
-Affected:
-- go/github.com/argoproj/argo-cd &gt;= 1.5.3, &lt; 2.0.0
-- go/github.com/argoproj/argo-cd/v2 &gt;= 2.0.0
-- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
-
----
-
-### Impact
-
-Argo CD limits failed local username/password logins. The default is 5 failures in a 5-minute window, set by `ARGOCD_SESSION_FAILURE_MAX_FAIL_COUNT` and `ARGOCD_SESSION_FAILURE_WINDOW_SECONDS`. The limit applies to local accounts, including the built-in `admin` account when it is enabled. It does not apply to SSO or OIDC logins.
-
-The login handler reads the failure count, checks the password, and only then increments the count. Concurrent requests for the same username all read the count before any of them updates it, so more guesses complete than the configured maximum. A correct password in that burst still returns a session token. Failed attempts in the burst return the same invalid-login response as an ordinary failure.
-
-All versions from v1.5.3 onward are affected, including every currently supported release. v1.5.2 and earlier do not have this throttle. The behavior was introduced in [76bacfdea4](https://github.com/argoproj/argo-cd/commit/76bacfdea4d9bbce774887f18a62e3ebc27d486c) (2020-04-21, [#3404](https://github.com/argoproj/argo-cd/pull/3404)) and first released in v1.5.3.
-
-Anyone who can reach `POST /api/v1/session` can attempt this. No Argo CD account is required. A separate cap, `ARGOCD_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT` (default 50), limits how many login requests one API server process handles at once. It is not per username, so it does not make the failure count correct. Each API server process stores its own failure counts. A second replica enforces its own limit.
-
-### Patches
-
-A patch for this vulnerability has been released in the following Argo CD versions:
-
-* v3.6.0-rc2
-* v3.5.4
-* v3.4.10
-* v3.3.15
-
-The fix handles one local login attempt per username at a time, so the failure count is updated before the next attempt is checked.
-
-Argo CD 1.x, 2.x, and 3.0 through 3.2 are out of support and will not receive a patch. Upgrade to a patched 3.3 or newer release, or disable local accounts and use SSO.
-
-### Workarounds
-
-Disable local accounts and require SSO. That removes the password check this limit applies to.
-
-* Disable the built-in `admin` account with `admin.enabled: "false"` in `argocd-cm`. See [Disable admin user](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#disable-admin-user).
-* Disable any other local account with `accounts.&lt;username&gt;.enabled: "false"`. See [Local users/accounts](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#local-usersaccounts).
-* Configure [SSO](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#sso) for login.
-
-Where a local account must stay enabled, set a strong unique password ([Manage users](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#manage-users)). Lowering `ARGOCD_MAX_CONCURRENT_LOGIN_REQUESTS_COUNT` shrinks how many login attempts can be in flight on one API server process ([Failed logins rate limiting](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#failed-logins-rate-limiting)). That cap is not per username, so it does not make the failure counter correct. With more than one API server replica, set `ARGOCD_API_SERVER_REPLICAS` so the cap is divided across them ([argocd-server](https://argo-cd.readthedocs.io/en/stable/operator-manual/high_availability/#argocd-server)).
-
-Restricting network access to the API, or putting an HTTP rate limit in front of it, reduces how many attempts can arrive. Those are not Argo CD settings, and the project docs do not describe them.
-
-### Credits
-
-The Argo CD team would like to thank @foussey and @shivamkumarcyber for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).
-
-### References
-
-* Introducing commit: [76bacfdea4d9bbce774887f18a62e3ebc27d486c](https://github.com/argoproj/argo-cd/commit/76bacfdea4d9bbce774887f18a62e3ebc27d486c) ([#3404](https://github.com/argoproj/argo-cd/pull/3404)), first released in v1.5.3
-* [Local users / accounts](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#local-usersaccounts)
-* [Failed logins rate limiting](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#failed-logins-rate-limiting)
-
-### For more information
-
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
-* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
-      <guid isPermaLink="false">GHSA-4439-h7jw-5cjj</guid>
-      <category>HIGH</category>
-      <category>argoproj/argo-cd</category>
-      <pubDate>Wed, 07 Oct 2026 15:58:44 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] argoproj/argo-cd — A Jsonnet import can read files from the repo-server (CVE-2026-113672)</title>
-      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-m3vr-7329-44ww</link>
-      <description>CVE-2026-113672 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
-
-Affected:
-- go/github.com/argoproj/argo-cd &gt;= 0.9.0, &lt; 2.0.0
-- go/github.com/argoproj/argo-cd/v2 &gt;= 2.0.0
-- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
-
----
-
-### Impact&#13;
-&#13;
-Argo CD evaluates `.jsonnet` files inside the repo-server with an importer that can open any path the process can read. `import`, `importstr`, and `importbin` all use that importer. An absolute path such as `/proc/self/environ`, a `../` traversal, or a symlink inside the repository that points outside it is opened with the repo-server’s own filesystem permissions. `importstr` of a device such as `/dev/zero` reads until the process runs out of memory. Argo CD redacts generated Secrets, so placing the file contents in a ConfigMap returns them to the caller. The data can include the process environment, the projected service-account token, mounted private keys, and repository credentials.&#13;
-&#13;
-All versions from v0.9.0 onward are affected, including every currently supported release. v0.8.2 and earlier are not. The behavior was introduced in [27471d524](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) (2018-09-07, [#561](https://github.com/argoproj/argo-cd/pull/561)), the change that added Jsonnet as an application source, and was first released in v0.9.0. The import path was limited to a search list for relative paths. That list does not apply to absolute paths.&#13;
-&#13;
-Two ways to supply the file:&#13;
-&#13;
-* Commit a `.jsonnet` file to a Git repository that an Application builds. Directory applications evaluate every `.jsonnet` file in the application directory.&#13;
-* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing directory Application. It does not need permission to update or sync the Application, or write access to its Git repository.&#13;
-&#13;
-### Patches&#13;
-&#13;
-A patch for this vulnerability has been released in the following Argo CD versions:&#13;
-&#13;
-* v3.6.0-rc2&#13;
-* v3.5.4&#13;
-* v3.4.10&#13;
-* v3.3.15&#13;
-&#13;
-Imports that stay inside the repository still work. The patch resolves each import, including symlinks, and rejects any path outside the repository root. It also rejects anything that is not a regular file, so a device file is not read.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-Set `jsonnet.enable` to `"false"` in the [`argocd-cm` ConfigMap](https://argo-cd.readthedocs.io/en/stable/user-guide/tool_detection/#disable-built-in-tools). Argo CD then skips `.jsonnet` files. That covers a file committed to Git and a file uploaded through `POST /api/v1/applications/manifestsWithFiles`. YAML and JSON in a directory application are still applied. An application that depends on Jsonnet stops rendering those files: they are omitted rather than rejected, so a directory that contains only Jsonnet syncs without those manifests.&#13;
-&#13;
-### Credits&#13;
-&#13;
-The Argo CD team would like to thank @hoang-prod, @arpitjain099, @key-moon, @MopMonkAI, @Kushalkhemka, @PontusHanssen, @mayank-jangid-moon, @skigeek16, @opensec-intelligence, @thevilledev, @ShadowByte1, @izhax, @mikecole-mg, @jake-ciolek, and @vitorespf for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).&#13;
-&#13;
-### References&#13;
-&#13;
-* Introducing commit: [27471d524958878e7acc5131fb466b292079cd05](https://github.com/argoproj/argo-cd/commit/27471d524958878e7acc5131fb466b292079cd05) ([#561](https://github.com/argoproj/argo-cd/pull/561)), first released in v0.9.0&#13;
-&#13;
-### For more information&#13;
-&#13;
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)&#13;
-* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
-      <guid isPermaLink="false">GHSA-m3vr-7329-44ww</guid>
-      <category>CRITICAL</category>
-      <category>argoproj/argo-cd</category>
-      <pubDate>Wed, 07 Oct 2026 15:58:41 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] argoproj/argo-cd — A Kustomize Helm config home can run commands in the repo-server (CVE-2026-113709)</title>
-      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-fw5c-w8rc-j7fx</link>
-      <description>CVE-2026-113709 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
-
-Affected:
-- go/github.com/argoproj/argo-cd/v2 &gt;= 2.1.0
-- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
-
----
-
-### Impact&#13;
-&#13;
-When Kustomize Helm chart rendering is enabled, a kustomization can point Helm at a directory the repository controls and run a program from that directory inside `argocd-repo-server`. Kustomize copies `helmGlobals.configHome` into Helm’s config and data directories. Helm then loads a downloader plugin from `&lt;configHome&gt;/.data/plugins` with no separate plugin-install step, and runs it when a `helmCharts` repository URL uses that plugin’s protocol. The command runs as the repo-server user and can read repository credentials and anything else available to that process.&#13;
-&#13;
-All versions from v2.1.0 onward are affected, including every currently supported release. v2.0.5 and earlier are not. The behavior was introduced in [b6d5c23bc](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) (2021-04-20, [#6059](https://github.com/argoproj/argo-cd/pull/6059)), the change that upgraded the bundled Kustomize from 3.9.4 to 4.1.2, and was first released in v2.1.0. Kustomize 4.1.0 is what first passes `helmGlobals.configHome` through to Helm ([kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)). Deployments that do not pass `--enable-helm` to `kustomize build` are not affected.&#13;
-&#13;
-Two ways to supply the kustomization, both of which require that an operator has already enabled `--enable-helm`:&#13;
-&#13;
-* Commit it to a Git repository that an Application builds with Kustomize.&#13;
-* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.&#13;
-&#13;
-### Patches&#13;
-&#13;
-A patch for this vulnerability has been released in the following Argo CD versions:&#13;
-&#13;
-* v3.6.0-rc2&#13;
-* v3.5.4&#13;
-* v3.4.10&#13;
-* v3.3.15&#13;
-&#13;
-Kustomize Helm chart rendering still works for ordinary `http`, `https`, and `oci` chart repositories. The patch points Helm at an empty config and data directory for every Kustomize build, so `helmGlobals.configHome` cannot register a plugin.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-Do not pass `--enable-helm` in [`kustomize.buildOptions`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts). That is a complete workaround for this issue. Applications that render Helm charts through Kustomize cannot use it.&#13;
-&#13;
-Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A kustomization committed to Git is still built on the next sync while `--enable-helm` is set.&#13;
-&#13;
-### Credits&#13;
-&#13;
-The Argo CD team would like to thank @hoang-prod for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).&#13;
-&#13;
-### References&#13;
-&#13;
-* Introducing commit: [b6d5c23bce2f8a46c52975ba438a3b93d242d96c](https://github.com/argoproj/argo-cd/commit/b6d5c23bce2f8a46c52975ba438a3b93d242d96c) ([#6059](https://github.com/argoproj/argo-cd/pull/6059)), first released in v2.1.0&#13;
-* Kustomize feature: [kubernetes-sigs/kustomize#3784](https://github.com/kubernetes-sigs/kustomize/pull/3784)&#13;
-* [Kustomizing Helm charts](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts)&#13;
-&#13;
-### For more information&#13;
-&#13;
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)&#13;
-* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
-      <guid isPermaLink="false">GHSA-fw5c-w8rc-j7fx</guid>
-      <category>CRITICAL</category>
-      <category>argoproj/argo-cd</category>
-      <pubDate>Wed, 07 Oct 2026 15:58:40 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] argoproj/argo-cd — A Kustomize remote ref can run commands in the repo-server (CVE-2026-113708)</title>
-      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-9v9p-x54c-58gc</link>
-      <description>CVE-2026-113708 · CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)
-
-Affected:
-- go/github.com/argoproj/argo-cd/v2 &gt;= 2.7.0
-- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.3.15 || &gt;= 3.4.0, &lt; 3.4.10 || &gt;= 3.5.0, &lt; 3.5.4 || = 3.6.0-rc1 (patched: 3.3.15, 3.4.10, 3.5.4, 3.6.0-rc2)
-
----
-
-### Impact&#13;
-&#13;
-Kustomize passes a remote resource, base, or component URL to `git fetch`, and appends that URL’s `ref` or `version` query value with no `--` separator. A value that starts with `-`, such as `--upload-pack=&lt;command&gt;`, is parsed as a Git option. `--upload-pack` runs that command inside `argocd-repo-server` when the remote is a local transport such as `file://`. Git does not run it for an `https://` remote. A `file://` URL never leaves the pod, and Git returns the command’s output to the caller in the manifest-generation error. The command runs as the repo-server user and can read repository credentials and anything else available to that process.&#13;
-&#13;
-All versions from v2.7.0 onward are affected, including every currently supported release. v2.6.15 and earlier are not. The behavior was introduced in [25badeb7a1](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) (2023-03-16, [#12299](https://github.com/argoproj/argo-cd/pull/12299)), the change that upgraded the bundled Kustomize from 4.5.7 to 5.0.1, and was first released in v2.7.0. Kustomize 4.5.7 rejects a `file://` URL, so this payload does not run there. Kustomize 5.0.0 is what first accepts `file://` and hands it to `git fetch`. Replacing the repo-server binary with a newer Kustomize does not help: current Kustomize still passes `ref` through without `--`.&#13;
-&#13;
-Two ways to supply the Kustomization:&#13;
-&#13;
-* Commit it to a Git repository that an Application builds with Kustomize.&#13;
-* Upload it through `POST /api/v1/applications/manifestsWithFiles` (`argocd app diff --local --server-side-generate`). This needs only Application `get` on an existing Application. It does not need permission to update or sync the Application, or write access to its Git repository.&#13;
-&#13;
-### Patches&#13;
-&#13;
-A patch for this vulnerability has been released in the following Argo CD versions:&#13;
-&#13;
-* v3.6.0-rc2&#13;
-* v3.5.4&#13;
-* v3.4.10&#13;
-* v3.3.15&#13;
-&#13;
-The patch keeps Kustomize remote bases working. It places a `git` wrapper ahead of the real `git` on the Kustomize build’s `PATH`, so the remote URL and `ref` cannot be parsed as Git options.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-Pin every Application that runs Kustomize to a Kustomize older than 5.0, such as 4.5.7. Register that binary with [`kustomize.path.&lt;version&gt;`](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions) in `argocd-cm`, and set `spec.source.kustomize.version` (or `argocd app set &lt;app&gt; --kustomize-version`) on each Application. The binary that actually runs has to be that older one. Leaving Kustomize 5.x as the default, or as another registered version, leaves that path open.&#13;
-&#13;
-Applications that rely on Kustomize 5 features cannot use this pin. Those builds will fail or drop behavior that 4.5.7 does not have.&#13;
-&#13;
-Blocking repo-server egress does not prevent this, because a `file://` remote never leaves the pod. Restricting Application `get`, or blocking `POST /api/v1/applications/manifestsWithFiles`, closes only the upload path. A Kustomization committed to Git is still built on the next sync.&#13;
-&#13;
-There is no complete workaround besides upgrading.&#13;
-&#13;
-### Credits&#13;
-&#13;
-The Argo CD team would like to thank @hoang-prod and @yabeow for responsibly disclosing this issue according to our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md#reporting-a-vulnerability).&#13;
-&#13;
-### References&#13;
-&#13;
-* Introducing commit: [25badeb7a1e154805340bb7237e0ce671f3772dd](https://github.com/argoproj/argo-cd/commit/25badeb7a1e154805340bb7237e0ce671f3772dd) ([#12299](https://github.com/argoproj/argo-cd/pull/12299)), first released in v2.7.0&#13;
-* [Custom Kustomize versions](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#custom-kustomize-versions)&#13;
-&#13;
-### For more information&#13;
-&#13;
-* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)&#13;
-* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
-      <guid isPermaLink="false">GHSA-9v9p-x54c-58gc</guid>
-      <category>CRITICAL</category>
-      <category>argoproj/argo-cd</category>
-      <pubDate>Wed, 07 Oct 2026 15:58:38 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Knowledge base reordering, publishing and administration possible without the required permission</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-qvmq-j8hm-2mmc</link>
-      <description>CVSS 7.2 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:N/VI:H/VA:H/SC:L/SI:L/SA:N) · CWE-269, CWE-862, CWE-863
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-Agents with read-only knowledge base access were able to change the order of knowledge base categories and answers, and to change the publication state of answers. Both are intended to be restricted to knowledge base editors, but the permission checks accepted any level of knowledge base access. Because agents receive read access by default, any agent could publish answers to the public help site, archive or un-archive them, and set the publication dates. Answers meant to stay internal could therefore be made available to anonymous visitors, and published answers could be removed from the site.
-
-Separately, agents with knowledge base editor access were able to create, change and delete knowledge bases themselves, although this is reserved for knowledge base administrators. An editor could change the public address and the appearance of a knowledge base, take it offline, or delete it together with all of its categories and answers.
-</description>
-      <guid isPermaLink="false">GHSA-qvmq-j8hm-2mmc</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:18 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Customer-visible ticket update responses leak unredacted user and organization data</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fqh9-pvgg-jgpw</link>
-      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-359, CWE-863
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-Ticket update responses could include unredacted personal data that should have been hidden from the requesting user.&#13;
-&#13;
-When a customer updated one of their own tickets and requested a detailed response, the reply could contain unfiltered details about the agents involved in that ticket - such as private phone numbers, postal address, department and internal notes - as well as internal information about their organization, including internal notes and the VIP flag. The same data is correctly hidden when simply viewing the ticket; only the update responses were affected.&#13;
-&#13;
-Customers could therefore obtain personal information about support staff and internal administrative notes that are meant for internal use only.</description>
-      <guid isPermaLink="false">GHSA-fqh9-pvgg-jgpw</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:17 +0000</pubDate>
-    </item>
-    <item>
-      <title>[LOW] zammad/zammad — Clipboard HTML injection via unescaped user and organization display name</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-4r9g-r4wx-44p6</link>
-      <description>CVSS 2.1 (CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:A/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N) · CWE-116
-
-Affected:
-- other/Zammad &gt;= 7.0.0, &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-The desktop view offers a button to copy a user's or an organization's name together with a link to their profile. The copied content was assembled without properly escaping the name, so a name that contains markup was copied as markup rather than as plain text.&#13;
-&#13;
-An attacker could use this by choosing a crafted name — for example by sending an email into the helpdesk with a specially prepared sender name, which does not require an account. If an agent then copies that name and pastes it into a formatted text field, such as a reply to a customer, the pasted content can contain a link or other elements chosen by the attacker instead of the intended profile link. This can be used to make a message written by an agent point recipients at an attacker-controlled destination.</description>
-      <guid isPermaLink="false">GHSA-4r9g-r4wx-44p6</guid>
-      <category>LOW</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:15 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Channel administration APIs return stored channel credentials in clear text</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-xq4h-fjvm-m7x4</link>
-      <description>CVSS 6.9 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-116, CWE-200, CWE-522
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-Zammad stores the access data of the configured channels, such as Facebook page access tokens, the Telegram bot token, the SMS gateway token and the passwords or OAuth tokens of email accounts. Whenever a channel configuration is sent to the browser, these values are supposed to be replaced by a masked placeholder, so that stored access data cannot be read back once it has been saved. For several channels this masking did not take effect.&#13;
-&#13;
-As a result, an administrator holding the permission for one of the affected channels could obtain the stored access data in clear text through the channel administration APIs, and use it to access the connected external service directly, outside of Zammad. Affected are the Facebook, Telegram, SMS and email channels, including the Google and Microsoft 365 variants.&#13;
-&#13;
-Only instances that have such a channel configured are affected, and only administrators who already hold the administration permission for that channel type could read the access data.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-xq4h-fjvm-m7x4</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:14 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Missing authorization on ticket articles can expose article content to unauthorized users</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-jhhg-q69j-35wq</link>
-      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-639
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-A missing authorization check in the ticket-article creation endpoint allows any authenticated customer to read the content of arbitrary ticket articles, including internal agent notes and articles belonging to other organizations, that they are not permitted to view. This constitutes a confidentiality break of Zammad's core ticketing data, requiring no elevated privileges and no user interaction.</description>
-      <guid isPermaLink="false">GHSA-jhhg-q69j-35wq</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:12 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Stored HTML injection in Knowledge Base video widget rendered inside Zammad enables forced session switching</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-87pp-7pxh-xfcg</link>
-      <description>CVSS 6.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:N/VI:N/VA:N/SC:H/SI:H/SA:N) · CWE-79, CWE-352, CWE-838
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-A user with Knowledge Base editing rights for a category can embed a video widget in an answer with a specially crafted value. When that answer is opened in Zammad's knowledge base view, the value is inserted into the page's HTML without being escaped for the context it appears in, allowing it to break out and inject additional HTML into the page. The answer does not need to be published for this to happen.&#13;
-&#13;
-When another user who has permission to switch between user sessions opens the affected answer, the injected HTML causes their browser to silently send a request to Zammad's session-switching endpoint using their own active credentials. This results in switching their session to an account chosen by the person who wrote the Knowledge Base answer. No action is required from the viewer beyond opening the answer.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-87pp-7pxh-xfcg</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:11 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] zammad/zammad — Unscoped GraphQL template query and subscription bypass TemplatePolicy scope</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-8xp6-vq6v-xrfj</link>
-      <description>CVSS 5.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-200, CWE-862
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-Ticket templates were not restricted to the users allowed to see them. Agents were able to see templates that had been deactivated, and customers were able to receive the contents of all templates — including deactivated ones — whenever any template was created, changed or deleted.&#13;
-&#13;
-The disclosed information covered the name of each template and the values it fills in, such as prepared ticket titles, message texts, and the customer, group, owner or tag settings stored in it. Access was limited to reading; it was not possible to change templates, tickets or any other data this way. How sensitive the disclosed information was depended on what each installation had stored in its templates.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-8xp6-vq6v-xrfj</guid>
-      <category>MEDIUM</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:10 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Second-order SQL injection in ticket overview sorting</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-h5pm-rjvp-fr47</link>
-      <description>CVSS 7.2 (CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:H/SI:H/SA:H) · CWE-89, CWE-94
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-Zammad's ticket overview handling contained a second-order SQL injection flaw. A user permitted to create or modify ticket overviews could store a crafted value in an overview's sort-order configuration. That value was not restricted to the expected sort keywords, and when tickets for the overview were later retrieved through the API, it was incorporated into the underlying database query without being safely escaped for that context. Triggering it required no action by any other user.&#13;
-&#13;
-An attacker able to reach this could have read arbitrary data from the Zammad database — including other users' password hashes, ticket content and configuration data — regardless of what their own role was meant to grant them access to. The further reachable impact depended on the privileges of the database account the installation runs Zammad with. Installations using the packaged (Linux) setup, where Zammad runs with a restricted non-superuser database role, were limited to that read impact; where the database role held elevated privileges, the same access could have been extended to reading and writing files on the database host and, from there, to executing arbitrary code with the privileges of the database server process.&#13;
-&#13;
-Reported by: Gabriele PARIS from NATO Cyber Security Centre (NCSC)</description>
-      <guid isPermaLink="false">GHSA-h5pm-rjvp-fr47</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:09 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Arbitrary configuration disclosure via recent view endpoint</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-g9f6-7w7h-99f7</link>
-      <description>CVSS 8.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:H/SI:N/SA:N) · CWE-200, CWE-639, CWE-862
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-Any authenticated user, including the lowest-privileged customer role, could read the name and stored value of arbitrary application configuration settings. Because the configuration also holds deployment secrets, this included credentials a non-administrative user would otherwise never reach, such as the Elasticsearch endpoint password and the credentials of configured import sources.&#13;
-&#13;
-Affected were all settings neither marked as protected nor restricted to a specific permission — roughly a quarter of all settings on a default installation, including the credential-bearing ones. Sensitive values existed only where the corresponding feature was configured. Access was read-only and limited to configuration data.&#13;
-&#13;
-Upgrading does not undo an exposure that already happened. Administrators should rotate the affected credentials after upgrading.&#13;
-&#13;
-Reported by: Gabriele PARIS from NATO Cyber Security Centre (NCSC)</description>
-      <guid isPermaLink="false">GHSA-g9f6-7w7h-99f7</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:07 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Stored XSS in ticket zoom via attacker-controlled article preferences</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-fhq9-h46w-68hg</link>
-      <description>CVSS 8.5 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-79, CWE-915
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-A customer was able to store content of their own choosing in the internal metadata of a ticket article they created. When an agent later opened that ticket, parts of this metadata were displayed without being neutralized for safe rendering, so the stored content was interpreted as active content in the agent's browser session.&#13;
-&#13;
-As a result, a user with only standard customer permissions was able to cause code to run in the session of any agent who opened the affected ticket, without any special configuration or elevated privileges. Because the code ran with the agent's session, its impact extended to whatever that agent could reach, including tickets in other groups and internal notes.</description>
-      <guid isPermaLink="false">GHSA-fhq9-h46w-68hg</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:06 +0000</pubDate>
-    </item>
-    <item>
-      <title>[CRITICAL] zammad/zammad — Unfiltered sign-up and ticket update fields allow cross-organization ticket disclosure and takeover</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-79wh-8g2f-xj2c</link>
-      <description>CVSS 9.3 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N) · CWE-287, CWE-863, CWE-915
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-Zammad's public sign-up form accepted account fields that it should have ignored. An attacker without any account could use this to register on an email address they did not own, have that account treated as already email-confirmed, and add it to any organization in the system.&#13;
-&#13;
-Because members of an organization can see each other's tickets by default, such an account could then read and reply to tickets of other customers of those organizations. A second issue allowed any customer account to change fields of another customer's ticket in the same organization — including which customer the ticket belongs to — which could take a ticket away from the person who opened it.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-79wh-8g2f-xj2c</guid>
-      <category>CRITICAL</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:04 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Remote code execution via template sanitizer bypass in automation configuration</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-gvvq-mfj3-g56x</link>
-      <description>CVSS 8.6 (CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N) · CWE-20, CWE-94, CWE-1336
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
- A user allowed to configure automations in Zammad — such as triggers, scheduled jobs, ticket macros or AI agents — could execute arbitrary commands on the server hosting Zammad. A specially crafted value in an automation's configuration bypassed the escaping Zammad applied to such text, and the resulting code ran with the privileges of the Zammad application process. No interaction from another user was required.&#13;
-&#13;
-This could have been used to read or modify any data reachable by that process, including the ticket and customer database and any credentials available to it. On a default installation the required permission is held only by full administrators, who already have supported ways of running code on the server, so the practical gain there was limited; it became a genuine privilege escalation where a scoped or delegated role, or a hosted deployment, granted automation configuration without full administrative access. Installations with AI agents configured were exposed on an additional path, because values returned by the configured AI provider were processed in the same way.</description>
-      <guid isPermaLink="false">GHSA-gvvq-mfj3-g56x</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:03 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] zammad/zammad — Inactive sessions remain authorized over ActionCable GraphQL</title>
-      <link>https://github.com/zammad/zammad/security/advisories/GHSA-x777-frqf-7w45</link>
-      <description>CVSS 7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N) · CWE-613
-
-Affected:
-- Zammad &lt;= 7.2.0 (patched: 7.2.1)
-
----
-
-An account that had been deactivated in Zammad could retain access to ticket data through Zammad's real-time WebSocket connections. The web-based HTTP interface correctly rejected such accounts after deactivation, but the WebSocket connections restored the session's user without applying the same check for whether the account was still active.&#13;
-&#13;
-As a result, a deactivated agent could continue to read tickets within the scope of their previous group and role assignments, and a deactivated customer could continue to read their own ticket history and shared-organization data, until the underlying session expired or was removed. Because these connections also carry Zammad's live updates, the exposure was not limited to data that already existed at the point of deactivation: ticket changes and notifications occurring afterwards could continue to reach the affected account. The issue required an existing, retained session for an account that was later deactivated; it did not allow a new account, or an attacker without a valid session, to gain access.&#13;
-&#13;
-Administrators who deactivated accounts while running an affected version should treat any sessions still stored for those accounts as potentially usable and remove them in addition to upgrading. Installations in which no account was ever deactivated were not exposed.</description>
-      <guid isPermaLink="false">GHSA-x777-frqf-7w45</guid>
-      <category>HIGH</category>
-      <category>zammad/zammad</category>
-      <pubDate>Tue, 06 Oct 2026 05:59:01 +0000</pubDate>
     </item>
   </channel>
 </rss>
