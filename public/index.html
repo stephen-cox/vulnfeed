@@ -161,10 +161,82 @@
 
   <a class="feed-link" href="https://stephen-cox.github.io/vulnfeed/feed.xml">Subscribe to RSS Feed</a>
   <p class="meta">Feed URL: <code>https://stephen-cox.github.io/vulnfeed/feed.xml</code></p>
-  <p class="meta">100 advisories, last updated 19 Nov 2026 at 12:27 UTC.</p>
+  <p class="meta">100 advisories, last updated 20 Nov 2026 at 12:27 UTC.</p>
 
   <h2>Latest advisories (100)</h2>
   <ul class="advisories">
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge medium">MEDIUM</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-jj8j-82j2-7ph7">Secret masking is skipped when last-applied-configuration is not valid JSON (incomplete fix for CVE-2026-45737)</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 6.3 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:N/A:N)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge high">HIGH</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-hr74-g9pw-j38m">ApplicationSet cluster generator exposes cluster credentials through the last-applied-configuration annotation</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge high">HIGH</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-rq7v-q562-vwcq">Symlinks in a tar archive allow writing files outside the extraction directory</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 8.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge high">HIGH</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-8f76-vwjj-hxgq">ApplicationSet SCM provider allowlist not enforced for Bitbucket Cloud and Azure DevOps pull request generators</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 8.5 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:H)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge high">HIGH</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-h67h-99w8-xf8r">Unauthenticated webhook request with an empty repository path crashes the API server</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge medium">MEDIUM</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-9mrf-wvv5-62p9">Unauthenticated pprof endpoints on the controller and API server metrics ports</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 5.4 (CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:L)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge medium">MEDIUM</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-v9xr-fwqf-mgq4">Parameter override files can follow symlinks out of the repository</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge high">HIGH</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-86m4-q4hw-93p2">Logging out does not revoke local user session tokens, which never expire</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVE-2021-26922</span><span>CVSS 7.4 (CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N)</span></div>
+    </li>
+    <li class="advisory">
+      <div class="advisory-head">
+        <span class="badge medium">MEDIUM</span>
+        <span class="origin">argoproj/argo-cd</span>
+      </div>
+      <a class="summary" href="https://github.com/argoproj/argo-cd/security/advisories/GHSA-94mc-2ch7-r5r5">A broken Helm repository entry stops Helm dependency builds for all projects</a>
+      <div class="advisory-meta"><span>20 Nov 2026</span><span>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H)</span></div>
+    </li>
     <li class="advisory">
       <div class="advisory-head">
         <span class="badge low">LOW</span>
@@ -892,78 +964,6 @@
       </div>
       <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-fj8v-c9c3-7q26">SQL Injection in Contact Lookup AJAX Endpoint</a>
       <div class="advisory-meta"><span>26 Oct 2026</span><span>CVE-2026-115191</span><span>CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:L)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge high">HIGH</span>
-        <span class="origin">mautic/mautic</span>
-      </div>
-      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-5r63-8h35-j3mw">Insecure Deserialization in Segment Filters and Custom Fields</a>
-      <div class="advisory-meta"><span>26 Oct 2026</span><span>CVE-2026-115190</span><span>CVSS 8.0 (CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:H/I:H/A:H)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge high">HIGH</span>
-        <span class="origin">mautic/mautic</span>
-      </div>
-      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-h7pm-79gc-8867">Twig Sandbox Escape in Theme Templates</a>
-      <div class="advisory-meta"><span>26 Oct 2026</span><span>CVE-2026-115189</span><span>CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge critical">CRITICAL</span>
-        <span class="origin">mautic/mautic</span>
-      </div>
-      <a class="summary" href="https://github.com/mautic/mautic/security/advisories/GHSA-mxjf-pghx-h299">Remote Code Execution in Campaign Import</a>
-      <div class="advisory-meta"><span>26 Oct 2026</span><span>CVE-2026-115188</span><span>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge medium">MEDIUM</span>
-        <span class="origin">open-webui/open-webui</span>
-      </div>
-      <a class="summary" href="https://github.com/open-webui/open-webui/security/advisories/GHSA-3vvh-g22g-jq6r">Channel members can post messages shown as a webhook via client-supplied message metadata</a>
-      <div class="advisory-meta"><span>18 Oct 2026</span><span>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge critical">CRITICAL</span>
-        <span class="origin">go:github.com/argoproj/argo-cd/v2</span>
-      </div>
-      <a class="summary" href="https://github.com/advisories/GHSA-fmxq-cgp8-87wp">Argo CD: AppProject destination-namespace and resource restrictions bypassed by PreDelete/PostDelete resource hooks</a>
-      <div class="advisory-meta"><span>15 Oct 2026</span><span>CVE-2026-77459</span><span>CVSS 9.9 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge high">HIGH</span>
-        <span class="origin">espocrm/espocrm</span>
-      </div>
-      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-6pjq-v35w-jmjh">Unauthenticated long body request loads CPU in the password-redaction regex, denying service</a>
-      <div class="advisory-meta"><span>13 Oct 2026</span><span>CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge medium">MEDIUM</span>
-        <span class="origin">espocrm/espocrm</span>
-      </div>
-      <a class="summary" href="https://github.com/espocrm/espocrm/security/advisories/GHSA-r277-qh74-r86f">PDF rendering allows users with edit access to PDF template scope to view image attachments with known ID they don&#x27;t have access  to</a>
-      <div class="advisory-meta"><span>13 Oct 2026</span><span>CVE-2026-113643</span><span>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge high">HIGH</span>
-        <span class="origin">go:github.com/argoproj/argo-cd/v2</span>
-      </div>
-      <a class="summary" href="https://github.com/advisories/GHSA-j6cw-g6p4-7hch">Argo CD repo-server command injection via crafted SSH repository SOCKS5 proxy URL</a>
-      <div class="advisory-meta"><span>9 Oct 2026</span><span>CVE-2026-55797</span><span>CVSS 8.8 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H)</span></div>
-    </li>
-    <li class="advisory">
-      <div class="advisory-head">
-        <span class="badge high">HIGH</span>
-        <span class="origin">zammad/zammad</span>
-      </div>
-      <a class="summary" href="https://github.com/zammad/zammad/security/advisories/GHSA-p97w-927q-8vxq">Local privilege escalation to root in DEB/RPM packages (packager.io)</a>
-      <div class="advisory-meta"><span>8 Oct 2026</span><span>CVE-2026-102490</span><span>CVSS 8.5 (CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N)</span></div>
     </li>
   </ul>
 
