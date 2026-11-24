@@ -7,7 +7,60 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Mon, 23 Nov 2026 13:59:14 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 24 Nov 2026 14:30:36 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] composer/composer — Code execution via crafted vendor-dir in untrusted project (bypass of CVE-2024-24821 / GHSA-7c6p-848j-wh5h fix)</title>
+      <link>https://github.com/composer/composer/security/advisories/GHSA-374h-4mh9-7rpm</link>
+      <description>CVSS 8.8 (CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H) · CWE-95
+
+Affected:
+- composer/composer/composer &gt;=2.2.23,&lt;2.2.33 || &gt;=2.7.0,&lt;2.11.3 (patched: 2.2.33, 2.11.3)
+
+---
+
+## Summary&#13;
+&#13;
+Running Composer inside a directory prepared by an attacker could execute arbitrary commands as the user running Composer. This is a bypass of the fix for CVE-2024-24821 (GHSA-7c6p-848j-wh5h) and has the same preconditions and impact. Any Composer command that loads the project is enough, including read-only ones such as `composer list`, `validate`, `show` or `outdated`.&#13;
+&#13;
+It is not exploitable remotely or through package installation: the attacker needs to control the `composer.json` and the vendor directory contents of the project you run Composer in.&#13;
+&#13;
+## Am I affected?&#13;
+&#13;
+You are exposed if all of the following apply:&#13;
+&#13;
+- You run Composer 2.2.23 to 2.2.32, or 2.7.0 to 2.11.2.&#13;
+- You run it in a project directory whose `composer.json` and vendor directory someone else can write to or has prepared, for example an untrusted checkout, a pull request built in CI, or a directory shared with other users.&#13;
+- You run it without `--no-plugins` and without `--no-scripts`.&#13;
+&#13;
+You are not affected if you only run Composer on projects whose files you fully control and trust.&#13;
+&#13;
+## Patched versions&#13;
+&#13;
+Fixed in Composer 2.11.3 and 2.2.33 (LTS).</description>
+      <guid isPermaLink="false">GHSA-374h-4mh9-7rpm</guid>
+      <category>HIGH</category>
+      <category>composer/composer</category>
+      <pubDate>Tue, 24 Nov 2026 09:19:37 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] espocrm/espocrm — Field-level ACL bypass for 'Attachment-Multiple' field in record duplicate and Lead conversion exposing forbidden attachments</title>
+      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-6h8h-v548-rrvq</link>
+      <description>CVSS 4.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N) · CWE-284, CWE-863
+
+Affected:
+- EspoCRM &lt;=10.0.10 (patched: 10.0.11)
+
+---
+
+## Summary&#13;
+&#13;
+Field-level ACL is not fully applied against Attachment-Multiple fields when duplicating an existing record or converting a Lead that have a custom Attachment-Multiple field. If the admin restricted access to such fields in roles, the user is still able to obtain the file contents of the attachments, considering they have access to the original parent record.&#13;
+</description>
+      <guid isPermaLink="false">GHSA-6h8h-v548-rrvq</guid>
+      <category>MEDIUM</category>
+      <category>espocrm/espocrm</category>
+      <pubDate>Tue, 24 Nov 2026 09:18:54 +0000</pubDate>
+    </item>
     <item>
       <title>[MEDIUM] argoproj/argo-cd — Secret masking is skipped when last-applied-configuration is not valid JSON (incomplete fix for CVE-2026-45737)</title>
       <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-jj8j-82j2-7ph7</link>
@@ -2940,81 +2993,6 @@ There are no official workarounds. To mitigate this vulnerability without upgrad
       <category>HIGH</category>
       <category>mautic/mautic</category>
       <pubDate>Mon, 26 Oct 2026 10:53:45 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] mautic/mautic — SQL Injection in Dashboard Widget API (CVE-2026-115192)</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-qpmx-7pq3-5q2v</link>
-      <description>CVE-2026-115192 · CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:L) · CWE-89
-
-Affected:
-- composer/mautic/core &gt;= 2.8.1, &lt; 5.2.12 (patched: 5.2.12)
-- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
-
----
-
-### Summary&#13;
-An SQL Injection vulnerability exists in the dashboard widget data API endpoint (`/api/data/{type}`). Chart filter parameters supplied by the client are not properly validated before they are used in the database queries that build dashboard chart data. An authenticated user with API access can exploit this to inject SQL into these reporting queries. Exploitation requires the Mautic API to be enabled.&#13;
-&#13;
-### Impact&#13;
-An attacker can use blind SQL injection techniques to read arbitrary data from the Mautic database, including:&#13;
-* Contact and other marketing data stored by Mautic.&#13;
-* User account data, including credentials (password hashes).&#13;
-&#13;
-The injected SQL can also be used to slow down database queries, which can have a limited impact on availability. Data modification is not possible through this vulnerability.&#13;
-&#13;
-### Patched Versions&#13;
-This security issue has been addressed in the following releases:&#13;
-* **7.2.2**&#13;
-* **6.0.10**&#13;
-* **5.2.12**&#13;
-&#13;
-*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
-&#13;
-### Workarounds&#13;
-There are no official workarounds. To mitigate this vulnerability without upgrading, disable the Mautic API if it is not needed, or restrict API access to trusted users only.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-qpmx-7pq3-5q2v</guid>
-      <category>HIGH</category>
-      <category>mautic/mautic</category>
-      <pubDate>Mon, 26 Oct 2026 10:53:05 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] mautic/mautic — SQL Injection in Contact Lookup AJAX Endpoint (CVE-2026-115191)</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-fj8v-c9c3-7q26</link>
-      <description>CVE-2026-115191 · CVSS 7.1 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:L) · CWE-89
-
-Affected:
-- composer/mautic/core &gt;= 2.1.0, &lt; 5.2.12 (patched: 5.2.12)
-- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
-
----
-
-### Summary&#13;
-A SQL injection vulnerability exists in a contact lookup AJAX endpoint of the Mautic administration interface (`/s/ajax`). A request parameter that selects the contact field to search by is not properly validated before it is used in a database query. Any authenticated Mautic user can exploit this, regardless of the role or permissions assigned to the account.&#13;
-&#13;
-### Impact&#13;
-An attacker with any valid Mautic user account can run arbitrary SQL queries against the Mautic database, using blind (boolean-based or time-based) techniques. This allows the attacker to read any data the Mautic database user can access, including:&#13;
-* Mautic user accounts, including email addresses and password hashes.&#13;
-* Contact data.&#13;
-* Campaign and email content.&#13;
-&#13;
-### Patched Versions&#13;
-This security issue has been addressed in the following releases:&#13;
-* **7.2.2**&#13;
-* **6.0.10**&#13;
-* **5.2.12**&#13;
-&#13;
-*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
-&#13;
-### Workarounds&#13;
-There are no official workarounds. To reduce the risk without upgrading, limit Mautic user accounts to trusted users, deactivate unused accounts, and enforce strong passwords. Where possible, block requests to `/s/ajax` with the action `lead:getLeadIdsByFieldValue` at the web server or web application firewall level. This only disables the duplicate contact warning shown when editing unique identifier fields in the contact form.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-fj8v-c9c3-7q26</guid>
-      <category>HIGH</category>
-      <category>mautic/mautic</category>
-      <pubDate>Mon, 26 Oct 2026 10:52:34 +0000</pubDate>
     </item>
   </channel>
 </rss>
