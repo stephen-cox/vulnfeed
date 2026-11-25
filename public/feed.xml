@@ -7,7 +7,422 @@
     <atom:link href="https://stephen-cox.github.io/vulnfeed/feed.xml" rel="self"/>
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
-    <lastBuildDate>Tue, 24 Nov 2026 14:30:36 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 25 Nov 2026 13:51:27 +0000</lastBuildDate>
+    <item>
+      <title>[HIGH] argoproj/argo-cd — A single unauthenticated request crashes the API server</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-w7rw-fg89-2cjf</link>
+      <description>CVSS 7.5 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H) · CWE-476
+
+Affected:
+- go/github.com/argoproj/argo-cd &gt;= 0.5.0, &lt; 2.0.0
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.0.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.4.15 || &gt;= 3.5.0, &lt; 3.5.9 || &gt;= 3.6.0, &lt; 3.6.3 (patched: 3.6.3, 3.5.9, 3.4.15)
+
+---
+
+### Impact&#13;
+&#13;
+An unauthenticated attacker can crash the Argo CD API server (`argocd-server`) with a single small request. Before it checks authentication, the API server rewrites repository URLs in some incoming requests. For four repository API methods (get application details for a repository source, and the three repository update methods), it did this without checking that the repository part of the request was present. A gRPC or gRPC-Web request that leaves that part out, such as an empty five-byte gRPC-Web message, makes the server dereference a nil pointer. The panic happens outside the server's panic recovery, so the whole `argocd-server` process exits.&#13;
+&#13;
+All versions from v0.5.0 onward are affected. v0.4.7 and earlier are not. The unchecked repository update case was added in [54835a0](https://github.com/argoproj/argo-cd/commit/54835a0d9334c1ee0ae9700a62d2011d7abac97e) (#256), and the application details case was added in v1.3.0.&#13;
+&#13;
+No credentials, session or knowledge of the installation are needed. The request is plain HTTP/1.1 to the API server port and works against the default configuration. It does not need the `/api/` path prefix, so ingress rules that only filter `/api/` paths do not stop it. Kubernetes restarts the crashed pod, but each further request kills it again. Repeating the request a few times a minute keeps the Argo CD API, web UI and CLI unavailable for as long as the attacker continues. Highly available installs lose one API server replica per request, so a few more requests take them all down. The application controller and repo server are separate processes and keep reconciling applications. Argo CD data is not read or changed.&#13;
+&#13;
+### Patches&#13;
+&#13;
+A patch for this vulnerability has been released in the following Argo CD versions:&#13;
+&#13;
+* v3.6.3&#13;
+* v3.5.9&#13;
+* v3.4.15&#13;
+&#13;
+The API server now accepts requests that leave out the repository part. It passes them on to authentication and the normal request checks instead of crashing, so an unauthenticated request gets an authentication error and the server stays up.&#13;
+&#13;
+### Workarounds&#13;
+&#13;
+There is no workaround besides upgrading. The following steps reduce exposure until you can upgrade:&#13;
+&#13;
+* Do not expose `argocd-server` to untrusted networks. Allow only trusted clients through your [ingress](https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/) or load balancer, or put an [authenticating reverse proxy](https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#authenticating-through-multiple-layers-of-authenticating-reverse-proxies) in front of it. This only helps against attackers who cannot get past it: any client that can reach the API server port, including from inside the cluster, can still crash it.&#13;
+* At the ingress or proxy, block requests whose path ends in `/repository.RepositoryService/GetAppDetails`, `/repository.RepositoryService/Update`, `/repository.RepositoryService/UpdateRepository` or `/repository.RepositoryService/UpdateWriteRepository`. The web UI does not use these gRPC paths. It uses the `/api/v1/` REST paths, which are not affected.&#13;
+* Run several API server replicas as described in [High Availability](https://argo-cd.readthedocs.io/en/stable/operator-manual/high_availability/). This does not prevent the crash, but an attacker has to send more requests to take every replica down.&#13;
+&#13;
+### Credits&#13;
+&#13;
+The Argo CD team would like to thank @McCaulay of watchTowr, @yuryfrolov, @mysanismine, @Kushalkhemka, @vivshaw, and @ryu11235 for responsibly disclosing this issue.&#13;
+&#13;
+### References&#13;
+&#13;
+* [Introducing commit 54835a0](https://github.com/argoproj/argo-cd/commit/54835a0d9334c1ee0ae9700a62d2011d7abac97e)&#13;
+* [Ingress configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/)&#13;
+* [High Availability](https://argo-cd.readthedocs.io/en/stable/operator-manual/high_availability/)&#13;
+&#13;
+### For more information&#13;
+&#13;
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)&#13;
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd&#13;
+</description>
+      <guid isPermaLink="false">GHSA-w7rw-fg89-2cjf</guid>
+      <category>HIGH</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Tue, 24 Nov 2026 16:51:03 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] argoproj/argo-cd — Helm chart home link allows stored XSS in the application details view</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-rxm8-qc6h-3c8h</link>
+      <description>CVSS 7.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.8.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.4.15 || &gt;= 3.5.0, &lt; 3.5.9 || &gt;= 3.6.0, &lt; 3.6.3 (patched: 3.6.3, 3.5.9, 3.4.15)
+
+---
+
+### Impact
+
+The Argo CD UI shows a link icon next to a Helm chart's name in the application details and deployment history views. Clicking it opens the `home` URL from the chart's `Chart.yaml` without checking the URL scheme. A chart whose `home` is a `javascript:` URL runs script in the Argo CD origin when a user clicks the icon. The script can then call the Argo CD API with that user's permissions. If an admin clicks it, the attacker gets admin-level API access.
+
+All versions from v2.8.0 onward are affected. The link was introduced in [d9b8e0f37](https://github.com/argoproj/argo-cd/commit/d9b8e0f37dbd8b67704adb6a2c22af9ac1877466) ([#11575](https://github.com/argoproj/argo-cd/pull/11575)).
+
+The attacker needs to control the `Chart.yaml` of a Helm chart that an Application uses. That means publish access to a chart repository the project allows, or permission to create an Application that points at a chart repository the attacker controls. No Argo CD account is required in the first case. The victim must be able to view the Application and must click the chart link. Charts pulled from OCI registries are not affected.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.3
+* v3.5.9
+* v3.4.15
+
+The UI now shows the chart link only when the `home` URL uses a safe scheme, and opens it in a new tab without access to the Argo CD window.
+
+### Workarounds
+
+Restrict each project's [source repositories](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#managing-projects) to Helm chart repositories you trust. Until you upgrade, do not click the Helm chart link icon in the application details or deployment history views.
+
+### Credits
+
+The Argo CD team would like to thank @oscarjhk, @sondt99, @HypeDuke, @Kushalkhemka, @ShadowByte1, @Phantomiman, and @ryu11235 for responsibly disclosing this issue.
+
+### References
+
+* Introducing commit: https://github.com/argoproj/argo-cd/commit/d9b8e0f37dbd8b67704adb6a2c22af9ac1877466
+* Related: [GHSA-h98r-wv3h-fr38](https://github.com/argoproj/argo-cd/security/advisories/GHSA-h98r-wv3h-fr38)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd
+</description>
+      <guid isPermaLink="false">GHSA-rxm8-qc6h-3c8h</guid>
+      <category>HIGH</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Tue, 24 Nov 2026 16:51:02 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] argoproj/argo-cd — Generated Dex configuration containing SSO secrets is written world-readable</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-8cfq-7w4v-ggm3</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N) · CWE-538, CWE-732
+
+Affected:
+- go/github.com/argoproj/argo-cd &gt;= 0.3.3, &lt; 2.0.0
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.0.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.4.15 || &gt;= 3.5.0, &lt; 3.5.9 || &gt;= 3.6.0, &lt; 3.6.3 (patched: 3.6.3, 3.5.9, 3.4.15)
+
+---
+
+### Impact
+
+When Dex is enabled, the `argocd-dex-server` builds the Dex configuration from `argocd-cm` and resolves every `$secret` reference into its plaintext value before starting Dex. It writes that resolved configuration to `/tmp/dex.yaml` with world-readable permissions (`0644`). The file holds the OAuth2 client secret Argo CD uses with Dex, plus every connector credential: OIDC client secrets, GitHub and GitLab OAuth application secrets, LDAP bind passwords, and any other secret referenced from `dex.config`. The `argocd-dex gendexcfg -o &lt;file&gt;` command writes the same resolved configuration to the given file with the same world-readable permissions.
+
+Any local user or process that can see the file and runs under a different user ID than Dex can read all of these secrets. With them, an attacker can authenticate to the upstream identity providers as Argo CD's registered application. An OAuth application that is shared with other services is exposed for those services too. They can also pose as Argo CD's client to Dex.
+
+All versions from v0.3.3 onward are affected. v0.3.2 and earlier are not. The world-readable write was added with initial SSO support in [670921d](https://github.com/argoproj/argo-cd/commit/670921df902855b209094b59f32ce3e051a847fd) (#152). The 3.3 line and older are out of support and will not receive a patch.
+
+The attacker needs local access to the file. They must be able to run code in the `argocd-dex-server` container, or in another container or process that mounts the volume holding `/tmp`, under a user ID other than the one Dex runs as. They could also have a local account on a machine where an operator ran `argocd-dex gendexcfg -o`. In the default installation, `/tmp` in the Dex pod is a dedicated volume that only the Dex container uses, and Dex is its only process. So the exposure depends on extra sidecars, shared volumes, or multi-user hosts. Anyone who already runs as the Dex user, or as root on the node, could read the file whatever its permissions were. The fix does not change that.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.3
+* v3.5.9
+* v3.4.15
+
+The patched versions write the generated Dex configuration so that only its owner can read and write it (`0600`). This covers both `/tmp/dex.yaml` in the Dex server and the file written by `argocd-dex gendexcfg -o`. Dex runs as the same user that writes the file, so SSO keeps working without any configuration change.
+
+### Workarounds
+
+* Do not add sidecars or other containers to the `argocd-dex-server` pod that mount its `/tmp` volume while running under a different user ID than Dex.
+* When you use [`argocd-dex gendexcfg`](https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-dex_gendexcfg/), write the output file into a directory that only you can read (or run the command with `umask 077`), and delete the file when you no longer need it.
+* If you do not need Dex, configure Argo CD against your [existing OIDC provider](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#existing-oidc-provider) directly and do not run `argocd-dex-server`.
+
+### Credits
+
+The Argo CD team would like to thank @Wernerina for responsibly disclosing this issue.
+
+### References
+
+* Introducing commit: [670921d](https://github.com/argoproj/argo-cd/commit/670921df902855b209094b59f32ce3e051a847fd) (SSO Support, #152)
+* [Dex configuration in Argo CD](https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#dex)
+* [`argocd-dex gendexcfg` command reference](https://argo-cd.readthedocs.io/en/stable/operator-manual/server-commands/argocd-dex_gendexcfg/)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd
+</description>
+      <guid isPermaLink="false">GHSA-8cfq-7w4v-ggm3</guid>
+      <category>MEDIUM</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Tue, 24 Nov 2026 16:51:01 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] argoproj/argo-cd — ApplicationSet delete API ignores the allowed ApplicationSet namespaces</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-rvmf-gjc9-wjgq</link>
+      <description>CVSS 7.1 (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:N/I:L/A:H) · CWE-863
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.8.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.4.15 || &gt;= 3.5.0, &lt; 3.5.9 || &gt;= 3.6.0, &lt; 3.6.3 (patched: 3.6.3, 3.5.9, 3.4.15)
+
+---
+
+### Impact
+
+The Argo CD API server does not check the allowed ApplicationSet namespaces when it deletes an ApplicationSet. Argo CD only manages ApplicationSets in its own control plane namespace and in the namespaces an administrator has allowed with the [ApplicationSet in any namespace](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Appset-Any-Namespace/) feature. The API refuses to read, create, update or generate from an ApplicationSet in any other namespace, but the delete endpoint skips that check. A user who may delete ApplicationSets in a project can therefore delete an ApplicationSet with that project in a namespace Argo CD is not allowed to manage. Deleting an ApplicationSet also deletes the Applications it generated, and if those Applications use the resources finalizer, the controller that manages them removes their deployed resources.
+
+All versions from [v2.8.0](https://github.com/argoproj/argo-cd/releases/tag/v2.8.0) onward are affected. v2.7.x and earlier are not. The flaw was introduced with ApplicationSet in any namespace support in [e8f5126](https://github.com/argoproj/argo-cd/commit/e8f512686e262691f8161141255725187c0558b4) ([#12378](https://github.com/argoproj/argo-cd/pull/12378)), which let the delete endpoint take a namespace without adding the namespace check that the other endpoints got.
+
+To exploit this, an attacker needs:
+
+* An authenticated Argo CD account whose RBAC policy allows `applicationsets, delete` for the project named in the target ApplicationSet. Wildcard rules such as `my-project/*` match ApplicationSets in every namespace (see [ApplicationSets RBAC](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Appset-Any-Namespace/#applicationsets-rbac)).
+* The name and namespace of the target ApplicationSet. The API does not list ApplicationSets in namespaces that are not allowed, so the attacker has to know or guess them.
+* A cluster-scoped Argo CD installation, where the API server's Kubernetes role can delete objects in every namespace. This is the default installation. Namespace-scoped installations are not affected because Kubernetes rejects the delete. The ApplicationSet in any namespace feature does not have to be enabled.
+
+The impact is on ApplicationSets that this Argo CD instance is not meant to manage. Examples are ApplicationSets owned by another Argo CD instance on the same cluster, or ApplicationSets in a namespace that was removed from the allowed list. The attacker cannot read or change those ApplicationSets, only delete them, but the deletion can remove the Applications and workloads that depend on them.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.3
+* v3.5.9
+* v3.4.15
+
+The API server now rejects a delete request for an ApplicationSet outside the allowed namespaces with `namespace '&lt;namespace&gt;' is not permitted`, before it looks up the ApplicationSet or checks RBAC, the same way it already handles the other ApplicationSet endpoints.
+
+### Workarounds
+
+If you cannot upgrade right away, limit who can delete ApplicationSets:
+
+* Review [`applicationsets` RBAC rules](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#the-applicationsets-resource) and remove the `delete` action from users and roles that do not need it.
+* If you do not manage ApplicationSets outside the control plane namespace through the API, add a [`deny` rule](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#the-deny-effect) for every role or group that can delete ApplicationSets. ApplicationSets outside the control plane namespace use the three-part `&lt;project&gt;/&lt;namespace&gt;/&lt;name&gt;` RBAC name, so this rule blocks deletes of those ApplicationSets and leaves ApplicationSets in the control plane namespace alone:
+
+  ```csv
+  p, my-role, applicationsets, delete, */*/*, deny
+  ```
+
+  This also blocks deletes through the API in namespaces that are allowed, so remove the rule after you upgrade.
+
+### Credits
+
+The Argo CD team would like to thank @34selen, @Aikido-Security, and @rexpository for responsibly disclosing this issue.
+
+### References
+
+* Introducing commit: [e8f5126](https://github.com/argoproj/argo-cd/commit/e8f512686e262691f8161141255725187c0558b4) ([#12378](https://github.com/argoproj/argo-cd/pull/12378))
+* [ApplicationSet in any namespace](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Appset-Any-Namespace/)
+* [RBAC Configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd
+</description>
+      <guid isPermaLink="false">GHSA-rvmf-gjc9-wjgq</guid>
+      <category>HIGH</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Tue, 24 Nov 2026 16:50:59 +0000</pubDate>
+    </item>
+    <item>
+      <title>[HIGH] argoproj/argo-cd — Repository create with upsert overwrites existing repositories without the update permission</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-mfgm-4p7x-3ccr</link>
+      <description>CVSS 7.7 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:N) · CWE-863
+
+Affected:
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.14.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.4.15 || &gt;= 3.5.0, &lt; 3.5.9 || &gt;= 3.6.0, &lt; 3.6.3 (patched: 3.6.3, 3.5.9, 3.4.15)
+
+---
+
+### Impact
+
+When a repository or write repository already exists, a create request with the `upsert` option overwrites it while checking only the `create` permission. Direct updates require `update`. A user who may add repositories (`repositories, create`) or write repositories (`write-repositories, create`), but is not allowed to change them, can overwrite the configuration of an existing repository with the same URL and project. This covers its credentials, proxy, no-proxy list, TLS and SSH settings, and the `insecure` flag. The caller does not need to read the existing repository first. Any field left out of the request is cleared.
+
+An attacker can point an existing repository at a proxy they control. Argo CD then fetches manifests through that proxy (for an HTTPS repository, the attacker also sets `insecure`), so the attacker can serve their own revision. Applications that use the repository, including ones with automated sync, then deploy the attacker's manifests to their destination clusters. Setting an unreachable proxy or bad credentials breaks manifest generation for every application that uses the repository. For write repositories, which the source hydrator uses to push hydrated manifests, the same request replaces the push credentials and settings.
+
+All versions from v2.14.0 onward are affected. v2.13.9 and earlier are not. The issue was introduced in [433b317](https://github.com/argoproj/argo-cd/commit/433b317c358b1bfc59352791254d52e504d83dd4) (#20345, the source hydrator), which changed repository upsert to skip the update permission check and added write repository upsert with the same shortcut.
+
+The attacker must be authenticated and hold `repositories, create` or `write-repositories, create` for the targeted repository's URL and project. This is not part of the built-in `role:readonly`, but it is commonly granted to project roles so developers can add [project-scoped repositories](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-scoped-repositories-and-clusters) on their own. Only installations where some role has `create` without `update` on the same repositories are affected. The write repository variant requires the source hydrator to be enabled and the new credentials to pass a connection test.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.3
+* v3.5.9
+* v3.4.15
+
+With the patch, a create request that upserts an existing repository or write repository goes through the same checks as a direct update: the caller needs `update` on both the existing and the requested repository, or the request is denied and the repository is left unchanged.
+
+### Workarounds
+
+Until you can upgrade, do not grant `repositories, create` or `write-repositories, create` to any role that should not also be able to update those repositories. Review your [RBAC policies](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/), including project roles used for [project-scoped repositories](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-scoped-repositories-and-clusters), and either remove the `create` grant or limit its object pattern so it does not match repositories that already exist.
+
+### Credits
+
+The Argo CD team would like to thank @revampstudio, @peaktwilight, @thevilledev, @Forrof, @tikipiya, @ARSB1, @MutedCybersecurity, @6kitty, @gigioneggiando, and @seslo82 for responsibly disclosing this issue in accordance with our [security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md).
+
+### References
+
+* Introducing commit: [433b317](https://github.com/argoproj/argo-cd/commit/433b317c358b1bfc59352791254d52e504d83dd4) (#20345)
+* [RBAC configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/)
+* [Project scoped repositories and clusters](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-scoped-repositories-and-clusters)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd</description>
+      <guid isPermaLink="false">GHSA-mfgm-4p7x-3ccr</guid>
+      <category>HIGH</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Tue, 24 Nov 2026 16:50:58 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] argoproj/argo-cd — Helm release name is evaluated as a template, disclosing repo-server environment variables</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-v2hj-322q-6cg4</link>
+      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-526, CWE-1336
+
+Affected:
+- go/github.com/argoproj/argo-cd &gt;= 1.5.0, &lt; 2.0.0
+- go/github.com/argoproj/argo-cd/v2 &gt;= 2.0.0
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.0.0, &lt; 3.4.15 || &gt;= 3.5.0, &lt; 3.5.9 || &gt;= 3.6.0, &lt; 3.6.3 (patched: 3.6.3, 3.5.9, 3.4.15)
+
+---
+
+### Impact
+
+The Helm release name of an Application (`spec.source.helm.releaseName`) is passed to Helm in a way that makes Helm evaluate it as a template instead of using it as a literal name. Helm's template functions can read environment variables, so a user who can set the release name of an Application can make the repo-server render the values of its own environment variables into the generated manifests. Those values are then visible through the normal manifest and diff views. In default installations the repo-server environment contains `REDIS_PASSWORD`, the password for Argo CD's Redis cache. It also contains any other environment variables an operator has added to the repo-server, such as credentials or tokens.
+
+When the rendered name is not a valid Helm release name, Helm rejects it and returns the rendered value in its error message, which Argo CD shows to the user. This is a second disclosure channel, and it does not depend on the release name being valid. Helm's template functions can also make DNS lookups, so a release name can send environment values to a DNS server the attacker controls without producing any visible output.
+
+All versions from v1.5.0 onward are affected. v1.4.3 and earlier are not. The issue was introduced by [6edd18b](https://github.com/argoproj/argo-cd/commit/6edd18bb89fe3342df18991b6aa1aa59030a5288) (#3178, Helm 3 support), which started passing the release name to Helm 3 as a template. `REDIS_PASSWORD` has been present in the repo-server environment since Redis authentication was enabled by default (v2.8.19, v2.9.15, v2.10.10, v2.11.1 and later). Older affected versions still disclose any other repo-server environment variables.
+
+To exploit this, an attacker needs one of:
+
+* Permission to create or update a single Application (for example `applications, update` on one Application) that uses a Helm chart.
+* Write access to a Git repository that an existing Helm Application tracks. The release name can be set in a [`.argocd-source.yaml` override file](https://argo-cd.readthedocs.io/en/stable/user-guide/parameters/#store-overrides-in-git), so this path needs no Argo CD credentials at all.
+
+The disclosure is limited to the repo-server's process environment. It does not give file read or command execution on the repo-server, and the repo-server has no Kubernetes service account token mounted by default. Using a disclosed Redis password requires network access to Argo CD's Redis, which normally means a position inside the cluster.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.3
+* v3.5.9
+* v3.4.15
+
+The patched versions pass the release name to Helm as a literal name, so it is never evaluated as a template. They also check that the release name is a valid Helm release name: lowercase letters, digits, `-` and `.`, starting and ending with a letter or digit, and at most 53 characters. Release names that are not valid Helm release names, or that relied on template syntax, are now rejected and manifest generation for that Application fails with an error naming `spec.source.helm.releaseName`. Check your Applications and `.argocd-source.yaml` files for such release names before upgrading.
+
+### Workarounds
+
+There is no complete workaround besides upgrading. Until you can upgrade, you can reduce exposure:
+
+* Grant `applications, create` and `applications, update` only to trusted users. See [RBAC Configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#the-applications-resource).
+* Limit write access to Git repositories tracked by Helm Applications, and review changes to [`.argocd-source.yaml` and `.argocd-source-&lt;appName&gt;.yaml` files](https://argo-cd.readthedocs.io/en/stable/user-guide/parameters/#store-overrides-in-git) in those repositories.
+* Avoid adding sensitive environment variables to the repo-server.
+
+If untrusted users could set Helm release names before you upgraded, [rotate the Redis password](https://argo-cd.readthedocs.io/en/stable/faq/#how-to-rotate-redis-secret) after upgrading, along with any other secrets in the repo-server environment.
+
+### Credits
+
+The Argo CD team would like to thank @gauravkdeore and @venkatchalla06 for responsibly disclosing this issue.
+
+### References
+
+* Introducing commit: https://github.com/argoproj/argo-cd/commit/6edd18bb89fe3342df18991b6aa1aa59030a5288
+* [Helm release name documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/#helm-release-name)
+* [Parameter overrides stored in Git](https://argo-cd.readthedocs.io/en/stable/user-guide/parameters/#store-overrides-in-git)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd
+</description>
+      <guid isPermaLink="false">GHSA-v2hj-322q-6cg4</guid>
+      <category>MEDIUM</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Tue, 24 Nov 2026 16:50:57 +0000</pubDate>
+    </item>
+    <item>
+      <title>[MEDIUM] argoproj/argo-cd — Bitbucket Cloud webhook sends stored repository credentials to a host taken from the webhook payload</title>
+      <link>https://github.com/argoproj/argo-cd/security/advisories/GHSA-q4f6-wc8m-r246</link>
+      <description>CVSS 6.8 (CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N) · CWE-522, CWE-918
+
+Affected:
+- go/github.com/argoproj/argo-cd/v3 &gt;= 3.1.0, &lt; 3.4.15 || &gt;= 3.5.0, &lt; 3.5.9 || &gt;= 3.6.0, &lt; 3.6.3 (patched: 3.6.3, 3.5.9, 3.4.15)
+
+---
+
+### Impact
+
+When `webhook.bitbucket.uuid` is set in `argocd-secret`, Argo CD calls the Bitbucket Cloud API after each Bitbucket Cloud push webhook to find out which files changed and whether the default branch moved. Argo CD took the API host for that call from the webhook payload, and it sent the call with the credentials it has stored for the repository named in the same payload. An attacker who can send a forged Bitbucket Cloud push event to `/api/webhook` can therefore point the call at a server they control and receive a stored repository username and password, access token, or bearer token.
+
+All versions from v3.1.0 onward are affected, up to the patched releases listed below. v3.0.23 and earlier, including all v2 releases, are not affected. The behavior was introduced in commit [2fbace3](https://github.com/argoproj/argo-cd/commit/2fbace3fe7b24a99446e0d7b1c6825a5f9bdbea6) (#21811), which added changed-file detection for Bitbucket Cloud webhooks and first shipped in v3.1.0.
+
+The attacker needs no Argo CD account. `/api/webhook` does not require Argo CD authentication, and the only check on a Bitbucket Cloud event is that its `X-Hook-UUID` header matches `webhook.bitbucket.uuid`. That value is a shared identifier, not a signature over the request body. It is the same for every Bitbucket repository that sends webhooks to the instance, it can be replayed once observed, and it is visible to anyone with admin access to one of those repositories in Bitbucket's webhook settings or API. Anyone who has the UUID and can reach the Argo CD API server can exploit the issue.
+
+The attacker also chooses which credential leaks. Argo CD picks the stored credential by matching the repository URL in the payload against the repositories configured in Argo CD, so a payload can name any configured repository with HTTPS credentials, whether or not an Application uses it. With those credentials the attacker can read, and depending on the credential's scope push to, the Git repositories that Argo CD deploys from.
+
+Bitbucket Cloud webhooks are only affected when `webhook.bitbucket.uuid` is set: without it, Argo CD does not make the API call. Bitbucket Server (Data Center) webhooks are not affected.
+
+### Patches
+
+A patch for this vulnerability has been released in the following Argo CD versions:
+
+* v3.6.3
+* v3.5.9
+* v3.4.15
+
+The patched versions always send the changed-files and default-branch calls to the Bitbucket Cloud API at `https://api.bitbucket.org` and no longer use any host from the webhook payload.
+
+### Workarounds
+
+* If you do not receive webhooks from Bitbucket Cloud, make sure `webhook.bitbucket.uuid` is not set in `argocd-secret` (see [Configure Argo CD With The WebHook Secret](https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/#2-configure-argo-cd-with-the-webhook-secret-optional)). Without it, Argo CD never makes the Bitbucket Cloud API call described above.
+* If you do receive webhooks from Bitbucket Cloud, removing `webhook.bitbucket.uuid` from `argocd-secret` also stops the API call. As described in [Special handling for BitBucket Cloud](https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/#special-handling-for-bitbucket-cloud), Argo CD then no longer learns which files changed in a push, so [manifest paths annotations](https://argo-cd.readthedocs.io/en/stable/operator-manual/high_availability/#manifest-paths-annotation) no longer limit which Applications are refreshed. Bitbucket Cloud webhook requests are also no longer authenticated, so anyone who can reach `/api/webhook` can trigger refreshes.
+* Alternatively, restrict network access to `/api/webhook` at your ingress or load balancer so that only Bitbucket Cloud's published webhook IP ranges can reach it.
+* If you think the webhook UUID may have been exposed, rotate the credentials of the repositories configured in Argo CD and create a new webhook in Bitbucket to get a new UUID.
+
+### Credits
+
+The Argo CD team would like to thank @harukioya, @muztahidultanim, @MmPple, @opensec-intelligence, @adityaraj178, @mayank-jangid-moon, @skigeek16, @Kushalkhemka, @JashwanthMU, @thaidn, and @dead-lamer for responsibly disclosing this issue in line with the [Argo CD security reporting guidelines](https://github.com/argoproj/argo-cd/blob/master/SECURITY.md).
+
+### References
+
+* Introducing commit: [2fbace3](https://github.com/argoproj/argo-cd/commit/2fbace3fe7b24a99446e0d7b1c6825a5f9bdbea6) (#21811)
+* [Webhook Configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/)
+
+### For more information
+
+* Open an issue in [the Argo CD issue tracker](https://github.com/argoproj/argo-cd/issues) or [discussions](https://github.com/argoproj/argo-cd/discussions)
+* Join us on [Slack](https://argoproj.github.io/community/join-slack) in channel #argo-cd
+</description>
+      <guid isPermaLink="false">GHSA-q4f6-wc8m-r246</guid>
+      <category>MEDIUM</category>
+      <category>argoproj/argo-cd</category>
+      <pubDate>Tue, 24 Nov 2026 16:50:55 +0000</pubDate>
+    </item>
     <item>
       <title>[HIGH] composer/composer — Code execution via crafted vendor-dir in untrusted project (bypass of CVE-2024-24821 / GHSA-7c6p-848j-wh5h fix)</title>
       <link>https://github.com/composer/composer/security/advisories/GHSA-374h-4mh9-7rpm</link>
@@ -2775,224 +3190,6 @@ This issue can only be mitigated by stopping malicious users from using filter e
       <category>MEDIUM</category>
       <category>icinga/icinga2</category>
       <pubDate>Wed, 28 Oct 2026 11:53:34 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] icinga/icinga2 — The default email notification scripts may allow command injection from the recipient address</title>
-      <link>https://github.com/Icinga/icinga2/security/advisories/GHSA-chm5-8fg3-g6fw</link>
-      <description>CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:N) · CWE-77
-
-Affected:
-- Icinga 2 &lt;= v2.16.5, &lt;= v2.15.6 (patched: v2.16.6, v2.15.7)
-
----
-
-### Impact&#13;
-&#13;
-The default `mail-host-notification.sh` and `mail-service-notification.sh` notification scripts shipped with Icinga 2 did not sufficiently validate the argument for the recipient address, allowing an attacker to pass arbitrary command line flags to the `mail` binary on the system. The exact impact depends on the implementation of the `mail` binary used on the specific system, in the case of GNU mailutils, there are flags that can be used to execute arbitrary commands.&#13;
-&#13;
-In order to exploit this, an attacker needs to be able to specify the email address of a `User` object in the Icinga 2 config, for example because they have access to an `ApiUser` with the `objects/modify/User` permission. In that case, they can provide command line flags for the `mail` binary instead of or in addition to a recipient email address. For GNU mailutils, there exists the `--exec` command line flag that can be used to instruct it to execute an arbitrary command. With other `mail` implementations, there could be undesirable effects.&#13;
-&#13;
-### Patches&#13;
-&#13;
-The following versions of Icinga 2 include fixes for this vulnerability: v2.16.6, v2.15.7.&#13;
-&#13;
-**Important:** As the vulnerable script is located in `/etc/icinga2/scripts`, it is treated as a configuration files by package managers and may not be updated automatically if it was modified locally. After upgrading, please verify the fix has been applied (see Workarounds section below) and there are no `*.rpmnew` or `*.dpkg-dist` files in that directory, indicating a newer upstream version.&#13;
-&#13;
-### Workarounds&#13;
-&#13;
-The vulnerability exists in scripts shipped in the default configuration in `/etc/icinga2/scripts`, so the fix for this issue can be applied locally without having to upgrade the Icinga 2 packages. To do so, apply the changes from https://github.com/Icinga/icinga2/pull/11144/commits/446de50a2ba0aa730602f29895e538cab5534692 to the files `mail-host-notification.sh` and `mail-service-notification.sh` in that directory.&#13;
-&#13;
-### References&#13;
-&#13;
-* [Release Announcement](https://icinga.com/blog/icinga-2-v2-16-6-and-icinga-web-v2-14-1/)&#13;
-* [PR with the patch](https://github.com/Icinga/icinga2/pull/11144)&#13;
-&#13;
-### Acknowledgements&#13;
-&#13;
-This issue was reported by @PfiatDe.</description>
-      <guid isPermaLink="false">GHSA-chm5-8fg3-g6fw</guid>
-      <category>MEDIUM</category>
-      <category>icinga/icinga2</category>
-      <pubDate>Wed, 28 Oct 2026 11:53:18 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] espocrm/espocrm — Stored XSS in Knowledge Base articles letting run JS code on link click</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-j6q5-9jwj-9p8q</link>
-      <description>CVSS 7.3 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:N) · CWE-79
-
-Affected:
-- EspoCRM &lt;= 10.0.8 (patched: 10.0.9)
-- EspoCRM &lt;= 9.3.10 (patched: 9.3.11)
-
----
-
-## Summary&#13;
-&#13;
-A regular user with create or edit access to the Knowledge Base scope can attach a JavaScript file to a Knowledge Base article and add a crafted link to its body. When an administrator clicks that link, EspoCRM runs the script in their session. The script creates an administrator account with credentials chosen by the attacker.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-j6q5-9jwj-9p8q</guid>
-      <category>HIGH</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Tue, 27 Oct 2026 08:44:56 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] espocrm/espocrm — SVG attachment opened in browser turns one click into authenticated API  POST call</title>
-      <link>https://github.com/espocrm/espocrm/security/advisories/GHSA-4qv5-q4g7-hp5r</link>
-      <description>CVSS 8.0 (CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H)
-
-Affected:
-- EspoCRM &lt;=10.0.7 (patched: 10.0.8)
-- EspoCRM &lt;= 9.3.10 (patched: 9.3.11)
-
----
-
-## Summary&#13;
-&#13;
-A low-privileged user can craft a malicious uploaded SVG image that submits a POST request to an arbitrary backend endpoint when a user (including administrator) opens it in a separate browser tab and clicks the image. By tricking an administrator into opening a link and clicking on the image, an attacker can execute actions with administrator privileges, including elevating their own account to administrator.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-4qv5-q4g7-hp5r</guid>
-      <category>HIGH</category>
-      <category>espocrm/espocrm</category>
-      <pubDate>Tue, 27 Oct 2026 08:34:23 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] mautic/mautic — Open Redirect in Form Submission (CVE-2026-115196)</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-5mm3-3g7p-9868</link>
-      <description>CVE-2026-115196 · CVSS 5.4 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N) · CWE-601
-
-Affected:
-- composer/mautic/core &gt;= 1.0.0-beta, &lt; 5.2.12 (patched: 5.2.12)
-- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
-
----
-
-### Summary
-An Open Redirect vulnerability exists in the public form submission endpoint (`/form/submit`) of Mautic. After a form is submitted, the application redirects the visitor to a return address supplied with the submission without verifying that it points to the Mautic instance or another trusted host. An unauthenticated attacker can exploit this to send visitors from a legitimate Mautic domain to an arbitrary external website. Exploitation requires the victim to submit a form prepared by the attacker.
-
-### Impact
-An attacker can abuse the trusted Mautic domain to redirect visitors to malicious websites, for example to phishing pages that imitate the original landing page or to sites that deliver malware. No authentication is required, and any Mautic instance with a published form is affected.
-
-### Patched Versions
-This security issue has been addressed in the following releases:
-* **7.2.2**
-* **6.0.10**
-* **5.2.12**
-
-*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*
-
-### Workarounds
-There are no official workarounds. To mitigate this vulnerability without upgrading, configure a reverse proxy or web application firewall rule that blocks redirect responses from `/form/submit` to hosts other than your Mautic instance and your own websites.
-</description>
-      <guid isPermaLink="false">GHSA-5mm3-3g7p-9868</guid>
-      <category>MEDIUM</category>
-      <category>mautic/mautic</category>
-      <pubDate>Mon, 26 Oct 2026 10:56:51 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] mautic/mautic — Broken Access Control in Stats API (CVE-2026-115195)</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-7j28-9rg4-wg63</link>
-      <description>CVE-2026-115195 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-862
-
-Affected:
-- composer/mautic/core &gt;= 2.3.0, &lt; 5.2.12 (patched: 5.2.12)
-- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
-
----
-
-### Summary&#13;
-A broken access control vulnerability exists in the Mautic Stats API (`/api/stats/{table}`). The endpoint did not enforce permissions for several internal tables: an intended administrator-only restriction was never applied, and tables without an explicit permission mapping were readable by default. As a result, any authenticated API user, including one whose role grants no permissions, could read data from these tables.&#13;
-&#13;
-### Impact&#13;
-A low-privileged authenticated user could read:&#13;
-* the application audit log, including actions performed by all users and change details that may contain contact personal data,&#13;
-* stored visitor IP addresses and their geolocation details,&#13;
-* tracked redirect URLs and their channel mappings.&#13;
-&#13;
-### Patched Versions&#13;
-This security issue has been addressed in the following releases:&#13;
-* **7.2.2**&#13;
-* **6.0.10**&#13;
-* **5.2.12**&#13;
-&#13;
-*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
-&#13;
-### Workarounds&#13;
-There are no official workarounds. To mitigate this vulnerability without upgrading, disable the API or restrict API access to trusted administrative users.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-7j28-9rg4-wg63</guid>
-      <category>MEDIUM</category>
-      <category>mautic/mautic</category>
-      <pubDate>Mon, 26 Oct 2026 10:54:58 +0000</pubDate>
-    </item>
-    <item>
-      <title>[MEDIUM] mautic/mautic — Arbitrary File Read via Path Traversal in Asset API (CVE-2026-115194)</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-wfhm-289v-79vp</link>
-      <description>CVE-2026-115194 · CVSS 6.5 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N) · CWE-22
-
-Affected:
-- composer/mautic/core &gt;= 2.3.0, &lt; 5.2.12 (patched: 5.2.12)
-- composer/mautic/core &gt;= 6.0.0, &lt; 6.0.10 (patched: 6.0.10)
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
-
----
-
-### Summary&#13;
-A path traversal vulnerability exists in the Mautic Asset API. When creating a local asset through the API, the supplied file path is not restricted to the asset upload directory. An authenticated API user with permission to create assets can register any file that is readable by the web server process as a Mautic asset. When the asset is published, its public download URL serves the contents of that file without authentication.&#13;
-&#13;
-### Impact&#13;
-A low-privilege user with asset creation permissions can read arbitrary files from the server, including:&#13;
-* Mautic configuration files containing the database password, secret key, and mail (SMTP) credentials.&#13;
-* System files and any other file readable by the web server user.&#13;
-&#13;
-Exposed credentials can be used to access the database or other connected services. Because published asset download URLs are public, anyone with the URL can retrieve the file contents.&#13;
-&#13;
-### Patched Versions&#13;
-This security issue has been addressed in the following releases:&#13;
-* **7.2.2**&#13;
-* **6.0.10**&#13;
-* **5.2.12**&#13;
-&#13;
-*Note: For general security support regarding legacy Mautic 4 releases, please refer to the [ELTS](https://mautic.org/extended-long-term-support-elts/) page.*&#13;
-&#13;
-### Workarounds&#13;
-There are no official workarounds. To mitigate this vulnerability without upgrading, disable API access or restrict asset creation permissions to trusted administrative users. Review existing local assets for file paths outside the asset upload directory.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-wfhm-289v-79vp</guid>
-      <category>MEDIUM</category>
-      <category>mautic/mautic</category>
-      <pubDate>Mon, 26 Oct 2026 10:54:33 +0000</pubDate>
-    </item>
-    <item>
-      <title>[HIGH] mautic/mautic — Stored XSS in HTML-type Custom Contact Field on Contact Detail View (CVE-2026-115193)</title>
-      <link>https://github.com/mautic/mautic/security/advisories/GHSA-3295-vq3p-93rw</link>
-      <description>CVE-2026-115193 · CVSS 8.2 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:L/A:N) · CWE-79
-
-Affected:
-- composer/mautic/core &gt;= 7.0.0, &lt; 7.2.2 (patched: 7.2.2)
-
----
-
-### Summary&#13;
-A stored Cross-Site Scripting (XSS) vulnerability exists in the contact detail view of Mautic 7. Values of HTML-type custom contact fields are rendered without output sanitization. A user or integration able to write a value to such a field (for example, through contact editing, the contact API, or a form submission mapped to the field) can store a script payload in it.&#13;
-&#13;
-### Impact&#13;
-When another user, including an administrator, opens the affected contact's detail page, the injected script executes within the context of their active browser session. This could allow an attacker to perform administrative actions on behalf of the victim, such as creating new administrator accounts, altering system configuration, or accessing contact and campaign data.&#13;
-&#13;
-### Patched Versions&#13;
-This security issue has been addressed in the following release:&#13;
-* **7.2.2**&#13;
-&#13;
-*Note: Mautic 6.x, 5.x, and 4.x escape HTML-type contact field values on the contact detail view and are not affected by this vulnerability.*&#13;
-&#13;
-### Workarounds&#13;
-There are no official workarounds. To mitigate this vulnerability without upgrading, restrict contact create and edit permissions and API access to trusted users, and avoid mapping public form fields or publicly updatable settings to HTML-type contact fields.&#13;
-</description>
-      <guid isPermaLink="false">GHSA-3295-vq3p-93rw</guid>
-      <category>HIGH</category>
-      <category>mautic/mautic</category>
-      <pubDate>Mon, 26 Oct 2026 10:53:45 +0000</pubDate>
     </item>
   </channel>
 </rss>
