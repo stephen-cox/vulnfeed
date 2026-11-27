@@ -16,6 +16,7 @@ feeds:
       - composer/composer
       - espocrm/espocrm
       - icinga/icinga2
+      - kimai/kimai
       - mautic/mautic
       - open-webui/open-webui
       - RocketChat/Rocket.Chat
